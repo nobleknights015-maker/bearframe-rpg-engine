@@ -1,0 +1,2061 @@
+{
+  "method": "static first-pass; read-only; no execution or behavioral proof",
+  "collection": {
+    "filename": "Phantasy Star Collection (USA).gba",
+    "type": "gba_arm7tdmi",
+    "size": 8388608,
+    "sha256": "6747a17af7ccb082bab1f2a8ed7d88952ab93879d93173b12331b1e5e8ec1c4e",
+    "header": {
+      "title": "PHANTASYSTAR",
+      "game_code": "AYCE",
+      "maker_code": "78",
+      "stored_header_checksum": "0x1E",
+      "calculated_header_checksum": "0x1E",
+      "checksum_matches": true,
+      "entry_opcode_hex": "0xEA00002E",
+      "entry_is_arm_branch": true,
+      "entry_target_offset_hex": "0xC0"
+    },
+    "blocks": [
+      {
+        "offset_hex": "0x000000",
+        "length": 65536,
+        "entropy": 6.7279,
+        "zero_percent": 11.79,
+        "ff_percent": 2.11
+      },
+      {
+        "offset_hex": "0x010000",
+        "length": 65536,
+        "entropy": 7.1611,
+        "zero_percent": 11.52,
+        "ff_percent": 2.26
+      },
+      {
+        "offset_hex": "0x020000",
+        "length": 65536,
+        "entropy": 7.373,
+        "zero_percent": 11.37,
+        "ff_percent": 1.26
+      },
+      {
+        "offset_hex": "0x030000",
+        "length": 65536,
+        "entropy": 7.1833,
+        "zero_percent": 2.45,
+        "ff_percent": 2.03
+      },
+      {
+        "offset_hex": "0x040000",
+        "length": 65536,
+        "entropy": 0.3677,
+        "zero_percent": 96.86,
+        "ff_percent": 0.02
+      },
+      {
+        "offset_hex": "0x050000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x060000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x070000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x080000",
+        "length": 65536,
+        "entropy": 6.4896,
+        "zero_percent": 10.95,
+        "ff_percent": 1.56
+      },
+      {
+        "offset_hex": "0x090000",
+        "length": 65536,
+        "entropy": 6.4318,
+        "zero_percent": 10.16,
+        "ff_percent": 1.19
+      },
+      {
+        "offset_hex": "0x0A0000",
+        "length": 65536,
+        "entropy": 6.4721,
+        "zero_percent": 10.86,
+        "ff_percent": 1.18
+      },
+      {
+        "offset_hex": "0x0B0000",
+        "length": 65536,
+        "entropy": 6.5194,
+        "zero_percent": 11.1,
+        "ff_percent": 2.38
+      },
+      {
+        "offset_hex": "0x0C0000",
+        "length": 65536,
+        "entropy": 6.4393,
+        "zero_percent": 11.13,
+        "ff_percent": 2.16
+      },
+      {
+        "offset_hex": "0x0D0000",
+        "length": 65536,
+        "entropy": 6.4878,
+        "zero_percent": 10.8,
+        "ff_percent": 1.55
+      },
+      {
+        "offset_hex": "0x0E0000",
+        "length": 65536,
+        "entropy": 6.7849,
+        "zero_percent": 10.23,
+        "ff_percent": 1.25
+      },
+      {
+        "offset_hex": "0x0F0000",
+        "length": 65536,
+        "entropy": 6.1498,
+        "zero_percent": 11.53,
+        "ff_percent": 0.64
+      },
+      {
+        "offset_hex": "0x100000",
+        "length": 65536,
+        "entropy": 6.6212,
+        "zero_percent": 14.69,
+        "ff_percent": 3.45
+      },
+      {
+        "offset_hex": "0x110000",
+        "length": 65536,
+        "entropy": 6.5374,
+        "zero_percent": 14.64,
+        "ff_percent": 6.97
+      },
+      {
+        "offset_hex": "0x120000",
+        "length": 65536,
+        "entropy": 5.5414,
+        "zero_percent": 28.28,
+        "ff_percent": 6.49
+      },
+      {
+        "offset_hex": "0x130000",
+        "length": 65536,
+        "entropy": 6.7129,
+        "zero_percent": 14.19,
+        "ff_percent": 3.4
+      },
+      {
+        "offset_hex": "0x140000",
+        "length": 65536,
+        "entropy": 6.8255,
+        "zero_percent": 8.13,
+        "ff_percent": 3.09
+      },
+      {
+        "offset_hex": "0x150000",
+        "length": 65536,
+        "entropy": 5.85,
+        "zero_percent": 20.17,
+        "ff_percent": 3.98
+      },
+      {
+        "offset_hex": "0x160000",
+        "length": 65536,
+        "entropy": 6.2328,
+        "zero_percent": 0.92,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x170000",
+        "length": 65536,
+        "entropy": 6.3036,
+        "zero_percent": 0.58,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x180000",
+        "length": 65536,
+        "entropy": 6.0597,
+        "zero_percent": 0.2,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x190000",
+        "length": 65536,
+        "entropy": 6.0688,
+        "zero_percent": 0.13,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x1A0000",
+        "length": 65536,
+        "entropy": 6.3721,
+        "zero_percent": 0.6,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x1B0000",
+        "length": 65536,
+        "entropy": 6.3671,
+        "zero_percent": 0.45,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x1C0000",
+        "length": 65536,
+        "entropy": 6.3936,
+        "zero_percent": 0.06,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x1D0000",
+        "length": 65536,
+        "entropy": 5.3988,
+        "zero_percent": 0.06,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x1E0000",
+        "length": 65536,
+        "entropy": 6.021,
+        "zero_percent": 6.25,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x1F0000",
+        "length": 65536,
+        "entropy": 6.0628,
+        "zero_percent": 17.56,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x200000",
+        "length": 65536,
+        "entropy": 6.3759,
+        "zero_percent": 11.49,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x210000",
+        "length": 65536,
+        "entropy": 6.9347,
+        "zero_percent": 2.3,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x220000",
+        "length": 65536,
+        "entropy": 6.6374,
+        "zero_percent": 0.31,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x230000",
+        "length": 65536,
+        "entropy": 6.6167,
+        "zero_percent": 0.13,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x240000",
+        "length": 65536,
+        "entropy": 6.565,
+        "zero_percent": 0.09,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x250000",
+        "length": 65536,
+        "entropy": 6.5032,
+        "zero_percent": 15.51,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x260000",
+        "length": 65536,
+        "entropy": 3.6151,
+        "zero_percent": 62.25,
+        "ff_percent": 2.11
+      },
+      {
+        "offset_hex": "0x270000",
+        "length": 65536,
+        "entropy": 2.4648,
+        "zero_percent": 73.97,
+        "ff_percent": 0.08
+      },
+      {
+        "offset_hex": "0x280000",
+        "length": 65536,
+        "entropy": 5.3886,
+        "zero_percent": 38.66,
+        "ff_percent": 1.56
+      },
+      {
+        "offset_hex": "0x290000",
+        "length": 65536,
+        "entropy": 6.9918,
+        "zero_percent": 10.24,
+        "ff_percent": 1.69
+      },
+      {
+        "offset_hex": "0x2A0000",
+        "length": 65536,
+        "entropy": 7.026,
+        "zero_percent": 9.94,
+        "ff_percent": 1.2
+      },
+      {
+        "offset_hex": "0x2B0000",
+        "length": 65536,
+        "entropy": 6.958,
+        "zero_percent": 10.32,
+        "ff_percent": 1.19
+      },
+      {
+        "offset_hex": "0x2C0000",
+        "length": 65536,
+        "entropy": 6.9887,
+        "zero_percent": 10.39,
+        "ff_percent": 1.03
+      },
+      {
+        "offset_hex": "0x2D0000",
+        "length": 65536,
+        "entropy": 2.09,
+        "zero_percent": 78.98,
+        "ff_percent": 0.51
+      },
+      {
+        "offset_hex": "0x2E0000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x2F0000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x300000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x310000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x320000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x330000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x340000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x350000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x360000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x370000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x380000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x390000",
+        "length": 65536,
+        "entropy": 6.5266,
+        "zero_percent": 10.94,
+        "ff_percent": 1.77
+      },
+      {
+        "offset_hex": "0x3A0000",
+        "length": 65536,
+        "entropy": 6.4382,
+        "zero_percent": 10.79,
+        "ff_percent": 1.72
+      },
+      {
+        "offset_hex": "0x3B0000",
+        "length": 65536,
+        "entropy": 6.5134,
+        "zero_percent": 10.36,
+        "ff_percent": 1.57
+      },
+      {
+        "offset_hex": "0x3C0000",
+        "length": 65536,
+        "entropy": 6.618,
+        "zero_percent": 9.16,
+        "ff_percent": 1.92
+      },
+      {
+        "offset_hex": "0x3D0000",
+        "length": 65536,
+        "entropy": 6.136,
+        "zero_percent": 21.95,
+        "ff_percent": 2.96
+      },
+      {
+        "offset_hex": "0x3E0000",
+        "length": 65536,
+        "entropy": 6.5583,
+        "zero_percent": 10.3,
+        "ff_percent": 5.09
+      },
+      {
+        "offset_hex": "0x3F0000",
+        "length": 65536,
+        "entropy": 7.0321,
+        "zero_percent": 7.53,
+        "ff_percent": 5.06
+      },
+      {
+        "offset_hex": "0x400000",
+        "length": 65536,
+        "entropy": 7.6525,
+        "zero_percent": 3.37,
+        "ff_percent": 2.04
+      },
+      {
+        "offset_hex": "0x410000",
+        "length": 65536,
+        "entropy": 6.6926,
+        "zero_percent": 6.34,
+        "ff_percent": 2.96
+      },
+      {
+        "offset_hex": "0x420000",
+        "length": 65536,
+        "entropy": 6.4072,
+        "zero_percent": 17.69,
+        "ff_percent": 3.1
+      },
+      {
+        "offset_hex": "0x430000",
+        "length": 65536,
+        "entropy": 6.2561,
+        "zero_percent": 22.2,
+        "ff_percent": 2.97
+      },
+      {
+        "offset_hex": "0x440000",
+        "length": 65536,
+        "entropy": 6.4247,
+        "zero_percent": 19.13,
+        "ff_percent": 2.98
+      },
+      {
+        "offset_hex": "0x450000",
+        "length": 65536,
+        "entropy": 6.5409,
+        "zero_percent": 13.61,
+        "ff_percent": 2.91
+      },
+      {
+        "offset_hex": "0x460000",
+        "length": 65536,
+        "entropy": 5.9949,
+        "zero_percent": 12.79,
+        "ff_percent": 0.93
+      },
+      {
+        "offset_hex": "0x470000",
+        "length": 65536,
+        "entropy": 6.1249,
+        "zero_percent": 18.46,
+        "ff_percent": 1.42
+      },
+      {
+        "offset_hex": "0x480000",
+        "length": 65536,
+        "entropy": 6.7382,
+        "zero_percent": 2.73,
+        "ff_percent": 1.28
+      },
+      {
+        "offset_hex": "0x490000",
+        "length": 65536,
+        "entropy": 5.9234,
+        "zero_percent": 0.02,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x4A0000",
+        "length": 65536,
+        "entropy": 5.9241,
+        "zero_percent": 0.24,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x4B0000",
+        "length": 65536,
+        "entropy": 6.1996,
+        "zero_percent": 0.08,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x4C0000",
+        "length": 65536,
+        "entropy": 6.2058,
+        "zero_percent": 0.71,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x4D0000",
+        "length": 65536,
+        "entropy": 6.6119,
+        "zero_percent": 0.38,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x4E0000",
+        "length": 65536,
+        "entropy": 4.8972,
+        "zero_percent": 34.65,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x4F0000",
+        "length": 65536,
+        "entropy": 5.3511,
+        "zero_percent": 27.83,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x500000",
+        "length": 65536,
+        "entropy": 6.5877,
+        "zero_percent": 12.32,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x510000",
+        "length": 65536,
+        "entropy": 4.9372,
+        "zero_percent": 41.64,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x520000",
+        "length": 65536,
+        "entropy": 6.3484,
+        "zero_percent": 0.18,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x530000",
+        "length": 65536,
+        "entropy": 5.7253,
+        "zero_percent": 1.13,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x540000",
+        "length": 65536,
+        "entropy": 6.8354,
+        "zero_percent": 0.59,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x550000",
+        "length": 65536,
+        "entropy": 6.0262,
+        "zero_percent": 0.11,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x560000",
+        "length": 65536,
+        "entropy": 6.398,
+        "zero_percent": 1.48,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x570000",
+        "length": 65536,
+        "entropy": 6.4448,
+        "zero_percent": 1.34,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x580000",
+        "length": 65536,
+        "entropy": 6.371,
+        "zero_percent": 0.09,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x590000",
+        "length": 65536,
+        "entropy": 6.5092,
+        "zero_percent": 0.29,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x5A0000",
+        "length": 65536,
+        "entropy": 6.9095,
+        "zero_percent": 1.51,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x5B0000",
+        "length": 65536,
+        "entropy": 6.5996,
+        "zero_percent": 1.12,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x5C0000",
+        "length": 65536,
+        "entropy": 6.7912,
+        "zero_percent": 2.49,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x5D0000",
+        "length": 65536,
+        "entropy": 6.3782,
+        "zero_percent": 0.08,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x5E0000",
+        "length": 65536,
+        "entropy": 6.5591,
+        "zero_percent": 4.15,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x5F0000",
+        "length": 65536,
+        "entropy": 6.5966,
+        "zero_percent": 16.18,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x600000",
+        "length": 65536,
+        "entropy": 6.7873,
+        "zero_percent": 6.07,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x610000",
+        "length": 65536,
+        "entropy": 6.2414,
+        "zero_percent": 18.94,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x620000",
+        "length": 65536,
+        "entropy": 6.917,
+        "zero_percent": 6.52,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x630000",
+        "length": 65536,
+        "entropy": 6.342,
+        "zero_percent": 20.49,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x640000",
+        "length": 65536,
+        "entropy": 6.5409,
+        "zero_percent": 15.12,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x650000",
+        "length": 65536,
+        "entropy": 6.0409,
+        "zero_percent": 24.66,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x660000",
+        "length": 65536,
+        "entropy": 5.9304,
+        "zero_percent": 27.78,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x670000",
+        "length": 65536,
+        "entropy": 6.9723,
+        "zero_percent": 10.39,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x680000",
+        "length": 65536,
+        "entropy": 5.9514,
+        "zero_percent": 27.38,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x690000",
+        "length": 65536,
+        "entropy": 6.403,
+        "zero_percent": 14.65,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x6A0000",
+        "length": 65536,
+        "entropy": 4.6688,
+        "zero_percent": 46.83,
+        "ff_percent": 2.43
+      },
+      {
+        "offset_hex": "0x6B0000",
+        "length": 65536,
+        "entropy": 2.6567,
+        "zero_percent": 67.41,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x6C0000",
+        "length": 65536,
+        "entropy": 1.9922,
+        "zero_percent": 78.05,
+        "ff_percent": 0.01
+      },
+      {
+        "offset_hex": "0x6D0000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x6E0000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x6F0000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x700000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x710000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x720000",
+        "length": 65536,
+        "entropy": -0.0,
+        "zero_percent": 100.0,
+        "ff_percent": 0.0
+      },
+      {
+        "offset_hex": "0x730000",
+        "length": 65536,
+        "entropy": 3.9109,
+        "zero_percent": 55.53,
+        "ff_percent": 0.31
+      },
+      {
+        "offset_hex": "0x740000",
+        "length": 65536,
+        "entropy": 5.7456,
+        "zero_percent": 18.21,
+        "ff_percent": 0.53
+      },
+      {
+        "offset_hex": "0x750000",
+        "length": 65536,
+        "entropy": 5.7872,
+        "zero_percent": 17.21,
+        "ff_percent": 0.64
+      },
+      {
+        "offset_hex": "0x760000",
+        "length": 65536,
+        "entropy": 5.8817,
+        "zero_percent": 12.63,
+        "ff_percent": 0.59
+      },
+      {
+        "offset_hex": "0x770000",
+        "length": 65536,
+        "entropy": 7.094,
+        "zero_percent": 6.89,
+        "ff_percent": 1.0
+      },
+      {
+        "offset_hex": "0x780000",
+        "length": 65536,
+        "entropy": 6.3435,
+        "zero_percent": 13.77,
+        "ff_percent": 4.36
+      },
+      {
+        "offset_hex": "0x790000",
+        "length": 65536,
+        "entropy": 5.7907,
+        "zero_percent": 19.56,
+        "ff_percent": 11.04
+      },
+      {
+        "offset_hex": "0x7A0000",
+        "length": 65536,
+        "entropy": 6.9243,
+        "zero_percent": 5.61,
+        "ff_percent": 3.24
+      },
+      {
+        "offset_hex": "0x7B0000",
+        "length": 65536,
+        "entropy": 6.4018,
+        "zero_percent": 15.19,
+        "ff_percent": 4.66
+      },
+      {
+        "offset_hex": "0x7C0000",
+        "length": 65536,
+        "entropy": 6.8615,
+        "zero_percent": 9.09,
+        "ff_percent": 2.88
+      },
+      {
+        "offset_hex": "0x7D0000",
+        "length": 65536,
+        "entropy": 6.8572,
+        "zero_percent": 7.8,
+        "ff_percent": 1.96
+      },
+      {
+        "offset_hex": "0x7E0000",
+        "length": 65536,
+        "entropy": 6.8983,
+        "zero_percent": 11.03,
+        "ff_percent": 3.46
+      },
+      {
+        "offset_hex": "0x7F0000",
+        "length": 65536,
+        "entropy": 1.5587,
+        "zero_percent": 85.93,
+        "ff_percent": 0.2
+      }
+    ]
+  },
+  "phantasy_star_iv": {
+    "filename": "Phantasy Star IV (USA).md",
+    "type": "sega_genesis_68000",
+    "size": 3145728,
+    "sha256": "511f35cc11f88316f8b8940e28ab298bd75a4da193672a80172884d6eb913b6a",
+    "header": {
+      "hardware": "SEGA GENESIS",
+      "domestic_title": "PHANTASY STAR The end of the millennium",
+      "overseas_title": "PHANTASY STAR The end of the millennium",
+      "product_code": "GM MK-1307 -00",
+      "stored_checksum": "0x05CB",
+      "calculated_checksum": "0x05CB",
+      "checksum_matches": true,
+      "rom_start": "0x00000000",
+      "rom_end": "0x002FFFFF",
+      "ram_start": "0x00FF0000",
+      "ram_end": "0x00FFFFFF",
+      "region": "4"
+    },
+    "vectors": [
+      {
+        "vector": 0,
+        "name": "initial_stack_pointer",
+        "address_hex": "0xFFFF4FF0",
+        "rom_aligned": false
+      },
+      {
+        "vector": 1,
+        "name": "reset_program_counter",
+        "address_hex": "0x00000220",
+        "rom_aligned": true
+      },
+      {
+        "vector": 2,
+        "name": "bus_error",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 3,
+        "name": "address_error",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 4,
+        "name": "illegal_instruction",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 5,
+        "name": "divide_by_zero",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 6,
+        "name": "chk",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 7,
+        "name": "trapv",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 8,
+        "name": "privilege_violation",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 9,
+        "name": "trace",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 10,
+        "name": "line_1010_emulator",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 11,
+        "name": "line_1111_emulator",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 12,
+        "name": "vector_12",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 13,
+        "name": "vector_13",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 14,
+        "name": "vector_14",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 15,
+        "name": "vector_15",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 16,
+        "name": "vector_16",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 17,
+        "name": "vector_17",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 18,
+        "name": "vector_18",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 19,
+        "name": "vector_19",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 20,
+        "name": "vector_20",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 21,
+        "name": "vector_21",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 22,
+        "name": "vector_22",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 23,
+        "name": "vector_23",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 24,
+        "name": "spurious_interrupt",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 25,
+        "name": "level_1_interrupt",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 26,
+        "name": "level_2_interrupt",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 27,
+        "name": "level_3_interrupt",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 28,
+        "name": "horizontal_blank_interrupt",
+        "address_hex": "0xFFFFECB0",
+        "rom_aligned": false
+      },
+      {
+        "vector": 29,
+        "name": "level_5_interrupt",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 30,
+        "name": "vertical_blank_interrupt",
+        "address_hex": "0x00000524",
+        "rom_aligned": true
+      },
+      {
+        "vector": 31,
+        "name": "level_7_interrupt",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 32,
+        "name": "vector_32",
+        "address_hex": "0x00000202",
+        "rom_aligned": true
+      },
+      {
+        "vector": 33,
+        "name": "vector_33",
+        "address_hex": "0x0000020C",
+        "rom_aligned": true
+      },
+      {
+        "vector": 34,
+        "name": "vector_34",
+        "address_hex": "0x00000216",
+        "rom_aligned": true
+      },
+      {
+        "vector": 35,
+        "name": "vector_35",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 36,
+        "name": "vector_36",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 37,
+        "name": "vector_37",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 38,
+        "name": "vector_38",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 39,
+        "name": "vector_39",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 40,
+        "name": "vector_40",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 41,
+        "name": "vector_41",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 42,
+        "name": "vector_42",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 43,
+        "name": "vector_43",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 44,
+        "name": "vector_44",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 45,
+        "name": "vector_45",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 46,
+        "name": "vector_46",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 47,
+        "name": "vector_47",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 48,
+        "name": "vector_48",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 49,
+        "name": "vector_49",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 50,
+        "name": "vector_50",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 51,
+        "name": "vector_51",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 52,
+        "name": "vector_52",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 53,
+        "name": "vector_53",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 54,
+        "name": "vector_54",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 55,
+        "name": "vector_55",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 56,
+        "name": "vector_56",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 57,
+        "name": "vector_57",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 58,
+        "name": "vector_58",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 59,
+        "name": "vector_59",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 60,
+        "name": "vector_60",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 61,
+        "name": "vector_61",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 62,
+        "name": "vector_62",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      },
+      {
+        "vector": 63,
+        "name": "vector_63",
+        "address_hex": "0x00000200",
+        "rom_aligned": true
+      }
+    ],
+    "absolute_long_branch_pattern_candidates": {
+      "total": 8874,
+      "first_40": [
+        {
+          "from_hex": "0x00039A",
+          "to_hex": "0x042292",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0003A0",
+          "to_hex": "0x0422A8",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0003AE",
+          "to_hex": "0x0D0004",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0003CA",
+          "to_hex": "0x0003F8",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000410",
+          "to_hex": "0x0422A8",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000432",
+          "to_hex": "0x04204C",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x00043C",
+          "to_hex": "0x04223E",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000442",
+          "to_hex": "0x0415DC",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x00045E",
+          "to_hex": "0x041C8A",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000464",
+          "to_hex": "0x041740",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000484",
+          "to_hex": "0x0421D4",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x00049C",
+          "to_hex": "0x069A64",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0004B4",
+          "to_hex": "0x069A64",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0004CC",
+          "to_hex": "0x069A64",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0004D2",
+          "to_hex": "0x041682",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0005F6",
+          "to_hex": "0x04217A",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000606",
+          "to_hex": "0x04236C",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000632",
+          "to_hex": "0x0D0000",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000948",
+          "to_hex": "0x0358BE",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000956",
+          "to_hex": "0x0452EC",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x00095C",
+          "to_hex": "0x036676",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x00098E",
+          "to_hex": "0x00B7B2",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000994",
+          "to_hex": "0x04168A",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x00099E",
+          "to_hex": "0x04204C",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0009A4",
+          "to_hex": "0x0358BE",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x0009AE",
+          "to_hex": "0x036676",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000AC2",
+          "to_hex": "0x04204C",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000B92",
+          "to_hex": "0x036B02",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000CB8",
+          "to_hex": "0x036B02",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000DFC",
+          "to_hex": "0x27DDB6",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000E14",
+          "to_hex": "0x27DDB6",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000E46",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000E72",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000E86",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000E94",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000EA2",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000EB0",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000FE4",
+          "to_hex": "0x27DAF6",
+          "opcode_kind": "JSR_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000FEA",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        },
+        {
+          "from_hex": "0x000FF2",
+          "to_hex": "0x041CBA",
+          "opcode_kind": "JMP_abs_long_candidate"
+        }
+      ]
+    },
+    "candidate_pointer_count_by_64k_block": [
+      {
+        "block_hex": "0x000000",
+        "count": 9756
+      },
+      {
+        "block_hex": "0x010000",
+        "count": 4892
+      },
+      {
+        "block_hex": "0x020000",
+        "count": 6621
+      },
+      {
+        "block_hex": "0x030000",
+        "count": 2779
+      },
+      {
+        "block_hex": "0x040000",
+        "count": 6816
+      },
+      {
+        "block_hex": "0x050000",
+        "count": 4441
+      },
+      {
+        "block_hex": "0x060000",
+        "count": 3339
+      },
+      {
+        "block_hex": "0x070000",
+        "count": 1886
+      },
+      {
+        "block_hex": "0x080000",
+        "count": 1954
+      },
+      {
+        "block_hex": "0x090000",
+        "count": 1395
+      },
+      {
+        "block_hex": "0x0A0000",
+        "count": 828
+      },
+      {
+        "block_hex": "0x0B0000",
+        "count": 311
+      },
+      {
+        "block_hex": "0x0C0000",
+        "count": 1843
+      },
+      {
+        "block_hex": "0x0D0000",
+        "count": 378
+      },
+      {
+        "block_hex": "0x0E0000",
+        "count": 639
+      },
+      {
+        "block_hex": "0x0F0000",
+        "count": 361
+      },
+      {
+        "block_hex": "0x100000",
+        "count": 1452
+      },
+      {
+        "block_hex": "0x110000",
+        "count": 2018
+      },
+      {
+        "block_hex": "0x120000",
+        "count": 1261
+      },
+      {
+        "block_hex": "0x130000",
+        "count": 901
+      },
+      {
+        "block_hex": "0x140000",
+        "count": 1792
+      },
+      {
+        "block_hex": "0x150000",
+        "count": 378
+      },
+      {
+        "block_hex": "0x160000",
+        "count": 1116
+      },
+      {
+        "block_hex": "0x170000",
+        "count": 532
+      },
+      {
+        "block_hex": "0x180000",
+        "count": 846
+      },
+      {
+        "block_hex": "0x190000",
+        "count": 522
+      },
+      {
+        "block_hex": "0x1A0000",
+        "count": 450
+      },
+      {
+        "block_hex": "0x1B0000",
+        "count": 541
+      },
+      {
+        "block_hex": "0x1C0000",
+        "count": 2004
+      },
+      {
+        "block_hex": "0x1D0000",
+        "count": 314
+      },
+      {
+        "block_hex": "0x1E0000",
+        "count": 1061
+      },
+      {
+        "block_hex": "0x1F0000",
+        "count": 415
+      },
+      {
+        "block_hex": "0x200000",
+        "count": 1119
+      },
+      {
+        "block_hex": "0x210000",
+        "count": 448
+      },
+      {
+        "block_hex": "0x220000",
+        "count": 382
+      },
+      {
+        "block_hex": "0x230000",
+        "count": 235
+      },
+      {
+        "block_hex": "0x240000",
+        "count": 1133
+      },
+      {
+        "block_hex": "0x250000",
+        "count": 638
+      },
+      {
+        "block_hex": "0x260000",
+        "count": 423
+      },
+      {
+        "block_hex": "0x270000",
+        "count": 1225
+      },
+      {
+        "block_hex": "0x280000",
+        "count": 605
+      },
+      {
+        "block_hex": "0x290000",
+        "count": 328
+      },
+      {
+        "block_hex": "0x2A0000",
+        "count": 869
+      },
+      {
+        "block_hex": "0x2B0000",
+        "count": 213
+      },
+      {
+        "block_hex": "0x2C0000",
+        "count": 854
+      },
+      {
+        "block_hex": "0x2D0000",
+        "count": 341
+      },
+      {
+        "block_hex": "0x2E0000",
+        "count": 1115
+      },
+      {
+        "block_hex": "0x2F0000",
+        "count": 83
+      }
+    ],
+    "blocks": [
+      {
+        "offset_hex": "0x000000",
+        "length": 65536,
+        "entropy": 6.4735,
+        "zero_percent": 14.48,
+        "ff_percent": 6.39
+      },
+      {
+        "offset_hex": "0x010000",
+        "length": 65536,
+        "entropy": 5.8343,
+        "zero_percent": 23.54,
+        "ff_percent": 1.64
+      },
+      {
+        "offset_hex": "0x020000",
+        "length": 65536,
+        "entropy": 5.9431,
+        "zero_percent": 22.54,
+        "ff_percent": 1.88
+      },
+      {
+        "offset_hex": "0x030000",
+        "length": 65536,
+        "entropy": 6.0319,
+        "zero_percent": 21.6,
+        "ff_percent": 1.88
+      },
+      {
+        "offset_hex": "0x040000",
+        "length": 65536,
+        "entropy": 6.0433,
+        "zero_percent": 24.21,
+        "ff_percent": 1.17
+      },
+      {
+        "offset_hex": "0x050000",
+        "length": 65536,
+        "entropy": 6.3369,
+        "zero_percent": 18.05,
+        "ff_percent": 1.36
+      },
+      {
+        "offset_hex": "0x060000",
+        "length": 65536,
+        "entropy": 6.4566,
+        "zero_percent": 16.8,
+        "ff_percent": 2.05
+      },
+      {
+        "offset_hex": "0x070000",
+        "length": 65536,
+        "entropy": 6.8608,
+        "zero_percent": 11.89,
+        "ff_percent": 4.72
+      },
+      {
+        "offset_hex": "0x080000",
+        "length": 65536,
+        "entropy": 7.9757,
+        "zero_percent": 0.79,
+        "ff_percent": 0.76
+      },
+      {
+        "offset_hex": "0x090000",
+        "length": 65536,
+        "entropy": 7.9159,
+        "zero_percent": 3.07,
+        "ff_percent": 0.81
+      },
+      {
+        "offset_hex": "0x0A0000",
+        "length": 65536,
+        "entropy": 7.9716,
+        "zero_percent": 1.0,
+        "ff_percent": 0.89
+      },
+      {
+        "offset_hex": "0x0B0000",
+        "length": 65536,
+        "entropy": 7.9641,
+        "zero_percent": 1.42,
+        "ff_percent": 0.78
+      },
+      {
+        "offset_hex": "0x0C0000",
+        "length": 65536,
+        "entropy": 7.9187,
+        "zero_percent": 2.04,
+        "ff_percent": 2.25
+      },
+      {
+        "offset_hex": "0x0D0000",
+        "length": 65536,
+        "entropy": 6.5989,
+        "zero_percent": 7.66,
+        "ff_percent": 5.02
+      },
+      {
+        "offset_hex": "0x0E0000",
+        "length": 65536,
+        "entropy": 5.8606,
+        "zero_percent": 0.0,
+        "ff_percent": 8.62
+      },
+      {
+        "offset_hex": "0x0F0000",
+        "length": 65536,
+        "entropy": 5.793,
+        "zero_percent": 0.0,
+        "ff_percent": 3.45
+      },
+      {
+        "offset_hex": "0x100000",
+        "length": 65536,
+        "entropy": 6.0214,
+        "zero_percent": 25.74,
+        "ff_percent": 1.11
+      },
+      {
+        "offset_hex": "0x110000",
+        "length": 65536,
+        "entropy": 7.3584,
+        "zero_percent": 2.32,
+        "ff_percent": 1.38
+      },
+      {
+        "offset_hex": "0x120000",
+        "length": 65536,
+        "entropy": 7.6967,
+        "zero_percent": 3.84,
+        "ff_percent": 2.13
+      },
+      {
+        "offset_hex": "0x130000",
+        "length": 65536,
+        "entropy": 7.6164,
+        "zero_percent": 6.26,
+        "ff_percent": 2.9
+      },
+      {
+        "offset_hex": "0x140000",
+        "length": 65536,
+        "entropy": 7.5535,
+        "zero_percent": 6.5,
+        "ff_percent": 3.45
+      },
+      {
+        "offset_hex": "0x150000",
+        "length": 65536,
+        "entropy": 7.4957,
+        "zero_percent": 5.64,
+        "ff_percent": 3.78
+      },
+      {
+        "offset_hex": "0x160000",
+        "length": 65536,
+        "entropy": 7.5123,
+        "zero_percent": 4.23,
+        "ff_percent": 3.38
+      },
+      {
+        "offset_hex": "0x170000",
+        "length": 65536,
+        "entropy": 7.0799,
+        "zero_percent": 9.77,
+        "ff_percent": 4.68
+      },
+      {
+        "offset_hex": "0x180000",
+        "length": 65536,
+        "entropy": 7.456,
+        "zero_percent": 7.4,
+        "ff_percent": 4.03
+      },
+      {
+        "offset_hex": "0x190000",
+        "length": 65536,
+        "entropy": 7.6509,
+        "zero_percent": 5.11,
+        "ff_percent": 2.53
+      },
+      {
+        "offset_hex": "0x1A0000",
+        "length": 65536,
+        "entropy": 7.4156,
+        "zero_percent": 6.61,
+        "ff_percent": 3.56
+      },
+      {
+        "offset_hex": "0x1B0000",
+        "length": 65536,
+        "entropy": 7.5401,
+        "zero_percent": 5.08,
+        "ff_percent": 3.94
+      },
+      {
+        "offset_hex": "0x1C0000",
+        "length": 65536,
+        "entropy": 7.6448,
+        "zero_percent": 4.62,
+        "ff_percent": 3.06
+      },
+      {
+        "offset_hex": "0x1D0000",
+        "length": 65536,
+        "entropy": 7.9246,
+        "zero_percent": 2.64,
+        "ff_percent": 0.86
+      },
+      {
+        "offset_hex": "0x1E0000",
+        "length": 65536,
+        "entropy": 7.6778,
+        "zero_percent": 2.07,
+        "ff_percent": 0.85
+      },
+      {
+        "offset_hex": "0x1F0000",
+        "length": 65536,
+        "entropy": 7.492,
+        "zero_percent": 2.07,
+        "ff_percent": 7.01
+      },
+      {
+        "offset_hex": "0x200000",
+        "length": 65536,
+        "entropy": 7.9509,
+        "zero_percent": 2.06,
+        "ff_percent": 0.48
+      },
+      {
+        "offset_hex": "0x210000",
+        "length": 65536,
+        "entropy": 7.9584,
+        "zero_percent": 1.69,
+        "ff_percent": 0.59
+      },
+      {
+        "offset_hex": "0x220000",
+        "length": 65536,
+        "entropy": 7.823,
+        "zero_percent": 3.64,
+        "ff_percent": 0.59
+      },
+      {
+        "offset_hex": "0x230000",
+        "length": 65536,
+        "entropy": 7.977,
+        "zero_percent": 1.11,
+        "ff_percent": 0.53
+      },
+      {
+        "offset_hex": "0x240000",
+        "length": 65536,
+        "entropy": 7.9321,
+        "zero_percent": 2.71,
+        "ff_percent": 0.63
+      },
+      {
+        "offset_hex": "0x250000",
+        "length": 65536,
+        "entropy": 5.0407,
+        "zero_percent": 35.19,
+        "ff_percent": 3.6
+      },
+      {
+        "offset_hex": "0x260000",
+        "length": 65536,
+        "entropy": 7.9615,
+        "zero_percent": 1.14,
+        "ff_percent": 0.6
+      },
+      {
+        "offset_hex": "0x270000",
+        "length": 65536,
+        "entropy": 7.8911,
+        "zero_percent": 3.18,
+        "ff_percent": 1.52
+      },
+      {
+        "offset_hex": "0x280000",
+        "length": 65536,
+        "entropy": 4.7066,
+        "zero_percent": 18.64,
+        "ff_percent": 35.41
+      },
+      {
+        "offset_hex": "0x290000",
+        "length": 65536,
+        "entropy": 7.0138,
+        "zero_percent": 16.75,
+        "ff_percent": 1.49
+      },
+      {
+        "offset_hex": "0x2A0000",
+        "length": 65536,
+        "entropy": 6.4955,
+        "zero_percent": 21.34,
+        "ff_percent": 2.04
+      },
+      {
+        "offset_hex": "0x2B0000",
+        "length": 65536,
+        "entropy": 7.6738,
+        "zero_percent": 9.32,
+        "ff_percent": 0.77
+      },
+      {
+        "offset_hex": "0x2C0000",
+        "length": 65536,
+        "entropy": 7.9736,
+        "zero_percent": 0.33,
+        "ff_percent": 0.82
+      },
+      {
+        "offset_hex": "0x2D0000",
+        "length": 65536,
+        "entropy": 7.9424,
+        "zero_percent": 2.18,
+        "ff_percent": 0.74
+      },
+      {
+        "offset_hex": "0x2E0000",
+        "length": 65536,
+        "entropy": 7.9432,
+        "zero_percent": 2.13,
+        "ff_percent": 0.77
+      },
+      {
+        "offset_hex": "0x2F0000",
+        "length": 65536,
+        "entropy": 3.016,
+        "zero_percent": 0.48,
+        "ff_percent": 71.59
+      }
+    ]
+  }
+}

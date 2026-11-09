@@ -1,0 +1,3 @@
+PASS menu index 0 and game boot video fingerprint
+PASS menu index 1 and game boot video fingerprint
+PASS menu index 2 and game boot video fingerprint

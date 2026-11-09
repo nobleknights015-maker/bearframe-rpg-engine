@@ -1,0 +1,13 @@
+test_collection_headers_and_launch (__main__.Probes.test_collection_headers_and_launch) ... ok
+test_combat_shortlist (__main__.Probes.test_combat_shortlist) ... ok
+test_effect_gate (__main__.Probes.test_effect_gate) ... ok
+test_event_selector (__main__.Probes.test_event_selector) ... ok
+test_interaction_rectangle_and_set_once (__main__.Probes.test_interaction_rectangle_and_set_once) ... ok
+test_order_with_deterministic_rng (__main__.Probes.test_order_with_deterministic_rng) ... ok
+test_packed_dungeon (__main__.Probes.test_packed_dungeon) ... ok
+test_save_slots_against_ram (__main__.Probes.test_save_slots_against_ram) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.065s
+
+OK

@@ -1,0 +1,3 @@
+PASS first-town movement, blocked step, reverse steps, system menu and slot 1 save
+Slot 1 payload: 2560 bytes; measured checksum: 58c0; 735 SRAM bytes changed
+PASS cold boot, Continue, select slot 1, restore exact saved field position

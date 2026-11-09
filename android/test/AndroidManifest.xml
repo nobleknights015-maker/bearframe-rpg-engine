@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.bearframe.ridge.tests">
+ <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35"/>
+ <instrumentation android:name=".RouteRunner" android:targetPackage="dev.bearframe.ridge"/>
+ <application android:label="Bearframe route test"/>
+</manifest>

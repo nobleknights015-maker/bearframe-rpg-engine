@@ -1,0 +1,28 @@
+test_entropy (test_analyzer.AnalyzerTests.test_entropy) ... ok
+test_gba_branch_and_checksum (test_analyzer.AnalyzerTests.test_gba_branch_and_checksum) ... ok
+test_genesis_checksum (test_analyzer.AnalyzerTests.test_genesis_checksum) ... ok
+test_psii_bugfix_high_damage_differs (test_cross_game.CrossGameReferenceTests.test_psii_bugfix_high_damage_differs) ... ok
+test_psii_bugfix_small_equal (test_cross_game.CrossGameReferenceTests.test_psii_bugfix_small_equal) ... ok
+test_psii_ordinary_hit (test_cross_game.CrossGameReferenceTests.test_psii_ordinary_hit) ... ok
+test_psii_roll_range (test_cross_game.CrossGameReferenceTests.test_psii_roll_range) ... ok
+test_psiii_ambush (test_cross_game.CrossGameReferenceTests.test_psiii_ambush) ... ok
+test_psiii_normal (test_cross_game.CrossGameReferenceTests.test_psiii_normal) ... ok
+test_psiii_preemptive (test_cross_game.CrossGameReferenceTests.test_psiii_preemptive) ... ok
+test_psiii_special (test_cross_game.CrossGameReferenceTests.test_psiii_special) ... ok
+test_battle_dispatch (test_pass2.ReverseEngineeringTests.test_battle_dispatch) ... ok
+test_checksum (test_pass2.ReverseEngineeringTests.test_checksum) ... ok
+test_checksum_size_rejected (test_pass2.ReverseEngineeringTests.test_checksum_size_rejected) ... ok
+test_encounter_blocked_and_reset (test_pass2.ReverseEngineeringTests.test_encounter_blocked_and_reset) ... ok
+test_encounter_masks (test_pass2.ReverseEngineeringTests.test_encounter_masks) ... ok
+test_encounter_start_after_ten_moves (test_pass2.ReverseEngineeringTests.test_encounter_start_after_ten_moves) ... ok
+test_field_dispatch (test_pass2.ReverseEngineeringTests.test_field_dispatch) ... ok
+test_flags_clear_and_mask (test_pass2.ReverseEngineeringTests.test_flags_clear_and_mask) ... ok
+test_flags_msb (test_pass2.ReverseEngineeringTests.test_flags_msb) ... ok
+test_gba_branch (test_pass2.ReverseEngineeringTests.test_gba_branch) ... ok
+test_gba_other_rejected (test_pass2.ReverseEngineeringTests.test_gba_other_rejected) ... ok
+test_main_dispatch (test_pass2.ReverseEngineeringTests.test_main_dispatch) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.029s
+
+OK

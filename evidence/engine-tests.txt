@@ -1,0 +1,18 @@
+✔ creation preserves a chosen identity and caps input (1.138499ms)
+✔ cardinal motion, bounds, wall collision and input ownership (0.574388ms)
+✔ legacy bearing is idempotent; core never appears as an equipment slot (3.353182ms)
+✔ weapon alone changes equipment appearance and both profiles equip (0.19222ms)
+✔ recruitment, hostile alternative and player consent (0.359012ms)
+✔ battle telegraph, pulse cost, guard, support and player withdrawal (0.201404ms)
+✔ defeat recovery, berth rest and battle victory (0.186291ms)
+✔ map transitions are reversible and the Hollow actually gates the ridge (0.197278ms)
+✔ Mira offers two independent recording choices (0.353484ms)
+✔ save and load every playable mode, reject damaged state (0.760148ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.465737
