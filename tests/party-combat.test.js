@@ -154,3 +154,17 @@ test('rejects duplicate status records before restore or combat replay',()=>{
  assert.equal(advanced.party[0].statuses.length,1);
  assert.equal(advanced.party[0].statuses[0].turns,1);
 });
+
+
+test('duplicate skill IDs are rejected in fresh rosters and restored battle snapshots',()=>{
+ const combat=make(skills);
+ assert.throws(()=>combat.begin([{...pilot(),skills:['strike','strike']}],[crawler()],17),/Invalid party or enemy roster/);
+ const initial=combat.begin([pilot()],[crawler()],17);
+ const corrupted=clone(initial);
+ corrupted.foes[0].skills=['strike','strike'];
+ assert.equal(combat.validateState(corrupted),false);
+ assert.equal(combat.restore(JSON.stringify(corrupted)),null);
+ assert.throws(()=>combat.serialize(corrupted),/Invalid combat state/);
+ assert.equal(combat.round(corrupted,[{actor:'pilot',skill:'strike',target:'crawler'}]),corrupted);
+ assert.deepEqual(combat.restore(combat.serialize(initial)),initial);
+});
