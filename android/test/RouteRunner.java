@@ -548,6 +548,27 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Recovered renderer failed durable commit: "+after);
         resultMeta.putString("renderer","PASS callback recovery, offline texture reload, journal revision 2");
     }
+    /** Native AudioManager focus request/release through the installed WebView.
+     * This confirms focus API behavior, not audible physical output. */
+    private void checkUnifiedAudioFocus() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        String requested=evalHost("BearframeAudioFocus.request()");
+        if(!"true".equals(requested))
+            throw new AssertionError("Foreground audio focus request rejected: "+requested);
+        if(!"true".equals(evalHost("BearframeAudioFocus.request()")))
+            throw new AssertionError("Repeated audio focus request should be idempotent");
+        evalHost("BearframeAudioFocus.abandon()");
+        evalHost("BearframeAudioFocus.abandon()");
+        JSONObject after=unifiedSnapshot();
+        if(before.getInt("sequence")!=after.getInt("sequence")||
+           before.getInt("savedRevision")!=after.getInt("savedRevision"))
+            throw new AssertionError("Audio focus changed authoritative gameplay state");
+        resultMeta.putString("focus","PASS native audio focus request, abandon and unchanged journal");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -645,6 +666,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedSoak(stage.equals("unified-soak-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-focus")){
+                checkUnifiedAudioFocus();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-focus");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
