@@ -168,3 +168,21 @@ test('duplicate skill IDs are rejected in fresh rosters and restored battle snap
  assert.equal(combat.round(corrupted,[{actor:'pilot',skill:'strike',target:'crawler'}]),corrupted);
  assert.deepEqual(combat.restore(combat.serialize(initial)),initial);
 });
+
+
+test('combat turn ceiling refuses advancement without corrupting a durable snapshot',()=>{
+ const combat=make(skills),state=combat.begin([pilot()],[crawler()],29);
+ state.turn=1000000;
+ const saved=combat.serialize(state);
+ const orders=[{actor:'pilot',skill:'strike',target:'crawler'}];
+ assert.equal(combat.validateState(state),true);
+ assert.doesNotThrow(()=>combat.round(state,orders));
+ assert.equal(combat.round(state,orders),state);
+ assert.equal(combat.serialize(state),saved);
+ assert.deepEqual(combat.restore(saved),state);
+ const previous=clone(state);previous.turn=999999;
+ const next=combat.round(previous,orders);
+ assert.equal(next.turn,1000000);
+ assert.equal(combat.validateState(next),true);
+ assert.equal(combat.round(next,orders),next);
+});
