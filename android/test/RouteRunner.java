@@ -699,6 +699,62 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Native restore modified new-engine journal");
         resultMeta.putString("restore","PASS native validation, restore-to-missing-only, no overwrite");
     }
+    /** Exercise actual native file-byte export and missing-only restore using
+     * a local test URI; the external picker UI itself is NOT exercised here.
+     * Starts after the two-process archive test so later source changes exist.
+     */
+    private void checkUnifiedArchiveFileRoundtrip() throws Exception {
+        android.content.SharedPreferences old=getTargetContext()
+            .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
+        if(!old.contains("expedition"))
+            throw new AssertionError("Expected original launcher data before file roundtrip");
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject baseline=unifiedSnapshot();
+        Object rawValue=new JSONTokener(evalHost("BearframeLegacyVault.exactCopy().raw")).nextValue();
+        if(!(rawValue instanceof String))
+            throw new AssertionError("No checked recovery vault to export");
+        String raw=(String)rawValue;
+        if(!raw.contains("Archive fixture"))
+            throw new AssertionError("Unexpected archive source fixture");
+        java.lang.reflect.Field field=screen.getClass().getDeclaredField("exporter");
+        field.setAccessible(true);
+        Object exporter=field.get(screen);
+        java.lang.reflect.Field pending=exporter.getClass().getDeclaredField("pending");
+        pending.setAccessible(true);
+        pending.set(exporter,raw);
+        java.io.File file=new java.io.File(getTargetContext().getFilesDir(),"archive-test.json");
+        if(file.exists()&&!file.delete())throw new AssertionError("Cannot reset file fixture");
+        Intent chosen=new Intent();
+        chosen.setData(Uri.fromFile(file));
+        java.lang.reflect.Method result=exporter.getClass().getMethod("onResult",
+            int.class,int.class,Intent.class);
+        result.invoke(exporter,4917,Activity.RESULT_OK,chosen);
+        if(!file.isFile())throw new AssertionError("SAF export result did not write a file");
+        String bytes=new String(java.nio.file.Files.readAllBytes(file.toPath()),
+            java.nio.charset.StandardCharsets.UTF_8);
+        if(!raw.equals(bytes))
+            throw new AssertionError("Exported historical JSON differs from archived bytes");
+        if(!old.edit().remove("expedition").commit())
+            throw new AssertionError("Cannot simulate absent old save");
+        java.lang.reflect.Field restoring=exporter.getClass().getDeclaredField("restoring");
+        restoring.setAccessible(true);restoring.setBoolean(exporter,true);
+        result.invoke(exporter,4918,Activity.RESULT_OK,chosen);
+        if(!raw.equals(old.getString("expedition",null))||
+           !"unchanged".equals(old.getString("unrelated",null)))
+            throw new AssertionError("User-file recovery did not restore original fields");
+        String after=evalHost("BearframeArchiveExport.canRestoreIntoEmptySource()");
+        if(!"false".equals(after))
+            throw new AssertionError("Restored original was not protected against overwrite");
+        JSONObject state=unifiedSnapshot();
+        if(baseline.getInt("sequence")!=state.getInt("sequence")||
+           baseline.getInt("savedRevision")!=state.getInt("savedRevision"))
+            throw new AssertionError("File export/import touched portable-engine journal");
+        resultMeta.putString("fileRoundtrip",
+            "PASS archived JSON export/import byte equality and no overwrite");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -747,6 +803,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedAssetPack();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-pack");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-archive-file")){
+                checkUnifiedArchiveFileRoundtrip();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-archive-file");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
