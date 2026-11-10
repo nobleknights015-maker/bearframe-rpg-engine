@@ -43,3 +43,16 @@ var playerDraw=null;
 for(var i=0;i<frame.commands.length;i++)if(frame.commands[i].actor==='player')playerDraw=frame.commands[i];
 ensure(playerDraw&&playerDraw.source.x===32,'animated sprite frame selected');
 print('PASS portable scene camera and sprite commands under Rhino');
+
+var audio=createBearframeAudioDirector({
+ theme:{type:'music',path:'audio/music/theme.ogg',loop:true},
+ step:{type:'sfx',path:'audio/sfx/step.wav'}
+});
+var audioStart=audio.fresh();
+var song=audio.apply(audioStart,{type:'music',id:'theme'});
+ensure(song.state.music==='theme'&&song.commands[0].type==='play','music started');
+var audioPaused=audio.apply(song.state,{type:'pause'});
+ensure(audioPaused.state.paused===true,'audio paused');
+var audioResumed=audio.apply(audioPaused.state,{type:'resume'});
+ensure(audioResumed.commands[0].type==='resume','audio resumed');
+print('PASS portable audio command scheduler under Rhino');
