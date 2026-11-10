@@ -186,3 +186,15 @@ test('combat turn ceiling refuses advancement without corrupting a durable snaps
  assert.equal(combat.validateState(next),true);
  assert.equal(combat.round(next,orders),next);
 });
+
+test('explicit malformed skill status values fail closed rather than silently disabling effects',()=>{
+ for(const value of [null,false,0,'',[],{type:'poison',turns:0,potency:1},
+   {type:'poison',turns:1,potency:0}]){
+  assert.throws(()=>make({strike:{kind:'damage',power:1,cost:0,element:'physical',status:value}}),
+   /Invalid status effect/);
+ }
+ const combat=make({strike:{kind:'damage',power:1,cost:0,element:'physical'}});
+ const state=combat.begin([{...pilot(),skills:['strike']}],[crawler()],7);
+ assert.equal(combat.validateState(state),true);
+ assert.equal(combat.round(state,[{actor:'pilot',skill:'strike',target:'crawler'}]).turn,2);
+});
