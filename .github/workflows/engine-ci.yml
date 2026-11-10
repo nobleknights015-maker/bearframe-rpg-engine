@@ -143,6 +143,16 @@ jobs:
             adb shell am instrument -w -e stage unified-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-second' "$RUNNER_TEMP/unified-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-second.txt"
+            # Longer run of real durable engine writes, then Android process
+            # termination and exact restoration of the saved revision.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-soak-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-soak-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-soak-first' "$RUNNER_TEMP/unified-soak-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-soak-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-soak-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-soak-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-soak-second' "$RUNNER_TEMP/unified-soak-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-soak-second.txt"
       - name: Publish non-release test APKs
         uses: actions/upload-artifact@v4
         with:

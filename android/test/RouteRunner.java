@@ -303,6 +303,48 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Missing legacy source was accepted");
         resultMeta.putString("legacy","PASS exact-key read-only bridge, corruption and journal isolation");
     }
+    /**
+     * Read-only stress of the real installed offline WebView, portable core and
+     * synchronous Android journal. First stage performs 256 durable moves;
+     * stage two verifies exact process-death recovery, then commits 64 more.
+     * No campaign, legacy source or diagnostic assets are modified.
+     */
+    private void checkUnifiedSoak(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        int initial=restart?256:0,cycles=restart?32:128;
+        if(before.getInt("sequence")!=initial ||
+           before.getInt("savedRevision")!=initial ||
+           before.getInt("x")!=1 || before.getInt("y")!=1 ||
+           before.getInt("assetsLoaded")!=2)
+            throw new AssertionError("Soak began from unexpected recovery state: "+before);
+        long started=android.os.SystemClock.elapsedRealtime();
+        // Keep each synchronous WebView batch below the instrumentation timeout,
+        // with journal readback at every eight complete down/up round trips.
+        for(int block=0;block<cycles;block+=8){
+            String batch=evalHost("(function(){for(var n=0;n<8;n++){" +
+                "var down=BearframeHost.navigate('down');" +
+                "if(!down.ok)return 'down:'+down.reason;" +
+                "var up=BearframeHost.navigate('up');" +
+                "if(!up.ok)return 'up:'+up.reason;" +
+                "}return 'ok';})()");
+            if(!"\"ok\"".equals(batch))
+                throw new AssertionError("WebView soak action failed: "+batch);
+            JSONObject snap=unifiedSnapshot();
+            int expected=initial+(block+8)*2;
+            if(snap.getInt("sequence")!=expected ||
+               snap.getInt("savedRevision")!=expected ||
+               snap.getInt("x")!=1 || snap.getInt("y")!=1 ||
+               snap.getInt("validSlots")!=2)
+                throw new AssertionError("Soak journal drift at "+expected+": "+snap);
+        }
+        long elapsed=android.os.SystemClock.elapsedRealtime()-started;
+        resultMeta.putString("soak","PASS "+(cycles*2)+
+            " committed moves; "+elapsed+"ms; revision "+(initial+cycles*2));
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -358,6 +400,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedMemoryRecovery();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-memory");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-soak-first") || stage.equals("unified-soak-second")){
+                checkUnifiedSoak(stage.equals("unified-soak-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
