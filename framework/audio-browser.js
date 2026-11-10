@@ -16,6 +16,7 @@ function createBearframeBrowserAudioBackend(createElement, config) {
   var maxSfx=Number.isInteger(config.maxSfxVoices)&&
     config.maxSfxVoices>=1&&config.maxSfxVoices<=32?config.maxSfxVoices:8;
   var liveMusic=null,voices=[],destroyed=false;
+  var pending=Promise.resolve();
   var gain={music:1,sfx:1};
   var validPath=/^audio\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*\.(?:ogg|wav|mp3)$/;
   function cleanup(media){
@@ -106,7 +107,10 @@ function createBearframeBrowserAudioBackend(createElement, config) {
       if(cmd.bus==='music'){
         stopMusic();
         liveMusic=entry;
-        return safePlay(entry);
+        return safePlay(entry).then(function(result){
+          if(!result.ok&&liveMusic===entry)stopMusic();
+          return result;
+        });
       }
       dropOldest();
       voices.push(entry);
@@ -123,11 +127,18 @@ function createBearframeBrowserAudioBackend(createElement, config) {
     if(!Array.isArray(commands)||commands.length>64)
       return Promise.reject(new TypeError('Audio command batch must contain at most 64 commands'));
     // Commands are sequential; a stop must happen before its replacement play.
-    return commands.reduce(function(p,cmd){
-      return p.then(function(results){
-        return applyOne(cmd).then(function(item){results.push(item);return results;});
-      });
-    },Promise.resolve([]));
+    // Serialize separate batches as well as commands inside each batch.
+    // Without this, simultaneous UI and lifecycle calls can reorder stop/play.
+    var work=pending.then(function(){
+      return commands.reduce(function(p,cmd){
+        return p.then(function(results){
+          if(destroyed){results.push({ok:false,reason:'destroyed'});return results;}
+          return applyOne(cmd).then(function(item){results.push(item);return results;});
+        });
+      },Promise.resolve([]));
+    });
+    pending=work.then(function(){},function(){});
+    return work;
   }
   function status(){
     return {destroyed:destroyed,music:liveMusic?liveMusic.id:null,
