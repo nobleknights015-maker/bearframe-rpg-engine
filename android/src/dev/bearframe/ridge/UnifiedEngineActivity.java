@@ -137,6 +137,18 @@ public final class UnifiedEngineActivity extends Activity {
     /** Exposed only to instrumentation in this development phase. */
     public WebView getEngineWebView(){return browser;}
 
+    @Override public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        // Only the renderer cache is affected. No gameplay or save mutation.
+        // JS executes on the WebView thread; a destroyed Activity has no browser.
+        if (browser != null) {
+            final int safeLevel=Math.max(0,Math.min(100,level));
+            browser.evaluateJavascript(
+                "window.BearframeHost&&window.BearframeHost.memoryPressure&&"+
+                "window.BearframeHost.memoryPressure("+safeLevel+")",null);
+        }
+    }
+
     @Override protected void onPause() {
         if(browser!=null){
             browser.evaluateJavascript(
