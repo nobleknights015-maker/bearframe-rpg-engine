@@ -3,7 +3,8 @@
  * Does not import Sounding Ridge world data or depend on user interface objects.
  */
 function createBearframeEngine(project) {
-  validateEngineProject(project);
+  var validate=(typeof module!=='undefined'&&module.exports)?require('./schema.js'):validateEngineProject;
+  validate(project);
   var own=Object.prototype.hasOwnProperty;
   var VERSION=1;
   function has(o,k){return !!o&&own.call(o,k);}
