@@ -89,3 +89,36 @@ test('destination becomes empty-string occupied after inspection and blocks comm
  assert.equal(s.disk['bf:import-test:v1:b'],'');
  assert.equal(s.disk['bf:import-test:v1:a'],undefined);
 });
+
+test('unavailable journal health fails closed during inspection without source reads or writes',()=>{
+ const s=setup();let reads=0;
+ const destination={health:()=>{throw Error('storage unavailable');},save:()=>{throw Error('must not save');}};
+ const i=importer({...s.config,source:{read:()=>{reads++;return s.sourceData.legacy;}},destination});
+ assert.deepEqual(i.inspect(),{ok:false,reason:'destination-occupied'});
+ assert.equal(reads,0);
+ assert.equal(Object.keys(s.disk).length,0);
+});
+test('health failure after staging cancels import and never retries a stale plan',()=>{
+ const s=setup();let broken=false,saves=0;
+ const destination={health:()=>broken?(()=>{throw Error('disk inaccessible')})():s.destination.health(),
+   save:state=>{saves++;return s.destination.save(state);},load:()=>s.destination.load()};
+ const i=importer({...s.config,destination});
+ assert.equal(i.inspect().ok,true);
+ broken=true;
+ assert.equal(i.commit().reason,'destination-occupied');
+ broken=false;
+ assert.equal(i.commit().reason,'not-staged');
+ assert.equal(saves,0);
+ assert.equal(Object.keys(s.disk).length,0);
+});
+test('ambiguous or incomplete health reports never authorize import',()=>{
+ const s=setup();
+ for(const report of [null,{}, {conflict:false,occupiedSlots:0},
+   {conflict:false,occupiedSlots:0,validSlots:0.0,unexpected:true,}]) {
+   // A complete report with extra diagnostic keys is allowed.
+   const expected=report&&report.conflict===false&&report.occupiedSlots===0&&report.validSlots===0;
+   const i=importer({...s.config,destination:{health:()=>report,save:()=>{throw Error('unexpected');}}});
+   assert.equal(i.inspect().ok,!!expected);
+ }
+ assert.equal(Object.keys(s.disk).length,0);
+});
