@@ -6,6 +6,10 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.webkit.JavascriptInterface;
 import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import org.json.JSONObject;
@@ -16,10 +20,12 @@ import org.json.JSONObject;
  */
 public final class LegacyArchiveExport {
     public static final int REQUEST_CODE=4917;
+    public static final int RESTORE_REQUEST=4918;
     public interface ResultListener { void onResult(String result); }
     private final Activity activity;
     private final ResultListener listener;
     private String pending;
+    private boolean restoring;
     public LegacyArchiveExport(Activity activity,ResultListener listener){
         this.activity=activity;
         this.listener=listener;
@@ -50,9 +56,7 @@ public final class LegacyArchiveExport {
                 return null;
             String original=state.getString("payload");
             if(original.length()<2||original.length()>1900000)return null;
-            JSONObject data=new JSONObject(original);
-            if(data.getInt("v")!=1)return null;
-            return original;
+            return LegacyV1Validator.accepts(original)?original:null;
         }catch(Exception invalid){return null;}
     }
     private String archived(){
@@ -69,7 +73,7 @@ public final class LegacyArchiveExport {
         return archived()!=null;
     }
     @JavascriptInterface public synchronized boolean begin(){
-        if(pending!=null)return false;
+        if(pending!=null||restoring)return false;
         String raw=archived();
         if(raw==null)return false;
         pending=raw;
@@ -87,7 +91,64 @@ public final class LegacyArchiveExport {
         });
         return true;
     }
+    @JavascriptInterface public boolean canRestoreIntoEmptySource(){
+        return !activity.getSharedPreferences("ExpeditionActivity",Activity.MODE_PRIVATE)
+            .contains("expedition");
+    }
+    @JavascriptInterface public synchronized boolean beginRestore(){
+        if(pending!=null||restoring||!canRestoreIntoEmptySource())return false;
+        restoring=true;
+        activity.runOnUiThread(()->{
+            try{
+                Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/json");
+                activity.startActivityForResult(intent,RESTORE_REQUEST);
+            }catch(RuntimeException missingPicker){
+                synchronized(LegacyArchiveExport.this){restoring=false;}
+                listener.onResult("restore-failed");
+            }
+        });
+        return true;
+    }
+    /** Called only after system document picker returns, never from JS.
+     * Refuses to overwrite any present legacy key, including malformed data.
+     */
+    synchronized boolean restoreIntoEmptySource(String raw){
+        if(!LegacyV1Validator.accepts(raw))return false;
+        SharedPreferences old=activity.getSharedPreferences("ExpeditionActivity",Activity.MODE_PRIVATE);
+        if(old.contains("expedition"))return false;
+        if(!old.edit().putString("expedition",raw).commit())return false;
+        try{return raw.equals(old.getString("expedition",null));}
+        catch(RuntimeException unreadable){return false;}
+    }
+    private static String utf8FromDocument(InputStream in) throws Exception{
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+        byte[] buffer=new byte[8192];int n;
+        while((n=in.read(buffer))!=-1){
+            if(bytes.size()+n>2000000)throw new IllegalArgumentException("Save file too large");
+            bytes.write(buffer,0,n);
+        }
+        return StandardCharsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+            .decode(ByteBuffer.wrap(bytes.toByteArray())).toString();
+    }
     public void onResult(int code,int resultCode,Intent data){
+        if(code==RESTORE_REQUEST){
+            boolean expected;
+            synchronized(this){expected=restoring;restoring=false;}
+            if(!expected){listener.onResult("restore-failed");return;}
+            if(resultCode!=Activity.RESULT_OK||data==null||data.getData()==null){
+                listener.onResult("restore-cancelled");return;
+            }
+            try(InputStream in=activity.getContentResolver().openInputStream(data.getData())){
+                if(in==null)throw new IllegalStateException("Missing save document");
+                String raw=utf8FromDocument(in);
+                listener.onResult(restoreIntoEmptySource(raw)?"restored":"restore-refused");
+            }catch(Exception invalid){listener.onResult("restore-failed");}
+            return;
+        }
         if(code!=REQUEST_CODE)return;
         String raw;
         synchronized(this){raw=pending;pending=null;}
@@ -105,5 +166,5 @@ public final class LegacyArchiveExport {
             listener.onResult("failed");
         }
     }
-    public synchronized void cancel(){pending=null;}
+    public synchronized void cancel(){pending=null;restoring=false;}
 }
