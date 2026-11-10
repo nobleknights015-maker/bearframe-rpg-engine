@@ -987,6 +987,93 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("inventory",
             "PASS scripted event, gear, quest, saved inventory and process restart");
     }
+    /** Regression for the physical-phone observation: right presses appear
+     * stuck because a scripted choice or battle captures the world state.
+     * Exercise actual WebView buttons, visibly explain the block, and verify
+     * durable checkpoint recovery after an Android process stop. */
+    private void checkUnifiedMobilePreviewFlow(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject first=unifiedSnapshot();
+        if(!restart){
+            if(first.getInt("sequence")!=0||
+               !"explore".equals(first.getString("mode"))||
+               !first.getBoolean("saveVerified"))
+                throw new AssertionError("Initial mobile save not visible: "+first);
+            if(!"false".equals(evalHost(
+                "document.querySelector('[data-dir=right]').disabled")))
+                throw new AssertionError("Start movement disabled without an event");
+            evalHost("document.querySelector('[data-dir=right]').click()");
+            JSONObject event=unifiedSnapshot();
+            if(event.getInt("sequence")!=1||
+               !"event".equals(event.getString("mode"))||
+               !"supply".equals(event.getJSONObject("prompt").getString("event"))||
+               !"true".equals(evalHost(
+                    "document.querySelector('[data-dir=right]').disabled"))||
+               !"true".equals(evalHost(
+                    "document.getElementById('runtime-phase').textContent.includes('choice')"))||
+               !"true".equals(evalHost(
+                    "document.querySelector('[data-event-choice=collect]')!==null")))
+                throw new AssertionError("Event prompt not explained and selectable: "+event);
+            evalHost("document.querySelector('[data-event-choice=collect]').click()");
+            JSONObject selected=unifiedSnapshot();
+            if(selected.getInt("sequence")!=2||
+               !"explore".equals(selected.getString("mode"))||
+               !"false".equals(evalHost(
+                    "document.querySelector('[data-dir=right]').disabled")))
+                throw new AssertionError("World pad did not resume after event choice: "+selected);
+            evalHost("document.querySelector('[data-dir=right]').click()");
+            JSONObject advanced=unifiedSnapshot();
+            if(advanced.getInt("sequence")!=3||advanced.getInt("x")!=2)
+                throw new AssertionError("Movement remained stuck after choice: "+advanced);
+            evalHost("document.querySelector('[data-dir=right]').click()");
+            JSONObject encounter=unifiedSnapshot();
+            if(encounter.getInt("sequence")!=4||
+               !"combat".equals(encounter.getString("mode"))||
+               !"true".equals(evalHost(
+                    "document.querySelector('[data-dir=right]').disabled"))||
+               !"true".equals(evalHost(
+                    "document.getElementById('runtime-phase').textContent.includes('combat action')"))||
+               !"true".equals(evalHost(
+                    "document.querySelector('[data-runtime-combat=strike]')!==null")))
+                throw new AssertionError("Combat soft-lock without visible actions: "+encounter);
+            evalHost("document.querySelector('[data-runtime-combat=strike]').click()");
+            JSONObject progressed=unifiedSnapshot();
+            if(progressed.getInt("sequence")!=5||
+               !"combat".equals(progressed.getString("mode"))||
+               !progressed.getBoolean("saveVerified"))
+                throw new AssertionError("Combat action not durably saved: "+progressed);
+        }else{
+            if(first.getInt("sequence")!=5||
+               !"combat".equals(first.getString("mode"))||
+               !first.getBoolean("saveVerified")||
+               !"true".equals(evalHost(
+                    "document.querySelector('[data-runtime-combat=flee]')!==null")))
+                throw new AssertionError("Interrupted battle did not resume: "+first);
+            evalHost("document.querySelector('[data-runtime-combat=flee]').click()");
+            JSONObject fled=unifiedSnapshot();
+            if(fled.getInt("sequence")!=6||
+               !"explore".equals(fled.getString("mode"))||
+               !"false".equals(evalHost(
+                    "document.querySelector('[data-dir=left]').disabled")))
+                throw new AssertionError("Pad still blocked after combat resolution: "+fled);
+            evalHost("document.querySelector('[data-dir=left]').click()");
+            JSONObject walking=unifiedSnapshot();
+            if(walking.getInt("sequence")!=7||walking.getInt("x")!=2)
+                throw new AssertionError("World movement did not resume: "+walking);
+        }
+        String verified=evalHost("JSON.stringify(BearframeHost.verifySave())");
+        JSONObject check=new JSONObject((String)new JSONTokener(verified).nextValue());
+        if(!check.getBoolean("ok")||check.getInt("revision")!=(restart?7:5))
+            throw new AssertionError("Explicit save check failed: "+verified);
+        if(!"true".equals(evalHost(
+            "document.getElementById('runtime-save-status').textContent.includes('Verified')")))
+            throw new AssertionError("Manual save confirmation not visible");
+        resultMeta.putString("mobileFlow",
+            "PASS visible event and battle actions, movement unlock, verified save and restart");
+    }
     /** Test-only native recovery acceptance without opening a document picker.
      * The actual restore UI always requires ACTION_OPEN_DOCUMENT user choice. */
     private void checkUnifiedRestoreNative() throws Exception {
@@ -1172,6 +1259,14 @@ public final class RouteRunner extends Instrumentation {
             if(stage.equals("unified-compat-file-first") ||
                stage.equals("unified-compat-file-second")){
                 checkUnifiedCompatFile(stage.equals("unified-compat-file-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-mobile-flow-first") ||
+               stage.equals("unified-mobile-flow-second")){
+                checkUnifiedMobilePreviewFlow(stage.equals("unified-mobile-flow-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);

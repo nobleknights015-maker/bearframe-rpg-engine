@@ -221,6 +221,18 @@ jobs:
             adb shell am instrument -w -e stage unified-compat-file-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-second' "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-second.txt"
+            # Reproduce phone report: right direction appears stuck because
+            # the world needs an event choice or an encounter command. Both
+            # controls now appear immediately after the map, with explicit
+            # save verification and saved combat resume across process death.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-mobile-flow-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/mobile-flow-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-mobile-flow-first' "$RUNNER_TEMP/mobile-flow-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/mobile-flow-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-mobile-flow-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/mobile-flow-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-mobile-flow-second' "$RUNNER_TEMP/mobile-flow-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/mobile-flow-second.txt"
             # Scripted world choice, inventory equipment, and quest display
             # run in the installed offline WebView against the canonical
             # save-before-render engine, then resume after process termination.

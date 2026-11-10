@@ -67,3 +67,16 @@ test('mobile world flow visibly distinguishes pending events, combat, and verifi
    assert.match(battle,new RegExp("'"+x+"'"));
  assert.match(battle,/dispatch\(\{type:'combat',id:option\[0\]\}\)/);
 });
+
+test('Android installed app must replay visible event and combat flow, then verify save and restart',()=>{
+ const java=read('android/test/RouteRunner.java');
+ const ci=read('.github/workflows/engine-ci.yml');
+ assert.match(java,/checkUnifiedMobilePreviewFlow\(boolean restart\)/);
+ assert.match(java,/document\.getElementById\('runtime-phase'\)\.textContent\.includes\('choice'\)/);
+ assert.match(java,/document\.querySelector\('\[data-runtime-combat=strike\]'\)/);
+ assert.match(java,/document\.getElementById\('runtime-save-status'\)\.textContent\.includes\('Verified'\)/);
+ assert.match(java,/World pad did not resume after event choice/);
+ assert.match(java,/Pad still blocked after combat resolution/);
+ assert.match(ci,/stage unified-mobile-flow-first/);
+ assert.match(ci,/stage unified-mobile-flow-second/);
+});
