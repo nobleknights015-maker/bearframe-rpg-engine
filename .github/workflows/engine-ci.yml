@@ -100,7 +100,14 @@ jobs:
           export SIGNING_KEY="$RUNNER_TEMP/ci-only.p12"
           export BF_ASSET_PACK_DIR="$RUNNER_TEMP/bf-asset-pack"
           bash android/build.sh "$RUNNER_TEMP/bearframe-ci.apk"
+          BF_ENGINE_PREVIEW=1 bash android/build.sh "$RUNNER_TEMP/bearframe-engine-preview.apk"
           bash android/test/build.sh "$RUNNER_TEMP/route-test-ci.apk"
+          # The preview is a separate package and its launcher explicitly
+          # targets UnifiedEngineActivity (not the original Rhino launcher).
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$RUNNER_TEMP/bearframe-engine-preview.apk" | tee "$RUNNER_TEMP/preview-badging.txt"
+          grep -F "package: name='dev.bearframe.ridge.preview'" "$RUNNER_TEMP/preview-badging.txt"
+          grep -F "launchable-activity: name='dev.bearframe.ridge.UnifiedEngineActivity'" "$RUNNER_TEMP/preview-badging.txt"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$RUNNER_TEMP/bearframe-engine-preview.apk"
           test -s "$RUNNER_TEMP/bearframe-ci.apk"
           test -s "$RUNNER_TEMP/route-test-ci.apk"
           # The verified custom asset-pack actually made it inside the APK;
@@ -129,7 +136,13 @@ jobs:
           disable-animations: true
           script: |
             set -euo pipefail
+            # Preview can coexist with the original package; both must
+            # install and its WebView engine must be launchable by the user.
             adb install -r "$RUNNER_TEMP/bearframe-ci.apk"
+            adb install -r "$RUNNER_TEMP/bearframe-engine-preview.apk"
+            adb shell am start -W -n dev.bearframe.ridge.preview/dev.bearframe.ridge.UnifiedEngineActivity | tee "$RUNNER_TEMP/preview-launch.txt"
+            grep -F 'Status: ok' "$RUNNER_TEMP/preview-launch.txt"
+            adb shell am force-stop dev.bearframe.ridge.preview
             adb install -r "$RUNNER_TEMP/route-test-ci.apk"
             adb shell pm clear dev.bearframe.ridge
             adb shell am instrument -w -e stage first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/native-stage-one.txt"
@@ -289,6 +302,7 @@ jobs:
           name: bearframe-android-ci-build
           path: |
             ${{ runner.temp }}/bearframe-ci.apk
+            ${{ runner.temp }}/bearframe-engine-preview.apk
             ${{ runner.temp }}/route-test-ci.apk
           if-no-files-found: error
           retention-days: 7

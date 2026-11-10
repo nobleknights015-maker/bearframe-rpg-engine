@@ -42,7 +42,15 @@ unzip -p "$RHINO_JAR" META-INF/NOTICE.txt > "$work/assets/Rhino-NOTICE.txt"
 java -m jdk.compiler/com.sun.tools.javac.Main -source 8 -target 8 -bootclasspath "$platform:$tools/core-lambda-stubs.jar" -classpath "$RHINO_JAR" -d "$work/classes" "$root/android/src/dev/bearframe/ridge/"*.java
 (cd "$work/classes" && zip -q -r "$work/classes.jar" .)
 "$tools/d8" --min-api 28 --lib "$platform" --output "$work/dex" "$work/classes.jar" "$RHINO_JAR"
-"$tools/aapt2" link -o "$work/base.apk" --manifest "$root/android/AndroidManifest.xml" -I "$platform" -A "$work/assets"
+# Preview has a different Android application id and launches the same offline
+# engine host directly, so user testing never requires replacing an installed
+# original Rhino app or its saved preferences.
+manifest="$root/android/AndroidManifest.xml"
+if [[ "${BF_ENGINE_PREVIEW:-0}" == "1" ]]; then
+  manifest="$work/preview-manifest.xml"
+  python3 "$root/scripts/build_preview_manifest.py" "$root/android/AndroidManifest.xml" "$manifest"
+fi
+"$tools/aapt2" link -o "$work/base.apk" --manifest "$manifest" -I "$platform" -A "$work/assets"
 (cd "$work/dex" && zip -q "$work/base.apk" classes.dex)
 "$tools/zipalign" -f 4 "$work/base.apk" "$work/aligned.apk"
 : "${SIGNING_KEY:?Specify a development keystore}" "${BF_KEY_PASS:?Set key password}"
