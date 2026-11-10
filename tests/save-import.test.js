@@ -68,3 +68,23 @@ test('rejects implicit namespace, absent decoder and invalid source keys',()=>{
  assert.throws(()=>importer({...s.config,sourceKey:'../legacy'}),/source key/);
  assert.throws(()=>importer({...s.config,decode:null}),/decoder/);
 });
+
+test('empty strings and non-string destination values are occupied, never import targets',()=>{
+ for(const value of ['',0,false,{},[]]){
+  const s=setup();
+  s.disk['bf:import-test:v1:a']=value;
+  const i=importer(s.config);
+  assert.equal(i.inspect().reason,'destination-occupied');
+  assert.equal(i.commit().reason,'not-staged');
+  assert.strictEqual(s.disk['bf:import-test:v1:a'],value);
+  assert.equal(s.disk['bf:import-test:v1:b'],undefined);
+ }
+});
+test('destination becomes empty-string occupied after inspection and blocks commit',()=>{
+ const s=setup(),i=importer(s.config);
+ assert.equal(i.inspect().ok,true);
+ s.disk['bf:import-test:v1:b']='';
+ assert.equal(i.commit().reason,'destination-occupied');
+ assert.equal(s.disk['bf:import-test:v1:b'],'');
+ assert.equal(s.disk['bf:import-test:v1:a'],undefined);
+});
