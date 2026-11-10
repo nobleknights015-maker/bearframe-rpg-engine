@@ -14,8 +14,9 @@ function createBearframePartyCombat(skillBook) {
        !int(k.power,0,9999)||!int(k.cost,0,999)||!id(k.element))
       throw new TypeError('Invalid skill '+key);
     if(k.kind==='guard'&&k.power!==0)throw new TypeError('Guard skill must have zero power');
-    if(k.status){
-      if(k.kind!=='damage'||k.status.type!=='poison'||!int(k.status.turns,1,20)||
+    if(has(k,'status')){
+      if(!k.status||typeof k.status!=='object'||Array.isArray(k.status)||
+         k.kind!=='damage'||k.status.type!=='poison'||!int(k.status.turns,1,20)||
          !int(k.status.potency,1,999))
         throw new TypeError('Invalid status effect '+key);
     }
