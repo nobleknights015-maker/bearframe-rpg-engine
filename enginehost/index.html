@@ -12,14 +12,23 @@
   <p id="status" role="status">Starting the unified engine…</p>
   <canvas id="surface" width="224" height="160" aria-label="Portable atlas renderer diagnostics"></canvas>
   <p id="metrics" aria-live="polite"></p>
-  <div class="pad" aria-label="Engine input diagnostics">
-    <button data-dir="up">↑</button><button data-dir="left">←</button>
-    <button data-dir="down">↓</button><button data-dir="right">→</button>
-  </div>
-  <section aria-label="Game-neutral event and inventory controls">
-    <h2>World actions and equipment</h2>
-    <p id="runtime-action-status" role="status" aria-live="polite">Actions use the canonical saved session.</p>
+  <section class="context-actions" aria-label="Current world actions">
+    <p id="runtime-phase" role="status" aria-live="polite">Loading world controls…</p>
+    <p id="runtime-action-status" role="status" aria-live="polite">Actions use the saved session.</p>
     <div id="runtime-event-controls" aria-label="Scripted event choices"></div>
+    <div id="runtime-combat-controls" aria-label="Current encounter actions"></div>
+  </section>
+  <div class="pad" aria-label="Engine directional movement">
+    <button data-dir="up" aria-label="Move up">↑</button><button data-dir="left" aria-label="Move left">←</button>
+    <button data-dir="down" aria-label="Move down">↓</button><button data-dir="right" aria-label="Move right">→</button>
+  </div>
+  <section class="save-panel" aria-label="Saved progress">
+    <h2>Save and continue</h2>
+    <p id="runtime-save-status" role="status" aria-live="polite">Checking saved state…</p>
+    <button id="runtime-save-verify" type="button">Verify saved progress</button>
+  </section>
+  <section aria-label="Game-neutral inventory and progression">
+    <h2>Equipment and objectives</h2>
     <div id="runtime-inventory-controls" aria-label="Inventory, equipment and quest objectives"></div>
   </section>
   <section aria-label="Portable party battle engine diagnostics">
@@ -79,5 +88,6 @@
 <script src="party-probe.js"></script>
 <script src="party-ui.js"></script>
 <script src="runtime-panels.js"></script>
+<script src="runtime-combat-panel.js"></script>
 <script src="boot.js"></script>
 </body></html>

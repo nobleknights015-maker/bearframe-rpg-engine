@@ -49,3 +49,21 @@ test('installed Android engine uses actual UI event/gear buttons and same journa
  assert.match(ci,/stage unified-inventory-first/);
  assert.match(ci,/stage unified-inventory-second/);
 });
+
+test('mobile world flow visibly distinguishes pending events, combat, and verified save',()=>{
+ const host=read('enginehost/boot.js'),html=read('enginehost/index.html');
+ const battle=read('enginehost/runtime-combat-panel.js');
+ assert.ok(html.indexOf('runtime-event-controls')<html.indexOf('class="pad"'));
+ assert.ok(html.indexOf('runtime-combat-controls')<html.indexOf('class="pad"'));
+ assert.ok(html.indexOf('runtime-save-status')<html.indexOf('runtime-inventory-controls'));
+ assert.match(host,/directional\.forEach\(function\(button\)\{button\.disabled=blocked;/);
+ assert.match(host,/A conversation needs your choice/);
+ assert.match(host,/An encounter has begun/);
+ assert.match(host,/No movement: a wall/);
+ assert.match(host,/engine\.verifySave\(\)/);
+ assert.match(host,/saveStatus\.textContent=/);
+ assert.match(html,/id="runtime-save-verify"/);
+ for(const x of ['strike','pulse','guard','flee'])
+   assert.match(battle,new RegExp("'"+x+"'"));
+ assert.match(battle,/dispatch\(\{type:'combat',id:option\[0\]\}\)/);
+});

@@ -20,3 +20,20 @@ fieldset button:disabled{opacity:.45}
 }
 #runtime-event-controls button:disabled,.inventory-line button:disabled{opacity:.5}
 .inventory-line{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px;border-bottom:1px solid #454c5d}
+
+/* Primary mobile flow: pending choices and combat are immediately after the map.
+ * No more silent directional pad when the canonical simulation is waiting. */
+.context-actions{padding:10px 12px;background:#182232;border:1px solid #566e88;border-radius:10px;margin:10px 0}
+#runtime-phase{font-weight:700;font-size:16px;line-height:1.4;margin:0 0 8px}
+#runtime-action-status{font-size:14px;margin:4px 0;color:#b8ddeb}
+#runtime-event-controls,#runtime-combat-controls{display:flex;flex-wrap:wrap;gap:8px}
+#runtime-event-controls p,#runtime-combat-controls p{flex:0 0 100%;margin:6px 0;font-size:15px}
+#runtime-event-controls button,#runtime-combat-controls button,#runtime-save-verify{
+  min-height:48px;padding:9px 15px;border:1px solid #94a7bb;
+  background:#263d54;color:#f5f8ff;border-radius:8px;font-size:16px
+}
+#runtime-combat-controls button:disabled,.pad button:disabled{opacity:.35}
+.pad button{min-width:54px;touch-action:manipulation}
+.save-panel{padding:10px 12px;border:1px solid #566e88;border-radius:10px}
+.save-panel h2{margin:0;font-size:18px}
+#runtime-save-status{font-size:14px;line-height:1.5;color:#cce5d5}

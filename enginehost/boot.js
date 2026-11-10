@@ -186,6 +186,25 @@
     var load=engine.resume();
     if(!load.ok&&load.reason==='no-save')load=engine.start('Engine host',8735);
     if(!load.ok)throw new Error('Safe engine startup blocked: '+load.reason);
+    var saveStatus=document.getElementById('runtime-save-status');
+    var phaseStatus=document.getElementById('runtime-phase');
+    var actionStatus=document.getElementById('runtime-action-status');
+    var directional=Array.from(document.querySelectorAll('[data-dir]'));
+    var runtimeCombat=createBearframeRuntimeCombatPanel(
+      document.getElementById('runtime-combat-controls'),
+      FRAMEWORK_FIXTURE,
+      function(){return engine.snapshot().view;},
+      function(command){return act(command);}
+    );
+    function verifySaved(){
+      var result=engine.verifySave();
+      saveStatus.textContent=result.ok?
+        'Verified: checkpoint revision '+result.revision+
+        ' matches durable storage. Close and reopen the app to resume automatically.':
+        'Save verification failed: '+result.reason+'. Keep this app open.';
+      return result;
+    }
+    document.getElementById('runtime-save-verify').addEventListener('click',verifySaved);
     var runtimePanels=createBearframeRuntimePanels(
       document.getElementById('runtime-event-controls'),
       document.getElementById('runtime-inventory-controls'),
@@ -205,6 +224,18 @@
       metrics.textContent='Map '+v.mapName+' · Pos '+v.x+','+v.y+
         ' · Revision '+v.sequence+' · '+snap.journal.validSlots+' validated save slot(s)';
       runtimePanels.render();
+      runtimeCombat.render();
+      var blocked=!!v.prompt||!!v.battle||!!v.partyBattle;
+      directional.forEach(function(button){button.disabled=blocked;});
+      phaseStatus.textContent=v.prompt?
+        'A conversation needs your choice before movement can continue.':
+        v.battle?'An encounter has begun. Choose a combat action below.':
+        v.partyBattle?'Party encounter active. Use party combat controls.':
+        'Exploring — use the directional buttons to move.';
+      actionStatus.textContent=v.message;
+      saveStatus.textContent=snap.journal.latestSequence===v.sequence?
+        'Auto-saved · revision '+v.sequence+'. Progress resumes when this app reopens.':
+        'Save mismatch: displayed revision has not been confirmed on disk.';
       return snap;
     }
     // A native trim callback may evict decoded atlases. Never draw an incomplete
@@ -236,8 +267,15 @@
       if(restoring||!assets.get('terrain')||!assets.get('characters'))
         return {ok:false,reason:'assets-restoring'};
       var result=engine.dispatch(command);
-      if(!result.ok&&result.reason!=='no-change'){
-        status.textContent='State unchanged: '+result.reason;
+      if(!result.ok){
+        var view=engine.snapshot().view;
+        var explanation=result.reason==='no-change'?
+          view&&view.prompt?'Choose a conversation response above to continue.':
+          view&&view.battle?'Combat is active. Use the battle buttons above.':
+          view&&view.partyBattle?'A party battle is active. Use the party controls.':
+          'No movement: a wall, blocked path, or unavailable action.':
+          'Action not saved: '+result.reason+'. Progress was not advanced.';
+        actionStatus.textContent=explanation;
       }else show();
       return result;
     }
@@ -247,6 +285,8 @@
         engineVersion:snap.engineVersion,sequence:v?v.sequence:null,
         map:v?v.map:null,x:v?v.x:null,y:v?v.y:null,
         savedRevision:snap.journal.latestSequence,
+        mode:v?(v.prompt?'event':v.battle?'combat':v.partyBattle?'party-battle':'explore'):null,
+        saveVerified:v?snap.journal.latestSequence===v.sequence&&snap.journal.validSlots>0:false,
         inventory:v?v.inventory:null,weapon:v?v.weapon:null,quests:v?v.quests:null,
         prompt:v?v.prompt:null,
         validSlots:snap.journal.validSlots,conflict:snap.journal.conflict,
@@ -261,6 +301,7 @@
       snapshot:snapshot,
       snapshotJson:function(){return JSON.stringify(snapshot());},
       memoryPressure:memoryPressure,
+      verifySave:verifySaved,
       party:partyProbe,
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};

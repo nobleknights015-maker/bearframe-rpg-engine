@@ -49,6 +49,20 @@ function createBearframeSession(project, storage, theme, opts) {
     current=next;lastError=null;
     return result(true);
   }
+  /* The manual Save check is a read-only audit. Gameplay commits already
+   * happen synchronously in dispatch(); this never creates an empty save,
+   * increments the revision, or pretends that corrupt storage is healthy. */
+  function verifySave() {
+    if(!current)return {ok:false,reason:'not-started'};
+    var health=journal.health();
+    if(health.conflict)return {ok:false,reason:'save-conflict'};
+    if(health.validSlots===0)return {ok:false,reason:'unreadable-save'};
+    var recovered=journal.load();
+    if(!recovered||health.latestSequence!==current.sequence||
+       engine.serialize(recovered)!==engine.serialize(current))
+      return {ok:false,reason:'save-mismatch'};
+    return {ok:true,reason:null,revision:current.sequence,validSlots:health.validSlots};
+  }
   function snapshot() {
     return {started:!!current,error:lastError,project:engine.projectId,
       engineVersion:engine.version,view:current?engine.view(current):null,
@@ -60,6 +74,6 @@ function createBearframeSession(project, storage, theme, opts) {
   }
   function serialize() {return current?engine.serialize(current):null;}
   return Object.freeze({resume:resume,start:start,dispatch:dispatch,
-    snapshot:snapshot,compose:compose,serialize:serialize});
+    verifySave:verifySave,snapshot:snapshot,compose:compose,serialize:serialize});
 }
 if(typeof module!=='undefined'&&module.exports)module.exports=createBearframeSession;

@@ -85,3 +85,22 @@ test('corrupted occupied save is never mistaken for a first launch',()=>{
  assert.equal(reopened.snapshot().journal.occupiedSlots,1);
  assert.equal(reopened.snapshot().journal.validSlots,0);
 });
+
+test('manual save verification reads existing journal without writing or advancing',()=>{
+ const disk=storage(),s=create(project,disk,theme,{slotPrefix:'verify-session'});
+ assert.equal(s.verifySave().reason,'not-started');
+ assert.equal(s.start('Checkpoint',11).ok,true);
+ const current=s.serialize(),keys=Object.keys(disk.data);
+ assert.deepEqual(s.verifySave(),{ok:true,reason:null,revision:0,validSlots:1});
+ assert.deepEqual(Object.keys(disk.data),keys);
+ assert.equal(s.serialize(),current);
+ assert.equal(s.dispatch({type:'move',dir:'down'}).ok,true);
+ assert.equal(s.verifySave().revision,1);
+ const atRevisionOne=s.serialize();
+ const damaged=Object.keys(disk.data).filter(k=>JSON.parse(disk.data[k]).sequence===1)[0];
+ disk.data[damaged]='corrupt';
+ assert.equal(s.verifySave().reason,'save-mismatch');
+ assert.equal(s.serialize(),atRevisionOne);
+ assert.equal(s.snapshot().view.sequence,1);
+ assert.equal(create(project,disk,theme,{slotPrefix:'verify-session'}).resume().sequence,0);
+});
