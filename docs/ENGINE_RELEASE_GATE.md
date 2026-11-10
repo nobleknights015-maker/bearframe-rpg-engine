@@ -83,3 +83,9 @@ The earlier audio probe was blocked by an Android-side response CSP mismatch: th
 The diagnostic audio probe now suspends by stopping and disposing all active HTML media, and foreground recovery creates a fresh backend **without autoplay**. Browser blur/focus, page visibility, and Android Activity onPause/onResume route to this behavior. The native WebView itself now receives onPause alongside the existing host suspension call. This is isolated from the deterministic simulation and native save journal; the original Rhino launcher is unchanged. Added Node regression cases for background cancellation, pending playback, foreground user-gesture requirement and native lifecycle wiring.
 
 **Still pending:** installed-APK Android emulator lifecycle acceptance, actual audio decoder/playback confirmation, audio focus and headset routing, original music/SFX, and physical-device testing. The audio release gate remains OPEN.
+
+## Installed WebView audio decoder acceptance (November 10, 2026 Central)
+
+An additional Android instrumentation stage, `unified-audio`, now launches the **actual installed offline WebView** and asks Chromium's HTMLMediaElement to load and decode the packaged original synthetic WAV. It requires a positive finite media duration, fails on media decode errors or timeout, and does not trigger audible playback or modify any save. The Android emulator CI workflow now invokes this stage independently of the existing two-process save-recovery tests. `tests/audio-probe.test.js` includes a regression guarding the instrumentation and CI wiring.
+
+Commits: `05cc7faf` (instrumentation), `637b9c1c` (CI stage), `203930dd` (Node regression). **Verification pending:** the Android emulator job must pass this stage before counting media decoding as verified. Even then, actual audible output, audio focus, device-specific codecs, physical device and all other engine release criteria remain OPEN.
