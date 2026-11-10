@@ -22,6 +22,7 @@ public final class ExpeditionActivity extends Activity {
     private TextView title, mode, stats, objective, story;
     private ImageView scene;
     private int controllerChoice=-1;
+    private boolean controllerWorldMovement;
     private final ControllerInputRouter gamepad=new ControllerInputRouter(new ControllerInputRouter.Listener() {
         @Override public boolean navigate(String direction) { return controllerNavigate(direction); }
         @Override public boolean confirm() { return controllerConfirm(); }
@@ -136,7 +137,8 @@ public final class ExpeditionActivity extends Activity {
                 choice.setTag(type+":"+value);
                 choice.setEnabled(!item.optBoolean(3,false));
             }
-            pad.setVisibility(packet.getBoolean("pad")?View.VISIBLE:View.GONE);
+            controllerWorldMovement=packet.getBoolean("pad");
+            pad.setVisibility(controllerWorldMovement?View.VISIBLE:View.GONE);
         }catch(JSONException e){throw new IllegalStateException(e);}
     }
     /** Physical controllers reuse the same action handlers as touch buttons. */
@@ -163,7 +165,7 @@ public final class ExpeditionActivity extends Activity {
     }
     private boolean controllerNavigate(String direction){
         if(title==null)return false;
-        if(controllerChoiceCount()>0)
+        if(!controllerWorldMovement&&controllerChoiceCount()>0)
             return controllerShift("left".equals(direction)||"up".equals(direction)?-1:1);
         action("move",direction);
         return true;
