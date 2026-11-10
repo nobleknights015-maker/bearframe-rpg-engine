@@ -142,6 +142,12 @@ jobs:
             adb shell am instrument -w -e stage controller dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/gamepad-controller.txt"
             grep -F 'route=PASS controller' "$RUNNER_TEMP/gamepad-controller.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/gamepad-controller.txt"
+            # Exercise optional verified asset pack inside the *installed*
+            # restricted WebView, not just APK zip entry presence.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-pack dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-pack.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-pack' "$RUNNER_TEMP/unified-pack.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-pack.txt"
             # Exercise read-only transport from the original ExpeditionActivity
             # preferences file; never run a writeback or migration here.
             adb shell pm clear dev.bearframe.ridge

@@ -345,6 +345,47 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("soak","PASS "+(cycles*2)+
             " committed moves; "+elapsed+"ms; revision "+(initial+cycles*2));
     }
+    /** Confirm the actual optional signed-APK asset pack decodes through the
+     * restricted local WebView origin, with the legacy and journal state intact.
+     * The synthetic pixel fixture has no narrative or production content. */
+    private void checkUnifiedAssetPack() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        String start=evalHost("(function(){" +
+            "window.__bfPackProbe='pending';" +
+            "var img=new Image();" +
+            "img.onload=function(){try{" +
+              "var c=document.createElement('canvas');c.width=1;c.height=1;" +
+              "var context=c.getContext('2d');context.drawImage(img,0,0);" +
+              "var rgba=context.getImageData(0,0,1,1).data;" +
+              "window.__bfPackProbe=(img.naturalWidth===64&&img.naturalHeight===32&&" +
+                "rgba[0]===76&&rgba[1]===100&&rgba[2]===128&&rgba[3]===255)?" +
+                "'decoded':'unexpected-pixels';" +
+             "}catch(e){window.__bfPackProbe='canvas-error';}};" +
+            "img.onerror=function(){window.__bfPackProbe='image-error';};" +
+            "img.src='/enginehost/packs/active/diagnostic/test.png';" +
+            "return 'started';})()");
+        if(!"\"started\"".equals(start))
+            throw new AssertionError("Packaged asset probe did not start: "+start);
+        String state="pending";
+        for(int attempt=0;attempt<40;attempt++){
+            state=evalHost("window.__bfPackProbe");
+            if("\"decoded\"".equals(state))break;
+            if(!"\"pending\"".equals(state))
+                throw new AssertionError("Offline asset pack did not decode: "+state);
+            Thread.sleep(200);
+        }
+        if(!"\"decoded\"".equals(state))
+            throw new AssertionError("Offline asset pack decode timed out");
+        JSONObject after=unifiedSnapshot();
+        if(before.getInt("sequence")!=after.getInt("sequence") ||
+           before.getInt("savedRevision")!=after.getInt("savedRevision"))
+            throw new AssertionError("Packaged asset probe mutated game state");
+        resultMeta.putString("pack","PASS original synthetic PNG pixels decoded from installed custom pack");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -386,6 +427,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnified(stage.equals("unified-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-pack")){
+                checkUnifiedAssetPack();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-pack");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
