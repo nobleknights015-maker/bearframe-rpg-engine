@@ -20,8 +20,12 @@ regular `android/AndroidManifest.xml` and existing app behavior do not change.
 2. In Android Files, tap the APK, allow installation from that source if prompted,
    and open **Bearframe Engine Preview**.
 3. The preview's engine host shows its synthetic scene, directional controls,
-   event, inventory, party and historical-save recovery controls. This is an
-   engineering diagnostic, not a polished game menu.
+   event, inventory, party and historical-save recovery controls. Events and
+   combat must be resolved before movement resumes; their controls appear
+   directly below the scene in current builds. Every successful action saves
+   automatically into the preview's independent journal. The **Save and
+   continue** section offers a read-only **Verify saved progress** button.
+   This is an engineering diagnostic, not a polished game menu.
 
 **Never uninstall the original Bearframe RPG app to install this.** The preview
 is a separate app with separate `SharedPreferences` and cannot directly read

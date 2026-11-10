@@ -151,3 +151,36 @@ The installed emulator route `unified-restore-native` invokes the native validat
 ## Installed Android JSON file recovery round-trip
 
 New emulator stage `unified-archive-file` uses the **same actual native export/import result handlers** as Android's system file pickers, with an app-private test URI instead of interactive user selection. Starting from the prior crash-recovered historical archive, it exports the original raw string, compares the UTF-8 file content with the archive, simulates a missing old-save key, restores the JSON from that file, proves the old launcher preference is recovered byte-for-byte and prevents a second overwrite. Unrelated preferences and the new engine journal must remain unchanged. This is automated low-level file I/O acceptance, **not** successful physical Android picker or app-upgrade acceptance.
+
+
+## Phone-preview usability regression and engine-only repair — November 10, 2026
+
+A real first-install phone test found that after moving right about twice,
+the WebView D-pad appeared to stop responding, with no obvious way to save.
+This is **not** a confirmed low-level touch/controller failure: the portable
+engine intentionally blocks navigation during a pending event prompt or
+combat encounter, but the first preview buried the necessary actions
+below the directional pad and gave no understandable save status.
+
+[Commit 81af727](https://github.com/nobleknights015-maker/bearframe-rpg-engine/commit/81af727e91be96ce063a890a36e65c88f5911e39)
+promotes pending scripted choices and active world-combat actions immediately
+under the scene; disables the pad with a visible explanation during action
+resolution, then re-enables it when normal exploration resumes. Its
+`session.verifySave()` is a read-only comparison of the in-memory state
+against the independently validated durable two-slot journal. Save-on-every-
+turn remains the authoritative write path; the new status and button make it
+visible without overwriting data or creating extra journal revisions.
+
+[Commit bd114e9 / passing Android CI 42851708602](https://github.com/nobleknights015-maker/bearframe-rpg-engine/actions/runs/42851708602)
+verifies the *actual installed Android WebView*: right-movement triggers
+a scripted choice, touch chooses and releases movement, a later encounter
+shows combat controls, strike commits revision 5, Android force-stop/restart
+restores active battle and same original revision, flee unlocks movement,
+then an explicit save audit verifies revision 7. **205/205 Node tests**
+and installed Android 35 tests passed. The original Rhino launcher and its
+saves remain untouched. The user's physical device reported the defect
+against the **older APK**; a post-fix physical-device acceptance has NOT
+occurred. Continue engine release work without requiring the user to
+test incomplete builds, and keep device acceptance OPEN.
+
+The engine is still not production-ready; see the existing release checklist.
