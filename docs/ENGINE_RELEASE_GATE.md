@@ -77,3 +77,9 @@ The portable `framework/audio.js` director is now connected to the `framework/au
 ## Native WebView audio delivery hardening — November 9, 2026 Central
 
 The earlier audio probe was blocked by an Android-side response CSP mismatch: the HTML meta policy allowed `media-src 'self'`, but `UnifiedEngineActivity.asset()` independently set a response policy without a media directive, causing `default-src 'none'` to govern audio. The native response now explicitly permits **same-origin packaged audio only**, preserving `connect-src 'none'` and the offline security boundary. The response also provides correct WAV/OGG/MP3 MIME types instead of generic binary data. `tests/audio-probe.test.js` now verifies the native response policy and MIME contract. This is a source-level and CI build regression; actual WebView playback and device audio-focus/lifecycle tests are still **not verified**. Legacy launcher and save data are untouched.
+
+## Offline audio lifecycle hardening — November 9, 2026 Central
+
+The diagnostic audio probe now suspends by stopping and disposing all active HTML media, and foreground recovery creates a fresh backend **without autoplay**. Browser blur/focus, page visibility, and Android Activity onPause/onResume route to this behavior. The native WebView itself now receives onPause alongside the existing host suspension call. This is isolated from the deterministic simulation and native save journal; the original Rhino launcher is unchanged. Added Node regression cases for background cancellation, pending playback, foreground user-gesture requirement and native lifecycle wiring.
+
+**Still pending:** installed-APK Android emulator lifecycle acceptance, actual audio decoder/playback confirmation, audio focus and headset routing, original music/SFX, and physical-device testing. The audio release gate remains OPEN.
