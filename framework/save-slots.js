@@ -69,7 +69,7 @@ function createBearframeSaveSlots(engine,storage,prefix){
     return {ok:true,slot:target,unchanged:false};
   }
   function occupied(key){
-    try {var raw=storage.read(key);return typeof raw==='string'&&raw.length>0;}
+    try {var raw=storage.read(key);return raw!==null&&raw!==undefined; }
     catch(error){return true;} // Fail closed when storage is unreadable.
   }
   function health(){
