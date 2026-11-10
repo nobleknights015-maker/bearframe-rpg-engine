@@ -10,7 +10,7 @@ function buildEngine({WORLD,FOES,TEXT,ACTIONS}){
     const callsign=String(name??'').trim().slice(0,18).trim()||'Sleeper';
     if(!finishes.includes(finish)) throw Error('Unknown finish');
     return {v:1,name:callsign,finish,area:'pod',x:3,y:4,hp:30,charge:2,weapon:null,
-      flags:Object.fromEntries(flags.map(f=>[f,false])),battle:null,prompt:null,
+      flags:flags.reduce((out,f)=>{out[f]=false;return out;},{}),battle:null,prompt:null,
       message:'A violet line finds its way across your visor. You can move. The name you had before is gone.'};
   }
   function encounter(s,k){
@@ -76,12 +76,12 @@ function buildEngine({WORLD,FOES,TEXT,ACTIONS}){
       const between=(n,lo,hi)=>Number.isInteger(n)&&n>=lo&&n<=hi;
       if(!s||s.v!==1||typeof s.name!=='string'||!s.name.trim()||s.name.length>18||
         !finishes.includes(s.finish)||!(s.weapon===null||weapons.includes(s.weapon))||
-        !Object.hasOwn(WORLD,s.area)||!between(s.y,0,WORLD[s.area].rows.length-1)||
+        !Object.prototype.hasOwnProperty.call(WORLD,s.area)||!between(s.y,0,WORLD[s.area].rows.length-1)||
         !between(s.x,0,WORLD[s.area].rows[s.y].length-1)||cell(s.area,s.x,s.y)==='#'||
         !flags.every(k=>typeof s.flags?.[k]==='boolean')||!between(s.hp,1,hpMax(s))||
         !between(s.charge,0,3)||typeof s.message!=='string'||s.message.length>1000||
-        !(s.prompt===null||Object.hasOwn(ACTIONS,s.prompt)))return null;
-      if(s.battle!==null&&(!Object.hasOwn(FOES,s.battle?.key)||s.prompt!==null||
+        !(s.prompt===null||Object.prototype.hasOwnProperty.call(ACTIONS,s.prompt)))return null;
+      if(s.battle!==null&&(!Object.prototype.hasOwnProperty.call(FOES,s.battle?.key)||s.prompt!==null||
         !between(s.battle.hp,1,FOES[s.battle.key].hp)||!between(s.battle.turn,1,Number.MAX_SAFE_INTEGER)))return null;
       if(s.flags.echoAlly&&!s.flags.E||s.flags.gridAlly&&!s.flags.D)return null;
       return s;
