@@ -483,6 +483,56 @@ public final class RouteRunner extends Instrumentation {
      * round through the same durable portable v2 engine session. */
     /** In-installed-WebView v2 integration: normal item/equipment rules, active
      * encounter and durable party resources share ONE native v2 journal. */
+    /** Installed Android WebView content-version isolation and two-process
+     * persistence. A changed project may never read or overwrite old saves. */
+    private void checkUnifiedContentBinding(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String response=evalHost("(function(){" +
+            "var project=JSON.parse(JSON.stringify(FRAMEWORK_FIXTURE));" +
+            "project.contentRevision='runtime_r1';" +
+            "var store={read:function(k){return BearframeNative.read(k)}," +
+            "write:function(k,v){return BearframeNative.write(k,v)}};" +
+            "var prefix='bf:framework-test:v1:contentbinding';" +
+            "var s=createBearframeSession(project,store,null,{slotPrefix:prefix});" +
+            "var launched="+(restart?"s.resume()":"s.start('Bound',47)")+";" +
+            "if(!launched.ok)return JSON.stringify({startError:launched.reason});" +
+            "var initial=s.snapshot();" +
+            "var step=s.dispatch({type:'move',dir:'"+(restart?"up":"down")+"'});" +
+            "var current=s.snapshot();" +
+            "var verified=s.verifySave();" +
+            "var first=BearframeNative.read(prefix+':a');" +
+            "var second=BearframeNative.read(prefix+':b');" +
+            "var changed=JSON.parse(JSON.stringify(project));" +
+            "changed.items.blade.power=40;" +
+            "var wrong=createBearframeSession(changed,store,null,{slotPrefix:prefix});" +
+            "var rejected=wrong.resume();" +
+            "var noStart=wrong.start('Unsafe',47);" +
+            "return JSON.stringify({initial:initial,step:step,current:current," +
+            "verified:verified,rejected:rejected,noStart:noStart," +
+            "preserved:first===BearframeNative.read(prefix+':a')&&" +
+            "second===BearframeNative.read(prefix+':b')," +
+            "tag:JSON.parse(first||second).contentTag});})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(response).nextValue());
+        if(proof.has("startError"))
+            throw new AssertionError("Content-bound journal refused same project: "+response);
+        JSONObject before=proof.getJSONObject("initial").getJSONObject("view");
+        JSONObject after=proof.getJSONObject("current").getJSONObject("view");
+        if(before.getInt("sequence")!=(restart?1:0)||
+           after.getInt("sequence")!=(restart?2:1)||
+           !proof.getJSONObject("step").getBoolean("ok")||
+           !proof.getJSONObject("verified").getBoolean("ok")||
+           !"incompatible-content".equals(proof.getJSONObject("rejected").getString("reason"))||
+           !"incompatible-content".equals(proof.getJSONObject("noStart").getString("reason"))||
+           !proof.getBoolean("preserved")||
+           !proof.getString("tag").startsWith("v1:runtime_r1:"))
+            throw new AssertionError("Native content mismatch enforcement failed: "+response);
+        resultMeta.putString("contentBinding",
+            "PASS version-tagged world save, content mismatch refusal, byte-preserving Android restart");
+    }
     private void checkUnifiedPartyWorldBridge(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1368,6 +1418,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedRecreate();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-recreate");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-content-first") ||
+               stage.equals("unified-content-second")){
+                checkUnifiedContentBinding(stage.equals("unified-content-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }

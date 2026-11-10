@@ -154,3 +154,30 @@ The generic mobile inventory panel shows individual labeled targets for
 a v2 party. V1 save data and v1 item commands retain their existing
 behavior. This bridges recruited allies to world inventory but does not
 yet implement general per-member equipment or skill progression.
+
+
+## Opt-in content-bound project journals
+
+A project may specify `contentRevision: 'release_1'` as a stable lowercase
+identifier. On construction, the portable runtime computes a deterministic,
+key-order-independent fingerprint over its validated project snapshot,
+including map geometry, events, items, combat rules, and optional party
+definitions. New saves record `contentTag` **only in the journal envelope**,
+not in the world-state schema. The tag combines the declared revision and
+two non-cryptographic checksums; it is for content compatibility detection,
+not cryptographic authentication.
+
+If even one recognizable occupied journal slot has a different content tag
+(or lacks one), the session refuses resume/start with
+`incompatible-content` and refuses commits with `content-mismatch`.
+It does **not** overwrite the occupied slots. Key ordering changes do not
+change fingerprints; actual definition changes do. Projects omitting
+`contentRevision` retain their exact historical untagged save envelope
+and behavior. Opting a project into this feature does not migrate its
+older saves. Such updates require an explicit tested migration into a
+different namespace or a reviewed release upgrade procedure.
+
+This is an **opt-in safeguard** until project content versioning and the
+migration API are frozen for v1. Browser, Rhino, Node and installed Android
+regressions exercise the binding. The content fingerprint does not protect
+against deliberate checksum forgery and is not a security signature.

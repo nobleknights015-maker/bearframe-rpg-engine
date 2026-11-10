@@ -254,6 +254,16 @@ jobs:
             adb shell am instrument -w -e stage unified-party-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-party-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-second' "$RUNNER_TEMP/unified-party-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-party-second.txt"
+            # Android-native journal content revisions must fail closed when
+            # maps, rules or item data change but the project id does not.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-content-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/content-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-content-first' "$RUNNER_TEMP/content-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/content-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-content-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/content-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-content-second' "$RUNNER_TEMP/content-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/content-second.txt"
             # One native WebView v2 session owns world inventory, equipped
             # lead attack, live battle resources, and save/restart journal.
             adb shell pm clear dev.bearframe.ridge

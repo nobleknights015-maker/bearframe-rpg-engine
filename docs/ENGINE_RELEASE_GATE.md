@@ -197,3 +197,21 @@ The engine is still not production-ready; see the existing release checklist.
 **Installed v2 host acceptance**: [commit dae1554](https://github.com/nobleknights015-maker/bearframe-rpg-engine/commit/dae1554d5db94ca54f59209263213bf884e8f8e7) adds `unified-v2-world-first` and `unified-v2-world-second` Android instrumentation that runs a shared v2 session inside the actual offline WebView, equips saved gear, resolves a party round, force-stops the Android process, then resumes the same native journal. [CI 42890708855](https://github.com/nobleknights015-maker/bearframe-rpg-engine/actions/runs/42890708855) is the acceptance evidence (check completion before marking the installed route verified).
 
 **Release remains OPEN**. This is meaningful engine progress, not a finished v1. Stable project-content version binding across app upgrades, full party gear/level progression, production-ready unified party menus, original asset/audio pipelines, controller ergonomics, physical target-device QA, performance and production-signed update/rollback tests still need acceptance. No campaign content or copyrighted ROM assets were added; the original launcher and its save namespace are preserved.
+
+
+## Content compatibility guard — November 10, 2026
+
+The portable save subsystem now supports opt-in `project.contentRevision`
+and deterministic, key-order-independent project fingerprints. New
+content-bound journals reject changed/missing version bindings with
+`incompatible-content` and prohibit overwriting any mismatched occupied
+slot. Existing unbound v1/v2 journal payloads and original Rhino saves
+remain unchanged; enabling the feature on old project IDs is not an
+automatic migration. Tests cover map, event, combat and item mutations,
+same-revision content changes, key ordering, and mixed-slot refusal.
+The Android host now includes a two-process content-bind regression. See
+[framework API](FRAMEWORK_API.md) for details.
+
+**Remaining release gate:** migration/rollback for changed project content,
+production version naming/signing, real-device acceptance, full engine
+UI/progression and audio/asset/performance work. No release completion claim.
