@@ -62,3 +62,17 @@ test('Android build packages generated WAV at the host-relative location',()=>{
  assert.match(build,/generate_audio_fixture\.js/);
  assert.match(build,/enginehost\/audio\/diagnostics\/silence\.wav/);
 });
+
+test('native WebView response CSP permits same-origin audio without remote media',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const java=fs.readFileSync(path.join(__dirname,
+   '../android/src/dev/bearframe/ridge/UnifiedEngineActivity.java'),'utf8');
+ const csp=java.match(/headers\.put\("Content-Security-Policy",([\s\S]*?)\);/);
+ assert.ok(csp,'native HTTP response must include Content-Security-Policy');
+ assert.match(csp[1],/media-src 'self'/);
+ assert.match(csp[1],/connect-src 'none'/);
+ assert.doesNotMatch(csp[1],/media-src[^;]*https?:/);
+ assert.match(java,/if \(path\.endsWith\("\.wav"\)\) return "audio\/wav";/);
+ assert.match(java,/if \(path\.endsWith\("\.ogg"\)\) return "audio\/ogg";/);
+ assert.match(java,/if \(path\.endsWith\("\.mp3"\)\) return "audio\/mpeg";/);
+});
