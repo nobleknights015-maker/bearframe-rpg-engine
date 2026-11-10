@@ -11,6 +11,7 @@ This directory is a new **game-independent** simulation and rendering contract. 
 - `framework/canvas.js` — browser Canvas adapter that validates all atlases before painting and renders without pixel smoothing.
 - `android/src/dev/bearframe/ridge/AtlasSceneRenderer.java` — native Android Canvas adapter for the same scene commands; compiles with the APK but is not connected to the current Activity.
 - `framework/audio.js` — deterministic transport/controller for BGM and SFX, including playback cues, pause/resume, mute and separate bus gains. It does not load or play sound files itself.
+- `framework/party-combat.js` — independent, deterministic party-versus-enemies round simulation with configurable skills, MP costs, speed ordering, elemental resistance, guard, healing, poison, and terminal draw handling. This module is **not yet hooked into the main RPG runtime**.
 - `fixtures/engine-project.js` — synthetic engine fixture for tests (not intended as Bearframe canon).
 
 ## Example (Node)
