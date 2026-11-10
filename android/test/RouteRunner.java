@@ -162,6 +162,12 @@ public final class RouteRunner extends Instrumentation {
         JSONObject loaded=unifiedSnapshot();
         if(!"framework-test".equals(loaded.getString("project")))
             throw new AssertionError("Wrong unified project: "+loaded);
+        if(loaded.optInt("assetsLoaded",-1)!=2 ||
+           !"packaged-png".equals(loaded.optString("atlasSource")))
+            throw new AssertionError("Unified WebView failed to load validated packaged PNG atlases: "+loaded);
+        String pixel=evalHost("document.getElementById('surface').getContext('2d').getImageData(0,0,1,1).data[0]");
+        if(!"23".equals(pixel))
+            throw new AssertionError("Unified WebView did not draw expected packaged atlas pixels: "+pixel);
         // The WebView storage bridge must never touch legacy game saves or
         // arbitrary preference keys; its allowed namespace is engine-only.
         if(!"false".equals(evalHost("BearframeNative.write('expedition','overwrite')")) ||
