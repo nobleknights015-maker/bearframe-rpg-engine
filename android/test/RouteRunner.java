@@ -121,8 +121,13 @@ public final class RouteRunner extends Instrumentation {
             Intent launch=getTargetContext().getPackageManager().getLaunchIntentForPackage("dev.bearframe.ridge");
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);screen=startActivitySync(launch);
             if(stage.equals("controller")){
-                tap("Awaken");
-                Object activityTitle=screen.getClass().getDeclaredField("title");
+                runOnMainSync(()->{
+                    View awaken=search(screen.getWindow().getDecorView(),"Awaken",true);
+                    if(awaken==null || !awaken.requestFocus())
+                        throw new AssertionError("Controller cannot focus title confirmation");
+                });
+                gamepadKey(KeyEvent.KEYCODE_BUTTON_A);
+                // A/Cross activates character creation before gameplay begins.
                 java.lang.reflect.Field titleField=screen.getClass().getDeclaredField("title");
                 titleField.setAccessible(true);
                 if(titleField.get(screen)==null)throw new AssertionError("Controller test not in gameplay");
