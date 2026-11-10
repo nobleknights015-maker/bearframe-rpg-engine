@@ -83,20 +83,21 @@
     }
     // A native trim callback may evict decoded atlases. Never draw an incomplete
     // scene or advance gameplay while the required render dependencies reload.
-    var restoring=null;
+    var restoring=null,trimCount=0,recoveryCount=0,recoveryFailures=0;
     function memoryPressure(level){
       if(!Number.isInteger(level)||level<0||level>100)
         return {ok:false,reason:'invalid-level'};
       if(restoring)return {ok:true,evicted:0,restoring:true};
       var target=level>=80?0:level>=40?4194304:8388608;
       var trimmed=assets.trimTo(target);
+      trimCount++;
       if(!assets.get('terrain')||!assets.get('characters')){
         if(!restoring){
           status.textContent='Restoring offline scene assets';
           restoring=assets.preload(['terrain','characters']).then(function(){
-            restoring=null;show();return true;
+            restoring=null;recoveryCount++;show();return true;
           },function(error){
-            restoring=null;
+            restoring=null;recoveryFailures++;
             status.textContent='Scene restoration failed: '+error.message;
             metrics.textContent='Saved state preserved; retry after resources recover.';
             return false;
@@ -121,7 +122,10 @@
         map:v?v.map:null,x:v?v.x:null,y:v?v.y:null,
         savedRevision:snap.journal.latestSequence,
         validSlots:snap.journal.validSlots,conflict:snap.journal.conflict,
-        assetsLoaded:assets.snapshot().loaded.length,atlasSource:'packaged-png',
+        assetsLoaded:assets.snapshot().loaded.length,
+        trimCount:trimCount,recoveryCount:recoveryCount,
+        recoveryFailures:recoveryFailures,restoring:!!restoring,
+        atlasSource:'packaged-png',
         renderer:surface.width+'x'+surface.height};
     }
     assets.preload().then(function(){
