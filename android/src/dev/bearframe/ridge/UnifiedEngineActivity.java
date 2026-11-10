@@ -3,6 +3,7 @@ package dev.bearframe.ridge;
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.webkit.JavascriptInterface;
@@ -39,6 +40,17 @@ public final class UnifiedEngineActivity extends Activity {
     private static final String PREFERENCES = "bearframe_unified_v1";
     private WebView browser;
     private int rendererRecoveries=0;
+    private final LegacyArchiveExport exporter=new LegacyArchiveExport(this,result->{
+        if(browser!=null){
+            String line="saved".equals(result)?
+                "Backup JSON saved to the selected document.":
+                "cancelled".equals(result)?
+                "Export cancelled; backup remains in app storage.":
+                "Export failed; backup remains in app storage.";
+            browser.evaluateJavascript("var e=document.getElementById('legacy-archive-status');"+
+                "if(e)e.textContent="+org.json.JSONObject.quote(line),null);
+        }
+    });
     private final AudioFocusRouter audioFocus=new AudioFocusRouter(this,()->{
         if(browser!=null)browser.evaluateJavascript(
             "window.BearframeHost&&window.BearframeHost.suspend()",null);
@@ -184,6 +196,7 @@ public final class UnifiedEngineActivity extends Activity {
         });
         browser.addJavascriptInterface(new NativeSaveBridge(),"BearframeNative");
         browser.addJavascriptInterface(audioFocus,"BearframeAudioFocus");
+        browser.addJavascriptInterface(exporter,"BearframeArchiveExport");
         setContentView(browser);
         browser.loadUrl(DIAGNOSTICS);
     }
@@ -220,11 +233,17 @@ public final class UnifiedEngineActivity extends Activity {
                 "window.BearframeHost&&window.BearframeHost.resume()",null);
         }
     }
+    @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
+        super.onActivityResult(requestCode,resultCode,data);
+        exporter.onResult(requestCode,resultCode,data);
+    }
     @Override protected void onDestroy() {
+        exporter.cancel();
         audioFocus.abandon();
         if(browser!=null){
             browser.removeJavascriptInterface("BearframeNative");
             browser.removeJavascriptInterface("BearframeAudioFocus");
+            browser.removeJavascriptInterface("BearframeArchiveExport");
             browser.stopLoading();
             browser.destroy();
             browser=null;

@@ -621,6 +621,9 @@ public final class RouteRunner extends Instrumentation {
         Object archived=new JSONTokener(evalHost("BearframeLegacyVault.exactCopy().raw")).nextValue();
         if(!(archived instanceof String)||!original.equals(archived))
             throw new AssertionError("Recovery archive did not preserve exact source bytes");
+        if(!"true".equals(evalHost("BearframeArchiveExport.hasVerifiedArchive()")) ||
+           !"false".equals(evalHost("document.getElementById('legacy-export').disabled")))
+            throw new AssertionError("Verified historical archive is not exportable via user picker");
         if(!original.equals(old.getString("expedition",null))||
            !"unchanged".equals(old.getString("unrelated",null)))
             throw new AssertionError("Original preference data was modified");

@@ -81,6 +81,18 @@
     var vault=null,archiveStatus=document.getElementById('legacy-archive-status');
     var inspectButton=document.getElementById('legacy-preview');
     var confirmButton=document.getElementById('legacy-confirm');
+    var exportButton=document.getElementById('legacy-export');
+    var archiveExport=window.BearframeArchiveExport&&
+      typeof window.BearframeArchiveExport.begin==='function'?
+      window.BearframeArchiveExport:null;
+    exportButton.disabled=true;
+    exportButton.addEventListener('click',function(){
+      if(!archiveExport||!archiveExport.begin()){
+        archiveStatus.textContent='Verified archive unavailable for export.';
+      }else{
+        archiveStatus.textContent='Choose a location to save the historical JSON backup.';
+      }
+    });
     if(window.BearframeNative &&
        typeof window.BearframeNative.readLegacyExpedition==='function'){
       vault=createBearframeLegacyArchive({read:function(key){
@@ -101,11 +113,13 @@
         archiveStatus.textContent=result.ok?
           'Exact historical save archived and read back. Original save unchanged.':
           'Archive refused: '+result.reason;
+        exportButton.disabled=!(result.ok&&archiveExport);
       });
       var existing=vault.audit();
       if(existing.ok){
         archiveStatus.textContent='Existing historical backup verified; original save preserved.';
         inspectButton.disabled=true;
+        exportButton.disabled=!archiveExport;
       }
     }else{
       inspectButton.disabled=true;

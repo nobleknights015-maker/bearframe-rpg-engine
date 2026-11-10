@@ -1,0 +1,20 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+test('verified old-save export uses Android document picker, not broad filesystem access',()=>{
+ const native=fs.readFileSync(path.join(__dirname,'../android/src/dev/bearframe/ridge/LegacyArchiveExport.java'),'utf8');
+ const activity=fs.readFileSync(path.join(__dirname,'../android/src/dev/bearframe/ridge/UnifiedEngineActivity.java'),'utf8');
+ const html=fs.readFileSync(path.join(__dirname,'../enginehost/index.html'),'utf8');
+ const boot=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
+ const runner=fs.readFileSync(path.join(__dirname,'../android/test/RouteRunner.java'),'utf8');
+ assert.match(native,/Intent\.ACTION_CREATE_DOCUMENT/);
+ assert.match(native,/Intent\.CATEGORY_OPENABLE/);
+ assert.match(native,/application\/json/);
+ assert.match(native,/getContentResolver\(\)\.openOutputStream/);
+ assert.match(native,/legacy-v1-archive:v1:backup:a/);
+ assert.match(native,/checksum\(body\)/);
+ assert.doesNotMatch(native,/\.putString\("expedition"/);
+ assert.match(activity,/addJavascriptInterface\(exporter,"BearframeArchiveExport"\)/);
+ assert.match(activity,/exporter\.onResult\(requestCode,resultCode,data\)/);
+ assert.match(html,/id="legacy-export"[^>]*disabled/);
+ assert.match(boot,/archiveExport\.begin\(\)/);
+ assert.match(runner,/BearframeArchiveExport\.hasVerifiedArchive\(\)/);
+});
