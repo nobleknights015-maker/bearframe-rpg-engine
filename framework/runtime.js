@@ -137,7 +137,8 @@ function createBearframeEngine(project) {
     var p=s.player, nx=p.x+delta[0],ny=p.y+delta[1];
     if(!isOpen(p.map,nx,ny))return false;
     var map=project.maps[p.map],at=key(nx,ny),origin=p.map+':'+at;
-    if(has(map.events,at))return openEvent(s,map.events[at],origin);
+    if(has(map.events,at)&&openEvent(s,map.events[at],origin))return true;
+    // Completed one-time events become walkable; they must never trap the player.
     if(has(map.exits,at)){
       var to=map.exits[at];p.map=to.map;p.x=to.x;p.y=to.y;
       s.message=project.maps[to.map].name;return true;
