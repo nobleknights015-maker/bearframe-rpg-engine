@@ -73,6 +73,9 @@ public final class UnifiedEngineActivity extends Activity {
         if (path.endsWith(".js")) return "application/javascript";
         if (path.endsWith(".png")) return "image/png";
         if (path.endsWith(".webp")) return "image/webp";
+        if (path.endsWith(".wav")) return "audio/wav";
+        if (path.endsWith(".ogg")) return "audio/ogg";
+        if (path.endsWith(".mp3")) return "audio/mpeg";
         return "application/octet-stream";
     }
     private WebResourceResponse asset(WebResourceRequest request) {
@@ -91,7 +94,7 @@ public final class UnifiedEngineActivity extends Activity {
             headers.put("X-Content-Type-Options","nosniff");
             headers.put("Content-Security-Policy",
                 "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "+
-                "connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'");
+                "media-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'");
             return new WebResourceResponse(mime(relative),"UTF-8",200,"OK",headers,in);
         } catch(IOException missing) {
             return failure(404,"Not Found");
