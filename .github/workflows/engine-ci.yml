@@ -84,6 +84,33 @@ jobs:
           test -s "$RUNNER_TEMP/route-test-ci.apk"
           "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --verbose "$RUNNER_TEMP/bearframe-ci.apk"
           sha256sum "$RUNNER_TEMP/bearframe-ci.apk"
+      - name: Enable KVM for Android emulator
+        if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[emulator]')
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run installed-app two-process recovery on Android emulator
+        if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[emulator]')
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: default
+          arch: x86_64
+          ram-size: 1536M
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            adb install -r "$RUNNER_TEMP/bearframe-ci.apk"
+            adb install -r "$RUNNER_TEMP/route-test-ci.apk"
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/native-stage-one.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS first' "$RUNNER_TEMP/native-stage-one.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/native-stage-one.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/native-stage-two.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS second' "$RUNNER_TEMP/native-stage-two.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/native-stage-two.txt"
       - name: Publish non-release test APKs
         uses: actions/upload-artifact@v4
         with:
