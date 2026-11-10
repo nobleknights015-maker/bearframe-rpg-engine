@@ -75,7 +75,7 @@ function webControllerAction(event){
   }
   const choices=webChoices();
   if(event.type==='navigate'){
-    if(choices.length){
+    if(state.prompt||state.battle){
       webSelectChoice(event.direction==='up'||event.direction==='left'?-1:1);
     }else act('move',event.direction);
   }else if(event.type==='confirm'&&choices.length){
