@@ -18,5 +18,15 @@ test('Android document recovery validates historical v1 JSON and refuses to over
  assert.match(html,/legacy-restore/);
  assert.match(boot,/archiveExport\.beginRestore\(\)/);
  assert.match(runner,/checkUnifiedRestoreNative\(\)/);
+ // Installed Android acceptance must distinguish legitimate '<' exits from walls.
+ // Regression: x=0,y=4 in gallery is a valid exit; x=0,y=0 and
+ // x=7,y=1 are actual blocked tiles. Never weaken the validator to
+ // accommodate a mistaken geometry assertion.
+ assert.match(runner,/blockedInterior=new JSONObject\(raw\)\.put\("x",7\)\.put\("y",1\)/);
+ assert.match(runner,/blocked=new JSONObject\(raw\)\.put\("x",0\)\.put\("y",0\)/);
+ assert.match(runner,/exit=new JSONObject\(raw\)\.put\("x",0\)/);
+ assert.match(runner,/!sourceValid\|\|blockedAccepted\|\|interiorAccepted\|\|!exitAccepted/);
+ assert.match(runner,/restore\.invoke\(exporter,raw\)/);
+ assert.match(runner,/raw\.equals\(old\.getString\("expedition",null\)\)/);
  assert.match(ci,/stage unified-restore-native/);
 });
