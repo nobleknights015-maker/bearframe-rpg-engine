@@ -7,6 +7,9 @@ This directory is a new **game-independent** simulation and rendering contract. 
 - `framework/schema.js` — validates a complete project definition, cross-references, map geometry, exits, event scripts, items, enemies, quests and game rules.
 - `framework/runtime.js` — deterministic pure state machine. No DOM, I/O, timers or platform APIs. State owns its PRNG seed. Use `fresh()`, `step()`, `view()`, `serialize()` and `restore()`.
 - `framework/save-slots.js` — two-slot durable save journal with rolling checksum, readback verification, stale-write rejection and recovery from a corrupted latest slot.
+- `framework/session.js` — **canonical host-facing runtime** integrating `createBearframeEngine`, the durable save journal, and `createBearframeSceneComposer`. A host calls `start`, `resume`, `dispatch`, `snapshot`, and `compose`; `dispatch` never presents a simulation update before the journal confirms a durable commit.
+- `android/src/dev/bearframe/ridge/UnifiedEngineActivity.java` — internal, offline Chromium WebView host serving only packaged engine scripts, with a synchronous, namespace-restricted native Android save adapter.
+- `enginehost/index.html` and `enginehost/boot.js` — Android/browser diagnostic host for this same session, **not game story content**.
 - `framework/scene.js` — independent presentation composer with atlas metadata verification, tile culling, camera tracking, actor depth ordering and tick-driven sprite animation.
 - `framework/canvas.js` — browser Canvas adapter that validates all atlases before painting and renders without pixel smoothing.
 - `android/src/dev/bearframe/ridge/AtlasSceneRenderer.java` — native Android Canvas adapter for the same scene commands; compiles with the APK but is not connected to the current Activity.
@@ -63,4 +66,4 @@ node --test tests/*.test.js
 # and an optionally triggered installed-app two-process emulator replay.
 ```
 
-The experimental framework is verified independently; it is not yet wired to the shipping Android Activity. No claim of a polished final engine, actual audio playback/mixing, production save migration, large-map streaming, full party AI, release-grade touch ergonomics, or real-device thermal profiling is made here.
+The experimental framework now runs end-to-end in a separate Android WebView Activity, verified by a two-process emulator test; it has **not replaced the shipping Rhino Android launcher**. No claim of a polished final engine, actual audio playback/mixing, production save migration, large-map streaming, full party AI, release-grade touch ergonomics, or real-device thermal profiling is made here.
