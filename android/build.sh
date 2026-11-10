@@ -24,7 +24,7 @@ printf '%s\n' \
   "eaaae7e1a33e854df437f592ea0cc98e530e8b955172ae47b75406378e4ea179  $work/assets/enginehost/assets/terrain.png" \
   "c9d3ad73ed2d6a8c67d8cec169cd190841eb61cc7a51c52e040ae0f8bf573722  $work/assets/enginehost/assets/characters.png" | sha256sum -c -
 # A generated, original silent WAV proves local audio packaging without game media.
-node "$root/scripts/generate_audio_fixture.js" "$work/assets/audio/diagnostics/silence.wav"
+node "$root/scripts/generate_audio_fixture.js" "$work/assets/enginehost/audio/diagnostics/silence.wav"
 unzip -p "$RHINO_JAR" META-INF/LICENSE.txt > "$work/assets/Rhino-LICENSE.txt"
 unzip -p "$RHINO_JAR" META-INF/NOTICE.txt > "$work/assets/Rhino-NOTICE.txt"
 java -m jdk.compiler/com.sun.tools.javac.Main -source 8 -target 8 -bootclasspath "$platform:$tools/core-lambda-stubs.jar" -classpath "$RHINO_JAR" -d "$work/classes" "$root/android/src/dev/bearframe/ridge/"*.java
