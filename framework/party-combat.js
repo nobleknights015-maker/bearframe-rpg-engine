@@ -35,9 +35,11 @@ function createBearframePartyCombat(skillBook) {
     for(var element in a.resistances)if(has(a.resistances,element)){
       if(!id(element)||!int(a.resistances[element],0,200))return false;
     }
+    var statusTypes={};
     for(var i=0;i<a.statuses.length;i++){
       var s=a.statuses[i];
-      if(!s||s.type!=='poison'||!int(s.turns,1,20)||!int(s.potency,1,999))return false;
+      if(!s||s.type!=='poison'||!int(s.turns,1,20)||!int(s.potency,1,999)||has(statusTypes,s.type))return false;
+      statusTypes[s.type]=true;
     }
     return true;
   }
