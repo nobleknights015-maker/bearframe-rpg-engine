@@ -118,3 +118,19 @@ test('simultaneous poison knockouts resolve as draw rather than a false victory'
   assert.equal(combat.round(tied,[]),tied);
   assert.equal(combat.restore(combat.serialize(tied)).phase,'draw');
 });
+
+test('combat rules are isolated from caller catalog mutations after construction',()=>{
+ const catalog=clone(skills),combat=make(catalog);
+ const baseline=combat.begin([pilot()],[crawler()],53);
+ const action=[{actor:'pilot',skill:'pulse',target:'crawler'}];
+ const expected=combat.round(baseline,action);
+ catalog.pulse.power=9999;
+ catalog.pulse.cost=999;
+ catalog.pulse.status.potency=999;
+ catalog.pulse.kind='heal';
+ delete catalog.strike;
+ catalog.injected={kind:'damage',power:9999,cost:0,element:'arc'};
+ assert.deepEqual(combat.round(baseline,action),expected);
+ assert.deepEqual(combat.restore(combat.serialize(expected)),expected);
+ assert.equal(combat.round(baseline,[{actor:'pilot',skill:'injected',target:'crawler'}]),baseline);
+});
