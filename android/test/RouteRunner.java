@@ -812,6 +812,117 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("legacyCompatExport",
             "PASS verified latest continued JSON export, missing-only restore and journal isolation");
     }
+    /** Real installed-host, user-selected continued file import and restart.
+     * Simulates the SAF document result with a local file URI. Actual external
+     * picker UI and physical phone acceptance remain separate release gates. */
+    private void checkUnifiedCompatFile(boolean restart) throws Exception {
+        android.content.SharedPreferences old=getTargetContext()
+            .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
+        if(!restart){
+            JSONObject originalFlags=new JSONObject();
+            for(String id:new String[]{"bearing","E","D","H","echoAlly","gridAlly","met"})
+                originalFlags.put(id,false);
+            String starting=new JSONObject().put("v",1).put("name","Old unchanged")
+                .put("finish","Ash").put("area","pod").put("x",3).put("y",4)
+                .put("hp",30).put("charge",2).put("weapon",JSONObject.NULL)
+                .put("flags",originalFlags).put("battle",JSONObject.NULL)
+                .put("prompt",JSONObject.NULL).put("message","Old launcher remains intact").toString();
+            if(!old.edit().putString("expedition",starting)
+                    .putString("unrelated","preserved").commit())
+                throw new AssertionError("Cannot seed old source for file import");
+        }
+        String original=old.getString("expedition",null);
+        if(original==null)throw new AssertionError("Original preference unexpectedly missing");
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject independent=unifiedSnapshot();
+        if(independent.getInt("sequence")!=0||independent.getInt("savedRevision")!=0)
+            throw new AssertionError("Compatibility file affected core journal");
+        JSONObject initially=new JSONObject((String)new JSONTokener(
+            evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+        if(initially.getBoolean("active")||
+           !"true".equals(evalHost("document.getElementById('legacy-compat-import-confirm').disabled")))
+            throw new AssertionError("External JSON was imported without explicit confirmation");
+        if(!restart){
+            JSONObject flags=new JSONObject();
+            for(String id:new String[]{"bearing","E","D","H","echoAlly","gridAlly","met"})
+                flags.put(id,false);
+            flags.put("bearing",true);
+            String continued=new JSONObject().put("v",1).put("name","File continuation")
+                .put("finish","Slate").put("area","gallery").put("x",8).put("y",4)
+                .put("hp",35).put("charge",3).put("weapon","lance")
+                .put("flags",flags).put("battle",new JSONObject().put("key","H")
+                    .put("hp",24).put("turn",1))
+                .put("prompt",JSONObject.NULL).put("message","Imported progress").toString();
+            java.lang.reflect.Field exporterField=screen.getClass().getDeclaredField("exporter");
+            exporterField.setAccessible(true);
+            Object exporter=exporterField.get(screen);
+            java.lang.reflect.Field restoringCompat=exporter.getClass()
+                .getDeclaredField("restoringCompat");
+            restoringCompat.setAccessible(true);
+            java.lang.reflect.Method onResult=exporter.getClass().getMethod("onResult",
+                int.class,int.class,Intent.class);
+            java.io.File file=new java.io.File(getTargetContext().getFilesDir(),
+                "continued-selected.json");
+            java.nio.file.Files.write(file.toPath(),
+                continued.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            Intent selected=new Intent();selected.setData(Uri.fromFile(file));
+            restoringCompat.setBoolean(exporter,true);
+            onResult.invoke(exporter,4919,Activity.RESULT_OK,selected);
+            boolean staged=false;
+            for(int attempt=0;attempt<20;attempt++){
+                if("false".equals(evalHost(
+                    "document.getElementById('legacy-compat-import-confirm').disabled"))){
+                    staged=true;break;
+                }
+                Thread.sleep(100);
+            }
+            if(!staged)
+                throw new AssertionError("SAF selected file did not reach second consent");
+            JSONObject beforeConfirm=new JSONObject((String)new JSONTokener(
+                evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+            if(beforeConfirm.getBoolean("active")||
+               beforeConfirm.getJSONObject("health").getInt("occupiedSlots")!=0)
+                throw new AssertionError("File preview committed without consent");
+            evalHost("document.getElementById('legacy-compat-import-confirm').click()");
+        }else{
+            if(!"true".equals(evalHost(
+                "document.getElementById('legacy-compat-import-file').disabled")))
+                throw new AssertionError("Existing compatible save allowed overwrite selection");
+            evalHost("document.getElementById('legacy-compat-resume').click()");
+        }
+        JSONObject loaded=new JSONObject((String)new JSONTokener(
+            evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+        if(!loaded.getBoolean("active")||loaded.getInt("sequence")!=(restart?1:0)||
+           loaded.getJSONObject("health").getInt("validSlots")<1||
+           !"File continuation".equals(loaded.getJSONObject("legacy").getString("name"))||
+           loaded.getJSONObject("legacy").getJSONObject("battle")
+               .getInt("hp")!=(restart?17:24))
+            throw new AssertionError("Chosen historical file not recovered: "+loaded);
+        if(!original.equals(old.getString("expedition",null))||
+           !"preserved".equals(old.getString("unrelated",null)))
+            throw new AssertionError("File import modified original launcher save");
+        if(!restart){
+            String action=evalHost("(function(){var buttons=document.querySelectorAll("+
+                "'#legacy-compat-actions button');for(var i=0;i<buttons.length;i++){"+
+                "if(buttons[i].textContent==='Strike'){buttons[i].click();return true;}}return false;})()");
+            if(!"true".equals(action))
+                throw new AssertionError("Recovered historical combat controls unavailable");
+            JSONObject progressed=new JSONObject((String)new JSONTokener(
+                evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+            if(progressed.getInt("sequence")!=1||
+               progressed.getJSONObject("legacy").getJSONObject("battle").getInt("hp")!=17)
+                throw new AssertionError("Selected file could not continue combat: "+progressed);
+        }
+        JSONObject unchanged=unifiedSnapshot();
+        if(unchanged.getInt("sequence")!=independent.getInt("sequence")||
+           unchanged.getInt("savedRevision")!=independent.getInt("savedRevision"))
+            throw new AssertionError("Recovered file mutated canonical engine");
+        resultMeta.putString("compatFile",
+            "PASS chosen document, explicit consent, original preservation, durable resume");
+    }
     /** Test-only native recovery acceptance without opening a document picker.
      * The actual restore UI always requires ACTION_OPEN_DOCUMENT user choice. */
     private void checkUnifiedRestoreNative() throws Exception {
@@ -991,6 +1102,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedLegacyCompatExport();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-compat-export");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-compat-file-first") ||
+               stage.equals("unified-compat-file-second")){
+                checkUnifiedCompatFile(stage.equals("unified-compat-file-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }

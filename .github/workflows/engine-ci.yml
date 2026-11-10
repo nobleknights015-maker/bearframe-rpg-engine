@@ -193,6 +193,17 @@ jobs:
             adb shell am instrument -w -e stage unified-compat-export dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-compat-export.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-export' "$RUNNER_TEMP/unified-compat-export.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-compat-export.txt"
+            # Fresh-install recovery of an exported historical JSON through
+            # the actual native document stream and WebView consent. Android
+            # process is killed before exact original-rule battle resume.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-compat-file-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/compat-file-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-first' "$RUNNER_TEMP/compat-file-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-compat-file-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/compat-file-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-second' "$RUNNER_TEMP/compat-file-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-second.txt"
             # Exercise the versioned party-combat core and UI through the
             # installed WebView, including process-stop journal recovery.
             adb shell pm clear dev.bearframe.ridge

@@ -46,3 +46,24 @@ test('continued original-format save export is checked by native checksum and mi
  assert.match(ci,/stage unified-compat-export/);
  assert.match(ci,/route=PASS unified-compat-export/);
 });
+
+test('continued file import must use the native document picker and explicit second consent',()=>{
+ const html=read('enginehost/index.html'),ui=read('enginehost/legacy-compat-ui.js');
+ const java=read('android/src/dev/bearframe/ridge/LegacyArchiveExport.java');
+ const activity=read('android/src/dev/bearframe/ridge/UnifiedEngineActivity.java');
+ const runner=read('android/test/RouteRunner.java'),ci=read('.github/workflows/engine-ci.yml');
+ assert.match(html,/id="legacy-compat-import-confirm"[^>]*disabled/);
+ assert.match(java,/Intent\.ACTION_OPEN_DOCUMENT/);
+ assert.match(java,/COMPAT_RESTORE_REQUEST=4919/);
+ assert.match(java,/stagedCompat=raw/);
+ assert.match(java,/takeCompatRestore\(\)/);
+ assert.match(java,/LegacyV1Validator\.accepts\(raw\)/);
+ assert.match(activity,/BearframeLegacyCompat\.onFileSelected/);
+ assert.match(ui,/compat\.inspectFile\(raw\)/);
+ assert.match(ui,/compat\.commitFile\(\)/);
+ assert.match(runner,/checkUnifiedCompatFile\(boolean restart\)/);
+ assert.match(runner,/File preview committed without consent/);
+ assert.match(runner,/File import modified original launcher save/);
+ assert.match(ci,/stage unified-compat-file-first/);
+ assert.match(ci,/stage unified-compat-file-second/);
+});
