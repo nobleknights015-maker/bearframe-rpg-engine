@@ -47,7 +47,7 @@ function createBearframePartyCombat(skillBook) {
   }
   function stateValid(s) {
     if(!s||s.version!==1||!int(s.turn,1,1000000)||!int(s.rng,1,4294967295)||
-       ['active','victory','defeat'].indexOf(s.phase)===-1||
+       ['active','victory','defeat','draw'].indexOf(s.phase)===-1||
        !Array.isArray(s.party)||!Array.isArray(s.foes)||
        s.party.length<1||s.party.length>6||s.foes.length<1||s.foes.length>12||
        !Array.isArray(s.log)||s.log.length>100||!s.log.every(function(line){return typeof line==='string'&&line.length<=200;}))
@@ -60,7 +60,9 @@ function createBearframePartyCombat(skillBook) {
     }
     var aliveParty=s.party.some(function(a){return a.hp>0;});
     var aliveFoes=s.foes.some(function(a){return a.hp>0;});
-    if(s.phase==='victory'&&aliveFoes||s.phase==='defeat'&&aliveParty||
+    if(s.phase==='victory'&&(!aliveParty||aliveFoes)||
+       s.phase==='defeat'&&(aliveParty||!aliveFoes)||
+       s.phase==='draw'&&(aliveParty||aliveFoes)||
        s.phase==='active'&&(!aliveParty||!aliveFoes))return false;
     return true;
   }
@@ -132,6 +134,8 @@ function createBearframePartyCombat(skillBook) {
       var k=skillBook[cmd.skill];
       if(a.mp<k.cost)continue;
       var target=k.kind==='guard'?a:find(k.kind==='heal'?allies:opponents,cmd.target);
+      if((!target||target.hp<=0)&&cmd.side==='foes'&&k.kind==='damage')
+        target=opponents.filter(function(x){return x.hp>0;})[0];
       if(!target||target.hp<=0)continue;
       a.mp-=k.cost;
       if(k.kind==='guard'){
@@ -169,7 +173,8 @@ function createBearframePartyCombat(skillBook) {
         a.statuses=remain;
       });
     }
-    if(s.foes.every(function(x){return x.hp===0}))s.phase='victory';
+    if(s.foes.every(function(x){return x.hp===0})&&s.party.every(function(x){return x.hp===0}))s.phase='draw';
+    else if(s.foes.every(function(x){return x.hp===0}))s.phase='victory';
     else if(s.party.every(function(x){return x.hp===0}))s.phase='defeat';
     else s.turn++;
     if(!stateValid(s))throw new Error('Party combat produced invalid state');
