@@ -6,10 +6,14 @@ function createBearframeEngine(project) {
   var validate=(typeof module!=='undefined'&&module.exports)?require('./schema.js'):validateEngineProject;
   validate(project);
   var own=Object.prototype.hasOwnProperty;
-  var VERSION=1;
+  var VERSION=project.partyCombat?2:1;
   var RULES={playerHp:30,playerCharge:3,baseAttack:5,pulseBonus:6,pulseCost:1,
     guardReduction:5,foeBurstBonus:3,foeVariance:3,victoryXp:10};
   if(project.rules)Object.keys(project.rules).forEach(function(k){RULES[k]=project.rules[k];});
+  var partyFactory=project.partyCombat?
+    (typeof module!=='undefined'&&module.exports?
+      require('./party-runtime.js'):createBearframePartyRuntime):null;
+  var party=partyFactory?partyFactory(project.partyCombat,project,RULES):null;
   function has(o,k){return !!o&&own.call(o,k);}
   function clone(v){return JSON.parse(JSON.stringify(v));}
   function number(v,min,max){return Number.isInteger(v)&&v>=min&&v<=max;}
@@ -20,12 +24,14 @@ function createBearframeEngine(project) {
   function fresh(name,seed) {
     var id=String(name==null?'':name).trim().slice(0,24)||'Frame';
     var value=number(seed,1,4294967295)?seed:0x9e3779b9;
-    return {version:VERSION,project:project.id,sequence:0,rng:value>>>0,
+    var state={version:VERSION,project:project.id,sequence:0,rng:value>>>0,
       player:{name:id,map:project.start.map,x:project.start.x,y:project.start.y,
         hp:RULES.playerHp,maxHp:RULES.playerHp,
         charge:RULES.playerCharge,maxCharge:RULES.playerCharge,xp:0},
       inventory:{},equipment:{weapon:null},flags:{},quests:{},allies:[],
       battle:null,prompt:null,message:'System initialized.'};
+    if(party)party.initialize(state);
+    return state;
   }
   function alive(s){return s.player.hp>0;}
   function valid(s) {
@@ -64,6 +70,7 @@ function createBearframeEngine(project) {
       if(!prompt||!has(project.events,prompt.event)||typeof prompt.origin!=='string'||s.battle!==null)return false;
     }
     if(typeof s.message!=='string'||s.message.length>10000)return false;
+    if(party&&!party.valid(s))return false;
     return true;
   }
   function restore(raw) {
@@ -87,6 +94,7 @@ function createBearframeEngine(project) {
     return true;
   }
   function beginBattle(s,foe,origin) {
+    if(party){party.begin(s,foe,origin);return;}
     s.battle={foe:foe,hp:project.foes[foe].hp,turn:1,origin:origin};
     s.prompt=null;s.message=project.foes[foe].name+' approaches.';
   }
@@ -123,7 +131,12 @@ function createBearframeEngine(project) {
         case 'quest':
           if(s.quests[effect.quest]===undefined||effect.stage>s.quests[effect.quest])s.quests[effect.quest]=effect.stage;
           break;
-        case 'recruit':if(s.allies.indexOf(effect.ally)===-1)s.allies.push(effect.ally);break;
+        case 'recruit':
+          if(s.allies.indexOf(effect.ally)===-1){
+            s.allies.push(effect.ally);
+            if(party)party.addAlly(s,effect.ally);
+          }
+          break;
         case 'message':s.message=effect.text;break;
         case 'warp':s.player.map=effect.map;s.player.x=effect.x;s.player.y=effect.y;break;
       }
@@ -190,7 +203,9 @@ function createBearframeEngine(project) {
   function step(previous,command) {
     if(!valid(previous)||!command||typeof command!=='object'||typeof command.type!=='string')return previous;
     var s=clone(previous),changed=false;
-    if(s.battle) {
+    if(party&&s.partyBattle) {
+      if(command.type==='party-round')changed=party.round(s,command.orders);
+    } else if(s.battle) {
       if(command.type==='combat')changed=combat(s,command.id);
     } else if(s.prompt) {
       if(command.type==='close'){s.prompt=null;changed=true;}
@@ -224,11 +239,13 @@ function createBearframeEngine(project) {
   function view(s){
     if(!valid(s))throw new TypeError('Invalid engine state');
     var p=s.player,map=project.maps[p.map];
-    return {project:project.id,sequence:s.sequence,map:p.map,mapName:map.name,
+    var result={project:project.id,sequence:s.sequence,map:p.map,mapName:map.name,
       rows:map.rows.slice(),x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,
       charge:p.charge,maxCharge:p.maxCharge,xp:p.xp,weapon:s.equipment.weapon,
       battle:s.battle?clone(s.battle):null,prompt:s.prompt?clone(s.prompt):null,
       message:s.message,allies:s.allies.slice()};
+    if(party)result.partyBattle=s.partyBattle?clone(s.partyBattle):null;
+    return result;
   }
   return Object.freeze({version:VERSION,projectId:project.id,fresh:fresh,
     restore:restore,step:step,view:view,serialize:function(s){if(!valid(s))throw new TypeError('Invalid state');return JSON.stringify(s);},

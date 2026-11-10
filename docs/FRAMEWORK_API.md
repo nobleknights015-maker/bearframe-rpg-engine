@@ -73,3 +73,11 @@ The experimental framework now runs end-to-end in a separate Android WebView Act
 ## Historical save compatibility limitation
 
 The original installed Android game's saved `expedition` JSON is not a `framework/runtime.js` state. The new read-only native source bridge and historical v1 decoder can inspect it, but **cannot yet convert a real campaign without losing world-specific progress**. The generic importer requires an explicit source key, `decode`, `map`, target engine and empty journal. `inspect()` never writes; `commit()` rejects changed sources and occupied destinations. Production migration needs a compatible project schema, a reviewed complete field mapping, original legacy `restore()` validation, an explicit user action, and installed-device rollback tests.
+
+## Opt-in party-combat integration — engine v2 development checkpoint
+
+A game-neutral project may opt into `project.partyCombat` with validated skill, protagonist, ally and enemy actor templates. The **existing canonical `framework/runtime.js`** then uses `framework/party-runtime.js` to drive `framework/party-combat.js` from normal project encounter and event effects, with one shared engine state, sequence counter, PRNG and two-slot journal. Commands are `{type:'party-round',orders:[{actor,skill,target},...]}`. Invalid orders are no-ops; a valid round is durably committed by the regular `framework/session.js` before being displayed.
+
+For save compatibility, the opt-in capability requires **runtime state version 2**; projects without it retain the exact v1 state shape and behavior. Recruited ally HP/MP carries between encounters in `allyStats`. Active encounter, status, resistance and order data live inside `partyBattle.encounter`, which is serialized and restored atomically with the world state. The synthetic `fixtures/party-engine-project.js` exercises this contract without campaign/game content.
+
+**Not production-ready yet:** the optional Android WebView combat UI/installed-party-restart stage, whole-party progression and equipment policy, target-device acceptance, migration of old game saves and release-grade combat balancing remain open. Do not enable this capability on an existing v1 project without a reviewed migration and new journal namespace.

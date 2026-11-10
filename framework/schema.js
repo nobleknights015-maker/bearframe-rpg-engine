@@ -117,6 +117,27 @@ function validateEngineProject(project) {
     });
   });
   validTarget(project.start,'project.start');
+  if(project.partyCombat!==undefined){
+    var spec=record(project.partyCombat,'project.partyCombat');
+    var pcAllies=record(spec.allies,'project.partyCombat.allies');
+    var pcEnemies=record(spec.enemies,'project.partyCombat.enemies');
+    record(spec.skills,'project.partyCombat.skills');
+    record(spec.player,'project.partyCombat.player');
+    Object.keys(foes).forEach(function(foe){
+      if(!own.call(pcEnemies,foe))fail('Missing party combat enemy '+foe);
+    });
+    Object.keys(events).forEach(function(eventId){
+      var event=events[eventId];
+      if(!event||!Array.isArray(event.choices))return;
+      event.choices.forEach(function(choice){
+        if(!choice||!Array.isArray(choice.effects))return;
+        choice.effects.forEach(function(effect){
+          if(effect&&effect.type==='recruit'&&!own.call(pcAllies,effect.ally))
+            fail('Party combat missing recruited ally '+effect.ally);
+        });
+      });
+    });
+  }
   if(errors.length)throw new TypeError('Invalid engine project ('+errors.length+'):\n'+errors.join('\n'));
   return project;
 }
