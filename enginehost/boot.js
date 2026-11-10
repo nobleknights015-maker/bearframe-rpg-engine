@@ -87,6 +87,7 @@
     function memoryPressure(level){
       if(!Number.isInteger(level)||level<0||level>100)
         return {ok:false,reason:'invalid-level'};
+      if(restoring)return {ok:true,evicted:0,restoring:true};
       var target=level>=80?0:level>=40?4194304:8388608;
       var trimmed=assets.trimTo(target);
       if(!assets.get('terrain')||!assets.get('characters')){
@@ -133,7 +134,11 @@
         return act({type:'move',dir:dir});
       },
       suspend:function(){audioProbe.suspend();return snapshot();},
-      resume:function(){audioProbe.resume();return show()&&snapshot();}
+      resume:function(){
+        audioProbe.resume();
+        if(restoring)return snapshot();
+        return show()&&snapshot();
+      }
     });
     Array.from(document.querySelectorAll('[data-dir]')).forEach(function(button){
       button.addEventListener('click',function(){
