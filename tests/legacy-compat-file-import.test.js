@@ -84,3 +84,14 @@ test('source-preflight and file-preflight never cross-authorize the other commit
  assert.equal(c.commitFile().reason,'not-staged');
  assert.equal(c.commit().ok,true);
 });
+
+test('cancelled or superseded file inspection cannot commit a stale historical snapshot',()=>{
+ const f=fixture(),c=f.compat(),raw=JSON.stringify(old.fresh('Old candidate','Ivory'));
+ assert.equal(c.inspectFile(raw).ok,true);
+ c.cancelFile();
+ assert.equal(c.commitFile().reason,'not-staged');
+ assert.equal(Object.keys(f.disk).length,0);
+ assert.equal(c.inspectFile(raw).ok,true);
+ assert.equal(c.inspectFile('bad').ok,false);
+ assert.equal(c.commitFile().reason,'not-staged');
+});

@@ -116,6 +116,7 @@ function createBearframeLegacyCompatibility(config) {
         battle:restored.battle!==null,prompt:restored.prompt!==null};
     }catch(error){return {ok:false,reason:'invalid-file'};}
   }
+  function cancelFile(){stagedFile=null;}
   function commitFile(){
     if(stagedFile===null)return {ok:false,reason:'not-staged'};
     var raw=stagedFile;stagedFile=null;
@@ -164,7 +165,7 @@ function createBearframeLegacyCompatibility(config) {
       legacy:current?copy(current.legacy):null,health:journal.health()};
   }
   return Object.freeze({preflight:preflight,commit:commit,resume:resume,
-    inspectFile:inspectFile,commitFile:commitFile,
+    inspectFile:inspectFile,commitFile:commitFile,cancelFile:cancelFile,
     dispatch:dispatch,snapshot:snapshot,archive:vault,
     namespace:prefix});
 }

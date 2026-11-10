@@ -21,6 +21,8 @@ function attachBearframeLegacyCompatibilityUI(config){
     else text('Select a file for your continued historical progress. The original remains intact.');
   });
   importButton.addEventListener('click',function(){
+    // A canceled or replaced document selection can never reuse stale consent.
+    compat.cancelFile();
     importConfirm.disabled=true;
     if(!nativeExport||
        typeof nativeExport.beginCompatRestore!=='function'||

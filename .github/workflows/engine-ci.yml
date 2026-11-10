@@ -201,6 +201,10 @@ jobs:
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-first' "$RUNNER_TEMP/compat-file-first.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-first.txt"
             adb shell am force-stop dev.bearframe.ridge
+            # Reinstalling the same signed APK with -r preserves app data.
+            # This exercises the PackageManager replacement path in addition
+            # to the force-stop restart path (not a real version upgrade).
+            adb install -r "$RUNNER_TEMP/bearframe-ci.apk"
             adb shell am instrument -w -e stage unified-compat-file-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-second' "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-second.txt"
