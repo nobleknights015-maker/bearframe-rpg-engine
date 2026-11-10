@@ -923,6 +923,70 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("compatFile",
             "PASS chosen document, explicit consent, original preservation, durable resume");
     }
+    /** Installed Android WebView event choice -> inventory -> equipment.
+     * Every action must commit through the SAME core journal. A second
+     * instrumentation process checks exact restoration after force-stop. */
+    private void checkUnifiedRuntimePanels(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject loaded=unifiedSnapshot();
+        int initial=restart?3:0;
+        if(loaded.getInt("sequence")!=initial||
+           loaded.getInt("savedRevision")!=initial)
+            throw new AssertionError("Runtime panel journal did not resume: "+loaded);
+        if(!restart){
+            if(!"true".equals(evalHost(
+                "document.querySelector('[data-event-choice=collect]')===null")))
+                throw new AssertionError("Unexpected starting event choice");
+            if(!"true".equals(evalHost("JSON.parse(BearframeHost.snapshotJson()).inventory===null?false:"+
+                "Object.keys(JSON.parse(BearframeHost.snapshotJson()).inventory).length===0")))
+                throw new AssertionError("Starting inventory unexpectedly populated");
+            String step=evalHost("JSON.stringify(BearframeHost.navigate('right'))");
+            JSONObject moved=new JSONObject((String)new JSONTokener(step).nextValue());
+            if(!moved.getBoolean("ok"))
+                throw new AssertionError("Supply event navigation refused: "+step);
+            JSONObject prompted=unifiedSnapshot();
+            if(prompted.getInt("sequence")!=1||
+               !"supply".equals(prompted.getJSONObject("prompt").getString("event")))
+                throw new AssertionError("Engine did not open scripted event: "+prompted);
+            if(!"true".equals(evalHost(
+                "document.querySelector('[data-event-choice=collect]')!==null")))
+                throw new AssertionError("Scripted supply choice missing from DOM");
+            evalHost("document.querySelector('[data-event-choice=collect]').click()");
+            JSONObject supplied=unifiedSnapshot();
+            if(supplied.getInt("sequence")!=2||
+               supplied.getJSONObject("inventory").getInt("blade")!=1||
+               supplied.getJSONObject("inventory").getInt("patch")!=2||
+               supplied.getJSONObject("quests").getInt("survey")!=0||
+               !supplied.isNull("prompt"))
+                throw new AssertionError("Choice effects were not durably committed: "+supplied);
+            if(!"true".equals(evalHost(
+                "document.querySelector('[data-inventory-equip=blade]')!==null")))
+                throw new AssertionError("New gear not exposed by inventory panel");
+            evalHost("document.querySelector('[data-inventory-equip=blade]').click()");
+        }else{
+            if(!"blade".equals(loaded.getString("weapon"))||
+               loaded.getJSONObject("inventory").getInt("blade")!=1||
+               loaded.getJSONObject("inventory").getInt("patch")!=2||
+               loaded.getJSONObject("quests").getInt("survey")!=0)
+                throw new AssertionError("Inventory/equipment/quest progress lost: "+loaded);
+            if(!"true".equals(evalHost(
+                "document.querySelector('[data-inventory-unequip]')!==null")))
+                throw new AssertionError("Saved equipped item lacks remove action");
+            evalHost("document.querySelector('[data-inventory-unequip]').click()");
+        }
+        JSONObject after=unifiedSnapshot();
+        if(after.getInt("sequence")!=(restart?4:3)||
+           after.getInt("savedRevision")!=(restart?4:3)||
+           !"framework-test".equals(after.getString("project"))||
+           (restart?!after.isNull("weapon"):
+               !"blade".equals(after.getString("weapon"))))
+            throw new AssertionError("Equipment action was not durably saved: "+after);
+        resultMeta.putString("inventory",
+            "PASS scripted event, gear, quest, saved inventory and process restart");
+    }
     /** Test-only native recovery acceptance without opening a document picker.
      * The actual restore UI always requires ACTION_OPEN_DOCUMENT user choice. */
     private void checkUnifiedRestoreNative() throws Exception {
@@ -1108,6 +1172,14 @@ public final class RouteRunner extends Instrumentation {
             if(stage.equals("unified-compat-file-first") ||
                stage.equals("unified-compat-file-second")){
                 checkUnifiedCompatFile(stage.equals("unified-compat-file-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-inventory-first") ||
+               stage.equals("unified-inventory-second")){
+                checkUnifiedRuntimePanels(stage.equals("unified-inventory-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);

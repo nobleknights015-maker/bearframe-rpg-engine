@@ -208,6 +208,17 @@ jobs:
             adb shell am instrument -w -e stage unified-compat-file-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-second' "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-second.txt"
+            # Scripted world choice, inventory equipment, and quest display
+            # run in the installed offline WebView against the canonical
+            # save-before-render engine, then resume after process termination.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-inventory-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-inventory-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-inventory-first' "$RUNNER_TEMP/unified-inventory-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-inventory-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-inventory-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-inventory-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-inventory-second' "$RUNNER_TEMP/unified-inventory-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-inventory-second.txt"
             # Exercise the versioned party-combat core and UI through the
             # installed WebView, including process-stop journal recovery.
             adb shell pm clear dev.bearframe.ridge

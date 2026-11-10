@@ -37,3 +37,15 @@ test('host event and equipment selectors call only saved-session commands',()=>{
  assert.match(boot,/runtimePanels\.render\(\)/);
  assert.match(boot,/inventory:v\?v\.inventory:null/);
 });
+
+test('installed Android engine uses actual UI event/gear buttons and same journal after restart',()=>{
+ const java=read('android/test/RouteRunner.java'),ci=read('.github/workflows/engine-ci.yml');
+ assert.match(java,/checkUnifiedRuntimePanels\(boolean restart\)/);
+ assert.match(java,/data-event-choice=collect/);
+ assert.match(java,/data-inventory-equip=blade/);
+ assert.match(java,/data-inventory-unequip/);
+ assert.match(java,/Choice effects were not durably committed/);
+ assert.match(java,/Inventory\/equipment\/quest progress lost/);
+ assert.match(ci,/stage unified-inventory-first/);
+ assert.match(ci,/stage unified-inventory-second/);
+});
