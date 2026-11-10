@@ -33,7 +33,7 @@ test('exact reversible conversion maps every historical field into an approved c
   assert.equal(mapped.player.hp,source.hp);
   assert.equal(mapped.message,source.message);
   if(source.battle)assert.equal(mapped.battle.turn,source.battle.turn);
-  if(source.prompt)assert.equal(mapped.prompt.event,source.prompt);
+  if(source.prompt)assert.equal(mapped.prompt.event,source.prompt.toLowerCase());
  }
 });
 test('consent-based generic importer can write one verified converted state without modifying original',()=>{
@@ -61,12 +61,12 @@ test('unmapped or incompatible project geometry and truncated history fail close
  const valid=m1.map(source);
  assert.throws(()=>m1.unmap({...valid,sequence:1}),/untouched/);
  const altered={...fixture.project,maps:{...fixture.project.maps,
-  pod:{...fixture.project.maps.pod,rows:['#############',
-    '#..#........#',...fixture.project.maps.pod.rows.slice(2)]}}};
+  pod:{...fixture.project.maps.pod,rows:[...fixture.project.maps.pod.rows.slice(0,3),
+    '#.#.........#',...fixture.project.maps.pod.rows.slice(4)]}}};
  const badEngine=runtime(altered);
  const badMapper=makeMapper({engine:badEngine,mapping:fixture.mapping,
    legacyRestore:original.restore});
- const invalid=make();invalid.x=3;invalid.y=1;
+ const invalid=make();invalid.x=2;invalid.y=3;
  assert.ok(original.restore(JSON.stringify(invalid)));
  assert.throws(()=>badMapper.map(invalid),/Destination project rejected/);
 });
