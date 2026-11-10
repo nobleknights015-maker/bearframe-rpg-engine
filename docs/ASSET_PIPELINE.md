@@ -75,3 +75,15 @@ This is a **development checkpoint**, not a verified Android memory-pressure rel
 The experimental WebView host now exposes renderer-only `trimCount`, `recoveryCount`, `recoveryFailures` and `restoring` diagnostics in its snapshot; none are part of the deterministic game state or save journal. The Android instrumentation `unified-memory` stage invokes the **native Activity's** `onTrimMemory(TRIM_MEMORY_COMPLETE)` callback, waits for verified atlas recovery, checks the canvas pixel against the packaged fixture, and compares both the in-memory sequence and persisted journal revision before/after. This prevents a fast reload from hiding the eviction event during test polling. The emulator workflow invokes this stage separately and fails if it fails. Node regression checks guard the native route, host telemetry and CI wiring.
 
 **Release gate remains open:** successful emulator recovery establishes only synthetic fixture recovery under an injected callback, not actual low-RAM performance, real-device thermal/soak behavior, rotation/process-death resilience or final art integration. CI verification is required before marking even this emulator subtest passed.
+
+## Deterministic offline asset packer
+
+`scripts/package_assets.js` introduces a separate, **game-neutral** local packaging command:
+
+```bash
+node scripts/package_assets.js MANIFEST.json SOURCE_ASSET_DIR NEW_OUTPUT_DIR
+```
+
+It applies the existing version-1 manifest contract, rejects traversal and symlink inputs, checks allowed file signatures, **exact PNG IHDR dimensions**, per-asset and total byte budgets, and duplicate paths. On success it writes the original unmodified files, a sorted `asset-manifest.json` and a deterministic `asset-index.json` containing SHA-256 digests, then atomically publishes a new output directory. It never overwrites an existing output or reads a remote URL; tests verify deterministic hashes and failure cleanup.
+
+This is **tooling groundwork**, not an assertion that final game art is integrated. JPEG/WebP dimensions are still checked during real browser decoding by the runtime asset cache; the offline packer only checks their signatures. Actual Android production-manifest integration, streaming of very large packs, provenance/art QA, mobile heap budgets and physical-device acceptance remain OPEN. The 512 MiB per-pack limit is a deliberate defensive bound, not the maximum size of a future complete asset library.
