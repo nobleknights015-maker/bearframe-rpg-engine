@@ -6,6 +6,8 @@ import android.content.Context;
 import android.graphics.*;
 import android.view.Gravity;
 import android.view.View;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.widget.*;
 import android.text.InputFilter;
 import org.json.*;
@@ -19,6 +21,16 @@ public final class ExpeditionActivity extends Activity {
     private LinearLayout content, options, pad;
     private TextView title, mode, stats, objective, story;
     private ImageView scene;
+    private int controllerChoice=-1;
+    private final ControllerInputRouter gamepad=new ControllerInputRouter(new ControllerInputRouter.Listener() {
+        @Override public boolean navigate(String direction) { return controllerNavigate(direction); }
+        @Override public boolean confirm() { return controllerConfirm(); }
+        @Override public boolean cancel() { return controllerCancel(); }
+        @Override public boolean menu() { return false; }
+        @Override public boolean map() { return false; }
+        @Override public boolean pause() { return false; }
+        @Override public boolean tab(int delta) { return controllerShift(delta); }
+    });
     private final HashMap<String,Bitmap> images=new HashMap<>();
     private final Paint brush=new Paint();
     private final Bitmap field=Bitmap.createBitmap(296,202,Bitmap.Config.ARGB_8888);
@@ -27,6 +39,7 @@ public final class ExpeditionActivity extends Activity {
 
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);
+        gamepad.setEnabled(false); // Preserve native focus navigation during name/finish creation.
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
         org.mozilla.javascript.Context js=org.mozilla.javascript.Context.enter();
@@ -85,6 +98,8 @@ public final class ExpeditionActivity extends Activity {
         });
     }
     private void play(){
+        gamepad.setEnabled(true);
+        controllerChoice=-1;
         content.removeAllViews();label(content,"BEARFRAME LABS   /   SURFACE EXPEDITION",12,ACCENT);
         title=label(content,"",26,TEXT);title.setTypeface(Typeface.SERIF);mode=label(content,"",13,ACCENT);
         scene=new ImageView(this);scene.setAdjustViewBounds(true);scene.setImageBitmap(field);scene.setContentDescription("Expedition field");
@@ -114,13 +129,76 @@ public final class ExpeditionActivity extends Activity {
             title.setText(packet.getString("title"));mode.setText(packet.getString("mode"));stats.setText(packet.getString("stats"));
             objective.setText(packet.getString("objective"));story.setText(packet.getString("message")+(saved?"":"\nSave unavailable. Keep this session open."));
             draw(packet.getJSONArray("draw"));scene.invalidate();
-            options.removeAllViews();JSONArray choices=packet.getJSONArray("options");
+            options.removeAllViews();controllerChoice=-1;JSONArray choices=packet.getJSONArray("options");
             for(int i=0;i<choices.length();i++){
                 JSONArray item=choices.getJSONArray(i);String type=item.getString(0),value=item.getString(1);
-                button(options,item.getString(2),()->action(type,value)).setEnabled(!item.optBoolean(3,false));
+                Button choice=button(options,item.getString(2),()->action(type,value));
+                choice.setTag(type+":"+value);
+                choice.setEnabled(!item.optBoolean(3,false));
             }
             pad.setVisibility(packet.getBoolean("pad")?View.VISIBLE:View.GONE);
         }catch(JSONException e){throw new IllegalStateException(e);}
+    }
+    /** Physical controllers reuse the same action handlers as touch buttons. */
+    private int controllerChoiceCount(){return options==null?0:options.getChildCount();}
+    private boolean controllerShift(int delta){
+        if(title==null||controllerChoiceCount()==0)return false;
+        int count=controllerChoiceCount(),start=controllerChoice;
+        for(int i=0;i<count;i++){
+            int next=(start+delta*(i+1)%count+count*4)%count;
+            View candidate=options.getChildAt(next);
+            if(candidate instanceof Button && candidate.isEnabled()){
+                controllerChoice=next;
+                for(int j=0;j<count;j++){
+                    Button button=(Button)options.getChildAt(j);
+                    boolean selected=j==next;
+                    button.setSelected(selected);
+                    button.setTypeface(selected?Typeface.DEFAULT_BOLD:Typeface.DEFAULT);
+                }
+                candidate.requestFocus();
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean controllerNavigate(String direction){
+        if(title==null)return false;
+        if(controllerChoiceCount()>0)
+            return controllerShift("left".equals(direction)||"up".equals(direction)?-1:1);
+        action("move",direction);
+        return true;
+    }
+    private boolean controllerConfirm(){
+        if(title==null)return false;
+        int count=controllerChoiceCount();
+        if(count==0)return false;
+        if(controllerChoice<0||controllerChoice>=count||
+            !options.getChildAt(controllerChoice).isEnabled()) {
+            if(!controllerShift(1))return false;
+        }
+        return options.getChildAt(controllerChoice).performClick();
+    }
+    private boolean controllerCancel(){
+        if(title==null)return false;
+        for(int i=0;i<controllerChoiceCount();i++){
+            View option=options.getChildAt(i);
+            String tag=String.valueOf(option.getTag());
+            if(option.isEnabled()&&("close:".equals(tag)||
+                "combat:withdraw".equals(tag)))return option.performClick();
+        }
+        return false;
+    }
+    @Override public boolean dispatchKeyEvent(KeyEvent event){
+        if(gamepad.onKeyEvent(event))return true;
+        return super.dispatchKeyEvent(event);
+    }
+    @Override public boolean onGenericMotionEvent(MotionEvent event){
+        if(gamepad.onMotionEvent(event))return true;
+        return super.onGenericMotionEvent(event);
+    }
+    @Override protected void onPause(){
+        gamepad.clear();
+        super.onPause();
     }
     private void color(String css){
         if(css.length()==9)css="#"+css.substring(7)+css.substring(1,7);
