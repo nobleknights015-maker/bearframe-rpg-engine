@@ -7,7 +7,8 @@ function setup(){
  const engine=engineFactory(project),sourceData={legacy:'{"name":"Old","seed":19}'};
  const disk=Object.create(null);
  const source={read:k=>sourceData[k]||null};
- const storage={read:k=>disk[k]||null,write:(k,v)=>{disk[k]=v;return true;}};
+ const storage={read:k=>Object.prototype.hasOwnProperty.call(disk,k)?disk[k]:null,
+   write:(k,v)=>{disk[k]=v;return true;}};
  const destination=journalFactory(engine,storage,'bf:import-test:v1');
  const config={source,sourceKey:'legacy',destination,engine,
    decode:JSON.parse,map:old=>engine.fresh(old.name,old.seed)};
