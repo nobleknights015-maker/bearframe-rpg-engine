@@ -2,10 +2,14 @@
  * Playback is started only from a real user gesture (browser autoplay policy).
  */
 function createBearframeAudioProbe(createElement){
-  var director=createBearframeAudioDirector({
+  var directorFactory=(typeof module!=='undefined'&&module.exports)
+    ?require('../framework/audio.js'):createBearframeAudioDirector;
+  var backendFactory=(typeof module!=='undefined'&&module.exports)
+    ?require('../framework/audio-browser.js'):createBearframeBrowserAudioBackend;
+  var director=directorFactory({
     diagnostic:{type:'sfx',path:'audio/diagnostics/silence.wav'}
   });
-  var backend=createBearframeBrowserAudioBackend(createElement,{maxSfxVoices:2});
+  var backend=backendFactory(createElement,{maxSfxVoices:2});
   var state=director.fresh();
   var disposed=false;
   function play(){
