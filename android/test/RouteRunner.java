@@ -682,11 +682,19 @@ public final class RouteRunner extends Instrumentation {
             .loadClass("dev.bearframe.ridge.LegacyV1Validator");
         java.lang.reflect.Method accepts=validator.getMethod("accepts",String.class);
         boolean sourceValid=(Boolean)accepts.invoke(null,raw);
-        String blocked=new JSONObject(raw).put("x",0).toString();
+        // Gallery row 4, x=0 is a LEGITIMATE '<' exit, not a wall.
+        // Verify both the outer boundary wall and an interior blocked cell.
+        String blocked=new JSONObject(raw).put("x",0).put("y",0).toString();
+        String blockedInterior=new JSONObject(raw).put("x",7).put("y",1).toString();
         boolean blockedAccepted=(Boolean)accepts.invoke(null,blocked);
-        if(!sourceValid||blockedAccepted)
-            throw new AssertionError("Native legacy validation mismatch: valid="+
-                sourceValid+" blockedAccepted="+blockedAccepted);
+        boolean interiorAccepted=(Boolean)accepts.invoke(null,blockedInterior);
+        String exit=new JSONObject(raw).put("x",0).toString();
+        boolean exitAccepted=(Boolean)accepts.invoke(null,exit);
+        if(!sourceValid||blockedAccepted||interiorAccepted||!exitAccepted)
+            throw new AssertionError("Native legacy geometry mismatch: valid="+
+                sourceValid+" wallAccepted="+blockedAccepted+
+                " interiorWallAccepted="+interiorAccepted+
+                " validExitAccepted="+exitAccepted);
         if(!(Boolean)restore.invoke(exporter,raw))
             throw new AssertionError("Native restore rejected valid missing-key backup");
         if(!raw.equals(old.getString("expedition",null))||
