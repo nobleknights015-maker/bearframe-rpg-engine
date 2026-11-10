@@ -10,7 +10,7 @@ The engine has **one canonical gameplay state machine** (`framework/runtime.js`)
 
 - **Legacy runtime state v1**: Existing portable project states without `project.partyCombat`. Their `version:1` payload, journal namespace and command semantics are preserved.
 - **Opt-in party-combat state v2**: Projects explicitly providing `project.partyCombat` use `version:2` and embed party encounters and ally resources in the same state/journal. There is no automatic v1→v2 conversion.
-- **Original Rhino game saves**: The old `ExpeditionActivity` stores one unrelated JSON snapshot under `ExpeditionActivity/expedition`. The experimental WebView can **read** it through a single-key, read-only bridge and inspect the historical v1 envelope. There is no approved gameplay field mapping or reverse-migration path; the original installed launcher must stay unchanged.
+- **Original Rhino game saves**: The old `ExpeditionActivity/expedition` snapshot is playable under a *separate original-rule compatibility session* after explicit archive, preview and consent. Continued progress can be externally exported as original-format JSON and recovered directly into an empty compatibility journal, with Android emulator restart/reinstall coverage. The original launcher save remains untouched. This is **not** a state conversion to the newer portable engine's different event/combat rules, and physical-device acceptance remains open.
 - **Platform**: Android API 28+ is the current build baseline; GitHub CI uses Android 35 emulator. Offline WebView is experimental. Rhino is retained as the compatibility/regression launcher only.
 - **Distribution**: CI APKs use disposable signing keys, are non-production test artifacts, and do not establish an update path for an already installed app.
 
@@ -26,7 +26,7 @@ The engine has **one canonical gameplay state machine** (`framework/runtime.js`)
 | Controller | portable mapping + native adapter | Touch, keyboard, gamepad navigation/action mapping | Synthetic Android gamepad; physical Bluetooth/USB pending |
 | Audio | director + HTMLMediaElement adapter | Music/SFX, pause/resume, bus gain, audio focus | Node lifecycle/race tests, installed offline WAV decode; focus/device output pending |
 | Party battle (opt-in v2) | `party-round` command through the **same session** | Speed, MP, status, resistance, target selection and persistence | Node/Rhino tests and installed synthetic party diagnostic; full UX and progression pending |
-| Save import | `save-import.inspect/commit` | Explicit opt-in, never erase source, reject occupied targets | Node preflight/fault tests, read-only Android source bridge; actual migration pending |
+| Save import / original-rule compatibility | `save-import.inspect/commit` and isolated `legacy-compat.inspectFile/commitFile` | Explicit preview and consent, never erase source, reject occupied targets | Node/installed Android emulator legacy archive, gameplay, file import/export/restart and same-signed APK replacement; migration into different game rules and real-device testing still open |
 
 Commands, project schemas and journal versions must be frozen and semantically versioned before `v1.0.0`. A green test against a synthetic fixture is **not** proof of compatibility with untested original game data.
 

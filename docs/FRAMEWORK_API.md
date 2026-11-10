@@ -70,9 +70,11 @@ node --test tests/*.test.js
 
 The experimental framework now runs end-to-end in a separate Android WebView Activity, verified by a two-process emulator test; it has **not replaced the shipping Rhino Android launcher**. No claim of a polished final engine, actual audio playback/mixing, production save migration, large-map streaming, full party AI, release-grade touch ergonomics, or real-device thermal profiling is made here.
 
-## Historical save compatibility limitation
+## Historical save compatibility and explicit original-rule mode
 
-The original installed Android game's saved `expedition` JSON is not a `framework/runtime.js` state. The new read-only native source bridge and historical v1 decoder can inspect it, but **cannot yet convert a real campaign without losing world-specific progress**. The generic importer requires an explicit source key, `decode`, `map`, target engine and empty journal. `inspect()` never writes; `commit()` rejects changed sources and occupied destinations. Production migration needs a compatible project schema, a reviewed complete field mapping, original legacy `restore()` validation, an explicit user action, and installed-device rollback tests.
+An original Rhino `ExpeditionActivity/expedition` JSON snapshot is **not** a `framework/runtime.js` project state. The supported path runs a **copy** of historical progress with the original frozen `game/engine.js` rules in a separate compatible two-slot journal. It supports explicit archive/confirmation, original-rule movement/combat and restart, current-progress original-format JSON export, and direct file import with a second confirmation. The original launcher save is untouched and remains independently playable. This avoids unsafe field-only conversion to the portable engine's different combat/event semantics.
+
+Node, Android emulator process-death and same-signed APK replacement acceptance are verified. Physical target-device, real external picker and production-signed version upgrade remain open. See [save compatibility](SAVE_COMPATIBILITY_STATUS.md). The generic `save-import.inspect/commit` mapper remains a separate opt-in interface; an actual conversion into a *different* gameplay project's rules still needs full behavioral parity evidence.
 
 ## Opt-in party-combat integration — engine v2 development checkpoint
 
@@ -87,3 +89,15 @@ For save compatibility, the opt-in capability requires **runtime state version 2
 `framework/legacy-parity.js` supplies an **independent, read-only** step-by-step audit of the old Rhino `step()` against the canonical new runtime, using an explicit old-command → new-command mapping and the existing reversible state mapper. It compares the entire historical snapshot **after** each command. The probe never writes to a journal, cannot itself grant migration permission, refuses empty/no-changing scenario suites, and returns the first mismatched scenario.
 
 The frozen synthetic migration fixture currently **fails** gameplay parity for historical equipment actions and combat, even though its stored fields round-trip successfully. A future migration UI must not enable playable conversion merely because the saved JSON is valid. Complete approval requires the real target project's world/event/combat rules to match every supported progression state, followed by explicit opt-in and Android/device validation. The original launcher remains authoritative until then.
+
+## Data-driven events, equipment and quest panel (Android host diagnostic)
+
+The generic DOM panel `enginehost/runtime-panels.js` reads the canonical
+`session.snapshot().view` (which provides **copied** `inventory`, `equipment`
+and `quests` alongside existing `weapon` and `prompt`). It renders choices
+from the validated project's event catalog, equip/unequip/use actions based on
+the item catalog, and current quest stage text. All actions are submitted as
+ordinary `session.dispatch` commands, with the same save-before-display
+guarantee. Interactions are disabled during combat or another pending prompt.
+The synthetic diagnostic host demonstrates this contract without introducing
+new game content. This is not a final production-grade menu.
