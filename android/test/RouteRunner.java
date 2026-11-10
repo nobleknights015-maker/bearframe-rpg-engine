@@ -733,6 +733,82 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("legacyCompat",
             "PASS verified source, original combat, isolated journal and restart");
     }
+    /** Validate native export of ACTUAL post-import progress, and missing-only
+     * restoration from the user-selected portable JSON backup. No picker UI
+     * automation; simulates Storage Access Framework result via a local URI. */
+    private void checkUnifiedLegacyCompatExport() throws Exception {
+        android.content.SharedPreferences old=getTargetContext()
+            .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
+        String original=old.getString("expedition",null);
+        if(original==null)throw new AssertionError("Expected intact old launcher save");
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject portable=unifiedSnapshot();
+        evalHost("document.getElementById('legacy-compat-resume').click()");
+        JSONObject continued=new JSONObject((String)new JSONTokener(
+            evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+        if(continued.getInt("sequence")!=2||
+           continued.getJSONObject("legacy").getJSONObject("battle").getInt("hp")!=3||
+           !"false".equals(evalHost(
+               "document.getElementById('legacy-compat-export').disabled")))
+            throw new AssertionError("Continued progress not available for export: "+continued);
+        if(!"true".equals(evalHost("BearframeArchiveExport.hasPlayableCompat()")))
+            throw new AssertionError("Native export cannot inspect recovered latest journal");
+        java.lang.reflect.Field field=screen.getClass().getDeclaredField("exporter");
+        field.setAccessible(true);
+        Object exporter=field.get(screen);
+        java.lang.reflect.Method latest=exporter.getClass().getDeclaredMethod("currentCompat");
+        latest.setAccessible(true);
+        String raw=(String)latest.invoke(exporter);
+        if(raw==null||!LegacyV1Validator.accepts(raw))
+            throw new AssertionError("Latest historical state cannot be exported");
+        JSONObject state=new JSONObject(raw);
+        if(state.getJSONObject("battle").getInt("hp")!=3 ||
+           !"Legacy playable".equals(state.getString("name")))
+            throw new AssertionError("Export did not reflect post-import combat: "+state);
+        java.lang.reflect.Field pending=exporter.getClass().getDeclaredField("pending");
+        pending.setAccessible(true);pending.set(exporter,raw);
+        java.io.File file=new java.io.File(getTargetContext().getFilesDir(),
+            "historical-continued.json");
+        if(file.exists()&&!file.delete())
+            throw new AssertionError("Cannot reset continued export fixture");
+        Intent chosen=new Intent();chosen.setData(Uri.fromFile(file));
+        java.lang.reflect.Method onResult=exporter.getClass().getMethod("onResult",
+            int.class,int.class,Intent.class);
+        onResult.invoke(exporter,4917,Activity.RESULT_OK,chosen);
+        String written=new String(java.nio.file.Files.readAllBytes(file.toPath()),
+            java.nio.charset.StandardCharsets.UTF_8);
+        if(!raw.equals(written))
+            throw new AssertionError("Continued historical export is not byte-identical");
+        // Refuse to overwrite the original until a deliberate external recovery.
+        if(original.equals(raw))
+            throw new AssertionError("Continued progress did not advance");
+        if(!original.equals(old.getString("expedition",null)))
+            throw new AssertionError("Export modified old launcher save");
+        if(!old.edit().remove("expedition").commit())
+            throw new AssertionError("Cannot stage a missing original preference");
+        java.lang.reflect.Field restoring=exporter.getClass().getDeclaredField("restoring");
+        restoring.setAccessible(true);restoring.setBoolean(exporter,true);
+        onResult.invoke(exporter,4918,Activity.RESULT_OK,chosen);
+        if(!raw.equals(old.getString("expedition",null)))
+            throw new AssertionError("Continued progress did not recover into missing old save");
+        restoring.setBoolean(exporter,true);
+        onResult.invoke(exporter,4918,Activity.RESULT_OK,chosen);
+        if(!raw.equals(old.getString("expedition",null)))
+            throw new AssertionError("Second restore overwrote or damaged recovered progress");
+        JSONObject after=unifiedSnapshot();
+        if(portable.getInt("savedRevision")!=after.getInt("savedRevision") ||
+           portable.getInt("sequence")!=after.getInt("sequence"))
+            throw new AssertionError("File recovery touched portable simulation journal");
+        JSONObject still=new JSONObject((String)new JSONTokener(
+            evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+        if(still.getInt("sequence")!=2)
+            throw new AssertionError("Old-file restoration modified compatibility journal");
+        resultMeta.putString("legacyCompatExport",
+            "PASS verified latest continued JSON export, missing-only restore and journal isolation");
+    }
     /** Test-only native recovery acceptance without opening a document picker.
      * The actual restore UI always requires ACTION_OPEN_DOCUMENT user choice. */
     private void checkUnifiedRestoreNative() throws Exception {
@@ -905,6 +981,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedLegacyCompat(stage.equals("unified-compat-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-compat-export")){
+                checkUnifiedLegacyCompatExport();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-compat-export");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

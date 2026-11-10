@@ -29,3 +29,20 @@ test('installed emulator route requires exact recovery across Android force-stop
  assert.match(ci,/stage unified-compat-second/);
  assert.match(ci,/route=PASS unified-compat-second/);
 });
+
+test('continued original-format save export is checked by native checksum and missing-only restore',()=>{
+ const java=read('android/src/dev/bearframe/ridge/LegacyArchiveExport.java');
+ const runner=read('android/test/RouteRunner.java');
+ const ci=read('.github/workflows/engine-ci.yml');
+ const ui=read('enginehost/legacy-compat-ui.js');
+ assert.match(java,/private String currentCompat\(\)/);
+ assert.match(java,/LegacyV1Validator\.accepts\(original\)/);
+ assert.match(java,/first\.sequence>=second\.sequence/);
+ assert.match(java,/beginCompatExport\(\)/);
+ assert.match(ui,/legacy-compat-export/);
+ assert.match(runner,/checkUnifiedLegacyCompatExport\(\)/);
+ assert.match(runner,/Latest historical state cannot be exported/);
+ assert.match(runner,/Continued progress did not recover into missing old save/);
+ assert.match(ci,/stage unified-compat-export/);
+ assert.match(ci,/route=PASS unified-compat-export/);
+});

@@ -187,6 +187,12 @@ jobs:
             adb shell am instrument -w -e stage unified-compat-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-compat-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-second' "$RUNNER_TEMP/unified-compat-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-compat-second.txt"
+            # Export the latest advanced historical journal state to a document
+            # and recover it into the old namespace ONLY when its key is missing.
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-compat-export dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-compat-export.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-export' "$RUNNER_TEMP/unified-compat-export.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-compat-export.txt"
             # Exercise the versioned party-combat core and UI through the
             # installed WebView, including process-stop journal recovery.
             adb shell pm clear dev.bearframe.ridge
