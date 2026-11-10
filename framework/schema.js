@@ -21,6 +21,18 @@ function validateEngineProject(project) {
   var items=record(project.items,'project.items');
   var foes=record(project.foes,'project.foes');
   var quests=record(project.quests,'project.quests');
+  var ruleRanges={
+    playerHp:[1,9999],playerCharge:[1,999],baseAttack:[1,9999],
+    pulseBonus:[0,9999],pulseCost:[1,99],guardReduction:[0,9999],
+    foeBurstBonus:[0,9999],foeVariance:[1,99],victoryXp:[0,99999]
+  };
+  if(project.rules!==undefined) {
+    var rules=record(project.rules,'project.rules');
+    Object.keys(rules).forEach(function(name) {
+      if(!own.call(ruleRanges,name))fail('unknown rule '+name);
+      else integer(rules[name],ruleRanges[name][0],ruleRanges[name][1],'rule '+name);
+    });
+  }
   var mapIds=Object.keys(maps);
   if(!mapIds.length)fail('at least one map required');
   Object.keys(items).forEach(function(k){
