@@ -51,6 +51,14 @@ jobs:
           npm install --no-save --ignore-scripts --no-audit --no-fund typescript@5.9.3
           curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/mozilla/rhino/1.7.15/rhino-1.7.15.jar -o "$RUNNER_TEMP/rhino.jar"
           echo '2427fdcbc149ca0a25ccfbb7c71b01f39ad42708773a47816cd2342861766b63  '"$RUNNER_TEMP/rhino.jar" | sha256sum -c -
+      - name: Run the Android JavaScript simulation under Rhino
+        shell: bash
+        run: |
+          set -euo pipefail
+          export TYPESCRIPT_PATH="$GITHUB_WORKSPACE/node_modules/typescript/lib/typescript.js"
+          node android/compile.js "$RUNNER_TEMP/simulation.js"
+          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -f "$RUNNER_TEMP/simulation.js" -f tests/native-adapter.js | tee "$RUNNER_TEMP/rhino-native-test.log"
+          grep -q 'PASS native adapter expedition' "$RUNNER_TEMP/rhino-native-test.log"
       - name: Generate disposable build-only signing key
         shell: bash
         run: |
