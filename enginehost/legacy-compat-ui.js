@@ -10,6 +10,8 @@ function attachBearframeLegacyCompatibilityUI(config){
     controls=document.getElementById('legacy-compat-actions');
   var compat=createBearframeLegacyCompatibility(config);
   var exportButton=document.getElementById('legacy-compat-export');
+  var importButton=document.getElementById('legacy-compat-import-file');
+  var importConfirm=document.getElementById('legacy-compat-import-confirm');
   var nativeExport=window.BearframeArchiveExport&&
     typeof window.BearframeArchiveExport.beginCompatExport==='function'?
     window.BearframeArchiveExport:null;
@@ -17,6 +19,25 @@ function attachBearframeLegacyCompatibilityUI(config){
     if(!nativeExport||!nativeExport.beginCompatExport())
       text('Current historical progress cannot be exported until a verified playable save exists.');
     else text('Select a file for your continued historical progress. The original remains intact.');
+  });
+  importButton.addEventListener('click',function(){
+    importConfirm.disabled=true;
+    if(!nativeExport||
+       typeof nativeExport.beginCompatRestore!=='function'||
+       !nativeExport.beginCompatRestore())
+      text('Recovery refused: an existing compatibility save or no document picker.');
+    else text('Select your exported historical JSON. Another confirmation is required.');
+  });
+  importConfirm.addEventListener('click',function(){
+    importConfirm.disabled=true;
+    var result=compat.commitFile();
+    text(result.ok?
+      'Continued historical progress durably recovered. Original launcher save unchanged.':
+      'Continued save recovery refused: '+result.reason);
+    if(result.ok){
+      resume.disabled=false;importButton.disabled=true;
+      exportButton.disabled=!nativeExport;draw();
+    }
   });
   function text(v){status.textContent=String(v);}
   function draw(){
@@ -68,7 +89,8 @@ function attachBearframeLegacyCompatibilityUI(config){
     var result=compat.commit();
     text(result.ok?'Playable historical progress copied and durably verified. Original unchanged.':
       'Import refused: '+result.reason);
-    if(result.ok){resume.disabled=false;exportButton.disabled=!nativeExport;draw();}
+    if(result.ok){resume.disabled=false;importButton.disabled=true;
+      exportButton.disabled=!nativeExport;draw();}
   });
   resume.addEventListener('click',function(){
     var result=compat.resume();
@@ -81,12 +103,27 @@ function attachBearframeLegacyCompatibilityUI(config){
   var health=compat.snapshot().health;
   resume.disabled=health.validSlots===0||health.conflict;
   exportButton.disabled=!nativeExport||health.validSlots===0||health.conflict;
+  importButton.disabled=!nativeExport||health.occupiedSlots!==0||health.conflict;
   draw();
   window.BearframeLegacyCompat=Object.freeze({
     snapshot:compat.snapshot,
     snapshotJson:function(){return JSON.stringify(compat.snapshot());},
     preflight:compat.preflight,
-    resume:compat.resume
+    resume:compat.resume,
+    onFileSelected:function(){
+      if(!nativeExport||
+         typeof nativeExport.takeCompatRestore!=='function'){
+        text('Continued file recovery bridge unavailable.');
+        return;
+      }
+      var raw=nativeExport.takeCompatRestore();
+      var inspected=compat.inspectFile(raw);
+      importConfirm.disabled=!inspected.ok;
+      text(inspected.ok?
+        'Validated '+inspected.name+' at '+inspected.location+
+        ' ('+inspected.x+','+inspected.y+'). Confirm to recover this progress.':
+        'Continued save file refused: '+inspected.reason);
+    }
   });
   return compat;
 }

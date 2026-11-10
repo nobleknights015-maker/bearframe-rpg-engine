@@ -82,3 +82,19 @@ compatibility journal does **not** automatically update the old launcher. A
 verified cross-engine migration to the canonical runtime, exported recovery
 for new compatibility progress, and physical-device acceptance remain distinct
 open gates. No new game content was developed.
+
+## Continued-save direct recovery to a fresh compatible session
+
+The original-rules compatibility adapter now accepts a **user-selected**
+original-format JSON export through the Android Storage Access Framework.
+The native picker bounds and strictly decodes UTF-8, checks the historical
+native validator, and holds the selected bytes **only in memory**.
+The offline UI invokes a second independent original-world validation and
+requires a separate confirmation before a new journal write. Any existing,
+corrupt, or newly occupied compatibility slot blocks the commit; no original
+`ExpeditionActivity/expedition` field is written or erased.
+
+This avoids the previous two-stage workaround of restoring the continued
+save to the old launcher before importing it into the compatibility journal.
+This implementation does not translate the old game to incompatible new
+combat/event rules, and real-picker/physical-device acceptance is still required.
