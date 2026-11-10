@@ -12,19 +12,31 @@
   // Audio is a host-only diagnostic. Never touch the simulation journal.
   var audioProbe=createBearframeAudioProbe(function(tag){return document.createElement(tag);});
   var audioStatus=document.getElementById('audio-status');
+  var androidFocus=window.BearframeAudioFocus&&
+    typeof window.BearframeAudioFocus.request==='function'?
+    window.BearframeAudioFocus:null;
+  function releaseFocus(){if(androidFocus)androidFocus.abandon();}
   document.getElementById('audio-probe').addEventListener('click',function(){
     // Invoke play synchronously from the gesture callback to satisfy browser
     // media activation; the backend reports policy/decoder failures explicitly.
+    if(androidFocus&&!androidFocus.request()){
+      audioStatus.textContent='Android audio focus unavailable; playback not started';
+      return;
+    }
     audioProbe.play().then(function(result){
+      if(!result.ok)releaseFocus();
       audioStatus.textContent=result.ok?'Offline WAV playback started':
         'Offline audio unavailable: '+result.reason;
-    },function(error){audioStatus.textContent='Offline audio failed: '+error.message;});
+    },function(error){
+      releaseFocus();
+      audioStatus.textContent='Offline audio failed: '+error.message;
+    });
   });
-  window.addEventListener('pagehide',function(){audioProbe.dispose();});
-  window.addEventListener('blur',function(){audioProbe.suspend();});
+  window.addEventListener('pagehide',function(){audioProbe.dispose();releaseFocus();});
+  window.addEventListener('blur',function(){audioProbe.suspend();releaseFocus();});
   window.addEventListener('focus',function(){audioProbe.resume();});
   document.addEventListener('visibilitychange',function(){
-    if(document.hidden)audioProbe.suspend();
+    if(document.hidden){audioProbe.suspend();releaseFocus();}
     else audioProbe.resume();
   });
   try {
