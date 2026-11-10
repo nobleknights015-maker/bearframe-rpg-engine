@@ -104,3 +104,17 @@ test('corrupt battle snapshots are rejected before simulation resumes',()=>{
    JSON.stringify({...s,phase:'victory'})])
    assert.equal(combat.restore(raw),null);
 });
+
+test('simultaneous poison knockouts resolve as draw rather than a false victory',()=>{
+  const combat=make(skills);
+  const state=combat.begin(
+    [{...pilot(),hp:1,skills:['guard']}],
+    [{...crawler(),hp:1,skills:['guard']}],77);
+  state.party[0].statuses=[{type:'poison',turns:1,potency:1}];
+  state.foes[0].statuses=[{type:'poison',turns:1,potency:1}];
+  assert.equal(combat.validateState(state),true);
+  const tied=combat.round(state,[{actor:'pilot',skill:'guard'}]);
+  assert.equal(tied.phase,'draw');
+  assert.equal(combat.round(tied,[]),tied);
+  assert.equal(combat.restore(combat.serialize(tied)).phase,'draw');
+});
