@@ -136,3 +136,18 @@ test('native and browser visibility lifecycle routes both suspend and resume',()
  assert.match(native,/BearframeHost&&window\.BearframeHost\.suspend\(\)/);
  assert.match(native,/BearframeHost&&window\.BearframeHost\.resume\(\)/);
 });
+
+test('installed Android WebView checks real packaged WAV metadata decoding',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const runner=fs.readFileSync(path.join(__dirname,'../android/test/RouteRunner.java'),'utf8');
+ const workflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/engine-ci.yml'),'utf8');
+ assert.match(runner,/checkUnifiedAudioDecode\(\)/);
+ assert.match(runner,/a\.onloadedmetadata=function\(\)/);
+ assert.match(runner,/a\.duration>0&&isFinite\(a\.duration\)/);
+ assert.match(runner,/a\.onerror=function\(\)/);
+ assert.match(runner,/stage\.equals\("unified-audio"\)/);
+ assert.match(runner,/PASS unified-audio/);
+ assert.match(workflow,/stage unified-audio/);
+ assert.match(workflow,/route=PASS unified-audio/);
+ assert.match(workflow,/INSTRUMENTATION_CODE: -1/);
+});
