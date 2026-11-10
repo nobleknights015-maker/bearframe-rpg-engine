@@ -64,20 +64,33 @@ function createBearframePartyRuntime(spec, project, rules) {
       if(b.encounter.party[j+1].id!==state.allies[j])return false;
     return true;
   }
-  function begin(state,foe,origin){
-    if(!has(spec.enemies,foe)||state.partyBattle!==null)
-      throw new TypeError('Unknown or overlapping party battle');
+  function worldRoster(state){
     var lead=copy(player);
     lead.name=state.player.name;
     lead.hp=state.player.hp;lead.maxHp=state.player.maxHp;
     lead.mp=state.player.charge;lead.maxMp=state.player.maxCharge;
+    // Derive combat attack from canonical saved equipment, not from UI state.
+    // The actor schema caps attack at 9999; templates remain immutable.
+    var weapon=state.equipment.weapon;
+    if(weapon!==null)
+      lead.attack=Math.min(9999,lead.attack+project.items[weapon].power);
     var roster=[lead];
     for(var i=0;i<state.allies.length;i++){
       var id=state.allies[i],actor=copy(spec.allies[id]),stats=state.allyStats[id];
       actor.hp=stats.hp;actor.mp=stats.mp;roster.push(actor);
     }
+    return roster;
+  }
+  function rosterView(state){
+    // While fighting, the encounter owns live HP/MP/status values.
+    // Outside encounters resources come from persisted player/ally state.
+    return state.partyBattle?copy(state.partyBattle.encounter.party):worldRoster(state);
+  }
+  function begin(state,foe,origin){
+    if(!has(spec.enemies,foe)||state.partyBattle!==null)
+      throw new TypeError('Unknown or overlapping party battle');
     state.partyBattle={foe:foe,origin:origin,
-      encounter:core.begin(roster,[spec.enemies[foe]],state.rng)};
+      encounter:core.begin(worldRoster(state),[spec.enemies[foe]],state.rng)};
     state.prompt=null;
     state.message='Party encounter started.';
   }
@@ -116,7 +129,7 @@ function createBearframePartyRuntime(spec, project, rules) {
     return true;
   }
   return Object.freeze({initialize:initialize,addAlly:addAlly,valid:valid,
-    begin:begin,round:round,playerId:player.id});
+    begin:begin,round:round,rosterView:rosterView,playerId:player.id});
 }
 if(typeof module!=='undefined'&&module.exports)
   module.exports=createBearframePartyRuntime;

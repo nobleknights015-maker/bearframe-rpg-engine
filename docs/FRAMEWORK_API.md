@@ -119,3 +119,19 @@ Do **not** interpret this as a cross-version content migration guarantee:
 constructing a *new* engine with a different project definition under the
 same project ID could still change how a saved game behaves. Explicit project
 schema/version binding remains an open release requirement.
+
+
+## Shared world equipment and live party resources (opt-in v2)
+
+For `project.partyCombat` projects, a world-equipped weapon contributes its
+validated `items[weapon].power` to the lead actor's battle attack, capped
+at 9999. Gear is read from the same authoritative saved world state before
+the encounter begins; actor templates and save schemas are unchanged.
+
+The canonical engine `view()` exposes a cloned `partyActors` roster for v2.
+Outside encounters it represents saved player and ally resources; while
+fighting it represents actual live battle actors, including current HP, MP,
+skills and statuses. Top-level `view.hp` and `view.charge` also reflect
+the active lead actor's battle HP/MP. This is read-only presentation; the
+single v2 engine state and two-slot journal remain authoritative. No new
+game content, game-specific party logic, or v1 save format changes.

@@ -251,7 +251,15 @@ function createBearframeEngine(project) {
       inventory:clone(s.inventory),equipment:clone(s.equipment),quests:clone(s.quests),
       battle:s.battle?clone(s.battle):null,prompt:s.prompt?clone(s.prompt):null,
       message:s.message,allies:s.allies.slice()};
-    if(party)result.partyBattle=s.partyBattle?clone(s.partyBattle):null;
+    if(party){
+      result.partyBattle=s.partyBattle?clone(s.partyBattle):null;
+      result.partyActors=party.rosterView(s);
+      if(s.partyBattle){
+        // HUD resources show live encounter state, not pre-battle checkpoint.
+        result.hp=result.partyActors[0].hp;
+        result.charge=result.partyActors[0].mp;
+      }
+    }
     return result;
   }
   return Object.freeze({version:VERSION,projectId:project.id,fresh:fresh,
