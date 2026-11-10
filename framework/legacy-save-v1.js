@@ -10,6 +10,13 @@ var BearframeLegacyV1=(function(){
     'weapon','flags','battle','prompt','message'];
   var flagNames=['bearing','E','D','H','echoAlly','gridAlly','met'];
   var foes={H:24,E:20,D:22};
+  // Frozen geometry from the existing historical v1 project. Used ONLY to
+  // validate whether a source save can be archived, never to build a game.
+  var geometry={"pod":["#############","#..G........#","#...###.###.#","#...........#","#..P...C....>","#...#.....#.#","#...........#","#############"],"gallery":["#############","#...E..#..T.#","#.##...#....#","#......#....#","<.......H...>","#...##.#....#","#......#....#","#############"],"ridge":["#############","#..D....#...#","#....#..#...#","#....#......#","<........M..#","#.##.....#..#","#......#....#","#############"]};
+  function walkable(area,x,y){
+    var rows=geometry[area];
+    return !!rows&&!!rows[y]&&rows[y][x]!==undefined&&rows[y][x]!=='#';
+  }
   function exact(o,keys) {
     if(!o||typeof o!=='object'||Array.isArray(o))return false;
     var present=Object.keys(o);
@@ -27,7 +34,7 @@ var BearframeLegacyV1=(function(){
       typeof s.name!=='string'||!s.name.trim()||s.name.length>18||
       ['Ash','Slate','Ivory'].indexOf(s.finish)<0||
       ['pod','gallery','ridge'].indexOf(s.area)<0||
-      !int(s.x,0,12)||!int(s.y,0,7)||
+      !int(s.x,0,12)||!int(s.y,0,7)||!walkable(s.area,s.x,s.y)||
       !int(s.hp,1,s.flags&&s.flags.bearing===true?36:30)||
       !int(s.charge,0,3)||
       !(s.weapon===null||s.weapon==='blade'||s.weapon==='lance')||
