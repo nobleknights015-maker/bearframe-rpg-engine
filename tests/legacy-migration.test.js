@@ -19,6 +19,8 @@ function setup(){
  };
  const config={source,storage,engine:runtime(fixture.project),
   mapping:fixture.mapping,legacyRestore:old.restore,
+  // Synthetic test approval only: production requires full gameplay parity evidence.
+  verifyGameplayParity:(oldState,newState)=>oldState.area===newState.player.map,
   targetPrefix:'bf:migration-compat-test:v1:verified'};
  return {legacy,raw,sourceData,disk,source,storage,config,setFault:x=>fault=x};
 }
@@ -68,6 +70,18 @@ test('occupied target, failed commit and damaged backup do not modify original',
  f.disk[key]='broken';
  assert.equal(m.preflight().reason,'backup-missing-or-invalid');
  assert.equal(f.sourceData.expedition,f.raw);
+});
+test('playable conversion is blocked without an explicit passing gameplay-parity validator',()=>{
+ const f=setup(),b=archive(f.source,f.storage);
+ b.inspect();assert.equal(b.confirm().ok,true);
+ assert.throws(()=>create({...f.config,verifyGameplayParity:null}),/required/);
+ let migration=create({...f.config,verifyGameplayParity:()=>false});
+ assert.equal(migration.preflight().reason,'behavior-incompatible');
+ assert.equal(migration.commit().reason,'not-staged');
+ migration=create({...f.config,verifyGameplayParity:()=>{throw Error('not assessed');}});
+ assert.equal(migration.preflight().reason,'behavior-incompatible');
+ assert.equal(migration.status().destination,'empty');
+ assert.equal(migration.archivedOriginal().raw,f.raw);
 });
 test('migration rejects invalid namespace and missing original restore',()=>{
  const f=setup();
