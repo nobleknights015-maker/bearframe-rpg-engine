@@ -155,6 +155,16 @@ jobs:
             adb shell am instrument -w -e stage unified-legacy dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-legacy.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-legacy' "$RUNNER_TEMP/unified-legacy.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-legacy.txt"
+            # Verify deliberate archival of original Rhino bytes into a separate
+            # crash-resistant vault, with restart readback and old save intact.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-archive-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-archive-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-archive-first' "$RUNNER_TEMP/unified-archive-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-archive-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-archive-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-archive-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-archive-second' "$RUNNER_TEMP/unified-archive-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-archive-second.txt"
             # Exercise the versioned party-combat core and UI through the
             # installed WebView, including process-stop journal recovery.
             adb shell pm clear dev.bearframe.ridge

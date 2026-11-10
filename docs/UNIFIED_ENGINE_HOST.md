@@ -56,3 +56,9 @@ Android installed `unified-party-first` and `unified-party-second` stages click 
 `enginehost/party-ui.js` now builds a small DOM-accessible **engine-only** command panel for each living party actor. It lists skills with MP affordability, limits healing/guard/damage target choices appropriately, and submits one complete round through `BearframeHost.party.submit(orders)`. The UI cannot mutate gameplay state directly: it receives a clone of the canonical battle view and the runtime validates/commits all decisions atomically. All controls have accessible names and mobile-sized selection targets.
 
 The installed `unified-party-choice` emulator route selects `pulse` rather than default strike via the actual WebView DOM controls, verifies the enemy target and persisted MP decrement, and checks the original diagnostic journal stays untouched. This is synthetic combat UI coverage, not release-grade menus, artwork or complete controller accessibility acceptance. 
+
+## Read-only legacy source archive flow
+
+The experimental Android host now offers explicit, separate buttons for historical save inspection and confirmation of a **lossless backup archive**. The Android bridge can only read the old `ExpeditionActivity/expedition` value; `framework/legacy-archive.js` writes the original bytes into an isolated versioned engine journal and verifies readback. Existing source saves remain unchanged, and old-game progress made after archival does not overwrite the archived snapshot. No archive or migration occurs during startup; the new host does not replace the old launcher.
+
+The `unified-archive-first` / `unified-archive-second` installed Android emulator stages verify UI consent, source isolation, durable readback after process death and detection of changed legacy bytes. **Do not interpret an archive as conversion to a playable world state.** That still needs a versioned project-specific mapping and acceptance on a real device.

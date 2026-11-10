@@ -76,6 +76,42 @@
            catch(e){return false;}
          }
        };
+    // Historical save preservation is separate from the active simulation.
+    // NEVER inspect, archive, or write automatically during startup.
+    var vault=null,archiveStatus=document.getElementById('legacy-archive-status');
+    var inspectButton=document.getElementById('legacy-preview');
+    var confirmButton=document.getElementById('legacy-confirm');
+    if(window.BearframeNative &&
+       typeof window.BearframeNative.readLegacyExpedition==='function'){
+      vault=createBearframeLegacyArchive({read:function(key){
+        return key==='expedition'?window.BearframeNative.readLegacyExpedition():null;
+      }},storage);
+      inspectButton.addEventListener('click',function(){
+        var inspection=vault.inspect();
+        confirmButton.disabled=!inspection.ok;
+        archiveStatus.textContent=inspection.ok?
+          'Validated '+inspection.summary.name+' at '+inspection.summary.area+
+          ' ('+inspection.summary.x+','+inspection.summary.y+
+          '); confirm to archive separately. Original save unchanged.':
+          'Archive inspection refused: '+inspection.reason;
+      });
+      confirmButton.addEventListener('click',function(){
+        confirmButton.disabled=true; // One explicit consent per staged inspection.
+        var result=vault.confirm();
+        archiveStatus.textContent=result.ok?
+          'Exact historical save archived and read back. Original save unchanged.':
+          'Archive refused: '+result.reason;
+      });
+      var existing=vault.audit();
+      if(existing.ok){
+        archiveStatus.textContent='Existing historical backup verified; original save preserved.';
+        inspectButton.disabled=true;
+      }
+    }else{
+      inspectButton.disabled=true;
+      archiveStatus.textContent='Historical source bridge unavailable in this host.';
+    }
+    window.BearframeLegacyVault=vault;
     var engine=createBearframeSession(FRAMEWORK_FIXTURE,storage,theme,
       {slotPrefix:'bf:framework-test:v1:diagnostics'});
     // Opt-in v2 combat runs through the same canonical engine/session API,

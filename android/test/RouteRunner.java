@@ -569,6 +569,83 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Audio focus changed authoritative gameplay state");
         resultMeta.putString("focus","PASS native audio focus request, abandon and unchanged journal");
     }
+    /** Real installed WebView recovery vault: deliberate preflight and consent,
+     * exact archive re-read after Android process restart, legacy source is not
+     * written by the new host. This is archival, NOT playable migration. */
+    private void checkUnifiedArchive(boolean restart) throws Exception {
+        android.content.SharedPreferences old=getTargetContext()
+            .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
+        if(!restart){
+            JSONObject flags=new JSONObject();
+            for(String id:new String[]{"bearing","E","D","H","echoAlly","gridAlly","met"})
+                flags.put(id,false);
+            flags.put("bearing",true);flags.put("E",true);flags.put("echoAlly",true);
+            JSONObject battle=new JSONObject().put("key","H").put("hp",14).put("turn",2);
+            JSONObject state=new JSONObject().put("v",1).put("name","Archive fixture")
+                .put("finish","Slate").put("area","gallery").put("x",8).put("y",4)
+                .put("hp",31).put("charge",2).put("weapon","lance")
+                .put("flags",flags).put("battle",battle)
+                .put("prompt",JSONObject.NULL).put("message","Preserve exact progress");
+            if(!old.edit().putString("expedition",state.toString())
+                .putString("unrelated","unchanged").commit())
+                throw new AssertionError("Cannot seed original test preferences");
+        }
+        String original=old.getString("expedition",null);
+        if(original==null)throw new AssertionError("Original source vanished");
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject baseline=unifiedSnapshot();
+        if(baseline.getInt("sequence")!=0||baseline.getInt("savedRevision")!=0)
+            throw new AssertionError("Source archival touched live engine journal");
+        if(!restart){
+            if(!"true".equals(evalHost("document.getElementById('legacy-confirm').disabled")))
+                throw new AssertionError("Historical archive consent button active before inspect");
+            String initial=evalHost("JSON.stringify(BearframeLegacyVault.audit())");
+            JSONObject absence=new JSONObject((String)new JSONTokener(initial).nextValue());
+            if(!"no-archive".equals(absence.getString("reason")))
+                throw new AssertionError("Historical source was archived automatically");
+            evalHost("document.getElementById('legacy-preview').click()");
+            if(!"false".equals(evalHost("document.getElementById('legacy-confirm').disabled")))
+                throw new AssertionError("Validated source did not enable explicit consent");
+            if(!original.equals(old.getString("expedition",null)))
+                throw new AssertionError("Preflight mutated old save");
+            evalHost("document.getElementById('legacy-confirm').click()");
+        }
+        String audited=evalHost("JSON.stringify(BearframeLegacyVault.audit())");
+        JSONObject info=new JSONObject((String)new JSONTokener(audited).nextValue());
+        if(!info.getBoolean("ok")||!info.getBoolean("sourceMatches")||
+           !"Archive fixture".equals(info.getJSONObject("summary").getString("name")))
+            throw new AssertionError("Historical archive was not recovered: "+info);
+        Object archived=new JSONTokener(evalHost("BearframeLegacyVault.exactCopy().raw")).nextValue();
+        if(!(archived instanceof String)||!original.equals(archived))
+            throw new AssertionError("Recovery archive did not preserve exact source bytes");
+        if(!original.equals(old.getString("expedition",null))||
+           !"unchanged".equals(old.getString("unrelated",null)))
+            throw new AssertionError("Original preference data was modified");
+        JSONObject after=unifiedSnapshot();
+        if(after.getInt("sequence")!=0||after.getInt("savedRevision")!=0)
+            throw new AssertionError("Recovery archive mutated active simulation");
+        if(restart){
+            // Changing the original *test fixture* later must not replace
+            // the previously archived bytes, and repeated imports fail closed.
+            if(!old.edit().putString("expedition",original.replace(
+                "Preserve exact progress","Advanced old progress")).commit())
+                throw new AssertionError("Cannot simulate original launcher progress");
+            String changed=evalHost("JSON.stringify(BearframeLegacyVault.audit())");
+            JSONObject drift=new JSONObject((String)new JSONTokener(changed).nextValue());
+            if(!drift.getBoolean("ok")||drift.getBoolean("sourceMatches"))
+                throw new AssertionError("Source drift was not detected");
+            Object still=new JSONTokener(evalHost("BearframeLegacyVault.exactCopy().raw")).nextValue();
+            if(!original.equals(still))
+                throw new AssertionError("Later old-save changes overwrote archived original");
+            evalHost("document.getElementById('legacy-preview').click()");
+            if(!"true".equals(evalHost("document.getElementById('legacy-confirm').disabled")))
+                throw new AssertionError("Second archive could overwrite occupied recovery slot");
+        }
+        resultMeta.putString("archive","PASS exact historical archive, original source and separate journal");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -617,6 +694,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedAssetPack();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-pack");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-archive-first") || stage.equals("unified-archive-second")){
+                checkUnifiedArchive(stage.equals("unified-archive-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
