@@ -207,7 +207,7 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("unified",next.toString());
     }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
-     * merely the APK filesystem. This does not assert audible output or autoplay. */
+     * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -217,8 +217,11 @@ public final class RouteRunner extends Instrumentation {
         String start=evalHost("(function(){window.__bfAudioDecode='pending';" +
             "var a=document.createElement('audio');" +
             "a.preload='auto';" +
-            "a.onloadedmetadata=function(){window.__bfAudioDecode=" +
-                "a.duration>0&&isFinite(a.duration)?'decoded':'invalid-duration';};" +
+            "a.onloadedmetadata=function(){if(!(a.duration>0&&isFinite(a.duration)))" +
+                "window.__bfAudioDecode='invalid-duration';};" +
+            "a.onloadeddata=function(){if(window.__bfAudioDecode==='pending')" +
+                "window.__bfAudioDecode=(a.readyState>=a.HAVE_CURRENT_DATA&&" +
+                "a.buffered.length>0&&a.buffered.end(0)>0)?'decoded':'no-decoded-data';};" +
             "a.onerror=function(){window.__bfAudioDecode='decode-error-'+(a.error?a.error.code:'unknown');};" +
             "a.src='/enginehost/audio/diagnostics/silence.wav';a.load();" +
             "return 'started';})()");
@@ -234,7 +237,7 @@ public final class RouteRunner extends Instrumentation {
         }
         if(!"\"decoded\"".equals(result))
             throw new AssertionError("WebView audio metadata decode timed out: "+result);
-        resultMeta.putString("audio","PASS packaged WAV decoded by WebView");
+        resultMeta.putString("audio","PASS packaged WAV media data decoded by WebView");
     }
     private Bundle resultMeta = new Bundle();
     @Override public void onStart(){
