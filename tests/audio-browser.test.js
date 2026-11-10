@@ -83,6 +83,16 @@ test('rejects path traversal, remote URLs, invalid factories and unrecognized co
  assert.equal((await backend.execute([{type:'unknown'}]))[0].reason,'unknown-command');
  await assert.rejects(backend.execute(Array.from({length:65},()=>sfx())),/at most 64/);
 });
+test('new play commands after gain changes do not apply volume twice',async()=>{
+ const {backend,elements}=rig();
+ await backend.execute([{type:'gain',bus:'music',gain:35}]);
+ await backend.execute([music()]);
+ assert.equal(elements[0].volume,.8);
+ await backend.execute([{type:'gain',bus:'music',gain:35}]);
+ assert.equal(elements[0].volume,.35);
+ await backend.execute([{...music('replacement'),gain:35}]);
+ assert.equal(elements[1].volume,.35);
+});
 test('reports autoplay rejection without unhandled promise and frees failed SFX',async()=>{
  const {backend}=rig({rejectPlay:true});
  const m=await backend.execute([music()]);
