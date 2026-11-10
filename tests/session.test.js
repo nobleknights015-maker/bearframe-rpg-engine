@@ -72,3 +72,16 @@ test('separate game names and slots do not cross-save',()=>{
  assert.equal(a.snapshot().view.sequence,0);
  assert.notEqual(a.serialize(),b.serialize());
 });
+
+test('corrupted occupied save is never mistaken for a first launch',()=>{
+ const disk=storage(),first=create(project,disk,theme,{slotPrefix:'bf:corrupt:v1'});
+ assert.equal(first.start('Owner',4).ok,true);
+ const slot=Object.keys(disk.data)[0];
+ disk.data[slot]='{invalid-json';
+ const reopened=create(project,disk,theme,{slotPrefix:'bf:corrupt:v1'});
+ assert.equal(reopened.resume().reason,'unreadable-save');
+ assert.equal(reopened.start('Replacement',5).reason,'unreadable-save');
+ assert.equal(disk.data[slot],'{invalid-json');
+ assert.equal(reopened.snapshot().journal.occupiedSlots,1);
+ assert.equal(reopened.snapshot().journal.validSlots,0);
+});
