@@ -73,7 +73,9 @@ function createBearframeLegacyV1Mapper(config){
       target.prompt={event:prompts[s.prompt],origin:'legacy-import'};
     }
     target.message=s.message;
-    var body=config.engine.serialize(target);
+    var body;
+    try{body=config.engine.serialize(target);}
+    catch(error){throw new TypeError('Destination project rejected mapped legacy state');}
     var checked=config.engine.restore(body);
     if(!checked)throw new TypeError('Destination project rejected mapped legacy state');
     if(JSON.stringify(unmap(checked))!==JSON.stringify(s))
