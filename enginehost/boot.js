@@ -81,7 +81,32 @@
         ' · Revision '+v.sequence+' · '+snap.journal.validSlots+' validated save slot(s)';
       return snap;
     }
+    // A native trim callback may evict decoded atlases. Never draw an incomplete
+    // scene or advance gameplay while the required render dependencies reload.
+    var restoring=null;
+    function memoryPressure(level){
+      if(!Number.isInteger(level)||level<0||level>100)
+        return {ok:false,reason:'invalid-level'};
+      var target=level>=80?0:level>=40?4194304:8388608;
+      var trimmed=assets.trimTo(target);
+      if(!assets.get('terrain')||!assets.get('characters')){
+        if(!restoring){
+          status.textContent='Restoring offline scene assets';
+          restoring=assets.preload(['terrain','characters']).then(function(){
+            restoring=null;show();return true;
+          },function(error){
+            restoring=null;
+            status.textContent='Scene restoration failed: '+error.message;
+            metrics.textContent='Saved state preserved; retry after resources recover.';
+            return false;
+          });
+        }
+      }
+      return {ok:true,evicted:trimmed.evicted,restoring:!!restoring};
+    }
     function act(command) {
+      if(restoring||!assets.get('terrain')||!assets.get('characters'))
+        return {ok:false,reason:'assets-restoring'};
       var result=engine.dispatch(command);
       if(!result.ok&&result.reason!=='no-change'){
         status.textContent='State unchanged: '+result.reason;
@@ -102,6 +127,7 @@
     window.BearframeHost=Object.freeze({
       snapshot:snapshot,
       snapshotJson:function(){return JSON.stringify(snapshot());},
+      memoryPressure:memoryPressure,
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});
