@@ -20,6 +20,8 @@ function createBearframePartyCombat(skillBook) {
         throw new TypeError('Invalid status effect '+key);
     }
   });
+  // Snapshot the validated catalog: callers must not change combat rules mid-save.
+  skillBook=JSON.parse(JSON.stringify(skillBook));
   function clone(x){return JSON.parse(JSON.stringify(x));}
   function actorValid(a){
     if(!a||!id(a.id)||typeof a.name!=='string'||!a.name.trim()||a.name.length>80||
