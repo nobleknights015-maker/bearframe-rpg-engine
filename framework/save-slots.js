@@ -11,6 +11,25 @@ function createBearframeSaveSlots(engine,storage,prefix){
   prefix=prefix||('bf:'+engine.projectId+':v'+engine.version);
   if(typeof prefix!=='string'||prefix.length>150)throw new TypeError('Invalid save namespace');
   var A=prefix+':a',B=prefix+':b';
+  var contentTag=engine.contentTag===undefined?null:engine.contentTag;
+  if(contentTag!==null&&(typeof contentTag!=='string'||contentTag.length>150))
+    throw new TypeError('Invalid engine content binding');
+  var own=Object.prototype.hasOwnProperty;
+  function bound(record){
+    return contentTag===null?!own.call(record,'contentTag'):
+      own.call(record,'contentTag')&&record.contentTag===contentTag;
+  }
+  function incompatible(key){
+    // Never recover OR overwrite a recognizable wrong-version content slot.
+    // Fully corrupt/unparseable slots retain historical journal recovery.
+    try{
+      var raw=storage.read(key);
+      if(typeof raw!=='string'||raw.length>2000000)return false;
+      var e=JSON.parse(raw);
+      return !!e&&e.format===1&&e.project===engine.projectId&&
+        e.version===engine.version&&!bound(e);
+    }catch(error){return false;}
+  }
   function hash(str){
     var h=2166136261;
     for(var i=0;i<str.length;i++){
@@ -26,6 +45,7 @@ function createBearframeSaveSlots(engine,storage,prefix){
       if(!e||e.format!==1||e.project!==engine.projectId||e.version!==engine.version||
         !Number.isInteger(e.sequence)||e.sequence<0||
         typeof e.body!=='string'||typeof e.checksum!=='string'||e.checksum!==hash(e.body))return null;
+      if(!bound(e))return null;
       var state=engine.restore(e.body);
       if(!state||state.sequence!==e.sequence)return null;
       return {slot:slot,state:state,raw:raw,body:e.body,sequence:e.sequence};
@@ -45,10 +65,12 @@ function createBearframeSaveSlots(engine,storage,prefix){
     return a.sequence>b.sequence?a:b;
   }
   function load(){
+    if(incompatible(A)||incompatible(B))return null;
     var selected=latest();
     return selected&&!selected.conflict?selected.state:null;
   }
   function save(state){
+    if(incompatible(A)||incompatible(B))return {ok:false,reason:'content-mismatch'};
     var serialized;
     try{serialized=engine.serialize(state);}catch(error){return {ok:false,reason:'invalid-state'};}
     if(serialized.length>1900000)return {ok:false,reason:'oversize'};
@@ -58,8 +80,10 @@ function createBearframeSaveSlots(engine,storage,prefix){
     if(prev&&state.sequence===prev.sequence)
       return prev.body===serialized?{ok:true,slot:prev.slot,unchanged:true}:{ok:false,reason:'conflict'};
     var target=prev&&prev.slot===A?B:A;
-    var raw=JSON.stringify({format:1,project:engine.projectId,version:engine.version,
-      sequence:state.sequence,checksum:hash(serialized),body:serialized});
+    var envelope={format:1,project:engine.projectId,version:engine.version,
+      sequence:state.sequence,checksum:hash(serialized),body:serialized};
+    if(contentTag!==null)envelope.contentTag=contentTag;
+    var raw=JSON.stringify(envelope);
     try{
       if(storage.write(target,raw)!==true)return {ok:false,reason:'write-failed'};
     }catch(error){return {ok:false,reason:'write-failed'};}
@@ -74,9 +98,10 @@ function createBearframeSaveSlots(engine,storage,prefix){
   }
   function health(){
     var a=readSlot(A),b=readSlot(B),newest=latest();
+    var mismatch=incompatible(A)||incompatible(B);
     return {validSlots:(a?1:0)+(b?1:0),occupiedSlots:(occupied(A)?1:0)+(occupied(B)?1:0),
-      latestSequence:newest&&!newest.conflict?newest.sequence:null,
-      conflict:!!(newest&&newest.conflict)};
+      latestSequence:!mismatch&&newest&&!newest.conflict?newest.sequence:null,
+      conflict:!!(newest&&newest.conflict),contentMismatch:mismatch};
   }
   return Object.freeze({load:load,save:save,health:health,keys:Object.freeze([A,B])});
 }

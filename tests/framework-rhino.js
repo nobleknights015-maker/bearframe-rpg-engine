@@ -127,3 +127,12 @@ try{
 }catch(error){refusedUnsafePath=true;}
 ensure(refusedUnsafePath,'rejected unsafe asset path under Rhino');
 print('PASS validated local asset manifest under Rhino');
+
+var boundDefinition=JSON.parse(JSON.stringify(FRAMEWORK_FIXTURE));
+boundDefinition.contentRevision='content_r1';
+var boundRhinoEngine=createBearframeEngine(boundDefinition);
+ensure(boundRhinoEngine.contentTag.indexOf('v1:content_r1:')===0,
+  'portable project content fingerprint under Rhino');
+var boundRhinoJournal=createBearframeSaveSlots(boundRhinoEngine,unifiedStorage,'bf:rhino:v1:bound');
+ensure(boundRhinoJournal.save(boundRhinoEngine.fresh('Content',91)).ok,'versioned Rhino save');
+ensure(boundRhinoJournal.load()!==null,'versioned Rhino save reload');

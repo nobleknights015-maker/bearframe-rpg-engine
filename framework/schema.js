@@ -16,6 +16,8 @@ function validateEngineProject(project) {
     if(!map.rows[y]||map.rows[y][x]===undefined||map.rows[y][x]==='#')fail(label+' blocked or out of bounds '+key);
   }
   project=record(project,'project');id(project.id,'project.id');
+  if(project.contentRevision!==undefined)
+    id(project.contentRevision,'project.contentRevision');
   var maps=record(project.maps,'project.maps');
   var events=record(project.events,'project.events');
   var items=record(project.items,'project.items');

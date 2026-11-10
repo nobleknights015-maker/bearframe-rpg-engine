@@ -11,6 +11,9 @@ function createBearframeEngine(project) {
   try{project=JSON.parse(JSON.stringify(project));}
   catch(error){throw new TypeError('Project must be JSON-serializable');}
   validate(project); // A custom toJSON must not bypass content validation.
+  var contentContract=(typeof module!=='undefined'&&module.exports)?
+    require('./content-contract.js'):createBearframeContentContract;
+  var contentTag=contentContract(project);
   var own=Object.prototype.hasOwnProperty;
   var VERSION=project.partyCombat?2:1;
   var RULES={playerHp:30,playerCharge:3,baseAttack:5,pulseBonus:6,pulseCost:1,
@@ -268,7 +271,7 @@ function createBearframeEngine(project) {
     }
     return result;
   }
-  return Object.freeze({version:VERSION,projectId:project.id,fresh:fresh,
+  return Object.freeze({version:VERSION,projectId:project.id,contentTag:contentTag,fresh:fresh,
     restore:restore,step:step,view:view,serialize:function(s){if(!valid(s))throw new TypeError('Invalid state');return JSON.stringify(s);},
     validateState:valid});
 }

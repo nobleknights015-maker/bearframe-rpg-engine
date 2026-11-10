@@ -20,6 +20,7 @@ function createBearframeSession(project, storage, theme, opts) {
   function resume() {
     var health=journal.health();
     if(health.conflict){lastError='save-conflict';return result(false,lastError);}
+    if(health.contentMismatch){lastError='incompatible-content';return result(false,lastError);}
     var recovered=journal.load();
     if(!recovered) {
       current=null;lastError=health.occupiedSlots===0?'no-save':'unreadable-save';
@@ -31,7 +32,8 @@ function createBearframeSession(project, storage, theme, opts) {
   function start(name,seed) {
     var health=journal.health();
     if(health.conflict||health.occupiedSlots>0)
-      return result(false,health.validSlots>0?'existing-save':'unreadable-save');
+      return result(false,health.contentMismatch?'incompatible-content':
+        health.validSlots>0?'existing-save':'unreadable-save');
     var first=engine.fresh(name,seed);
     var committed=journal.save(first);
     if(!committed.ok){lastError=committed.reason;return result(false,lastError);}
@@ -56,6 +58,7 @@ function createBearframeSession(project, storage, theme, opts) {
     if(!current)return {ok:false,reason:'not-started'};
     var health=journal.health();
     if(health.conflict)return {ok:false,reason:'save-conflict'};
+    if(health.contentMismatch)return {ok:false,reason:'incompatible-content'};
     if(health.validSlots===0)return {ok:false,reason:'unreadable-save'};
     var recovered=journal.load();
     if(!recovered||health.latestSequence!==current.sequence||
