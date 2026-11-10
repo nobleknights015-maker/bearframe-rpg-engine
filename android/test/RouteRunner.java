@@ -10,6 +10,9 @@ import org.json.*;
 import java.util.*;
 import java.lang.reflect.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import android.webkit.WebView;
 
 /** Runs in the installed app and activates its actual Android controls. */
 public final class RouteRunner extends Instrumentation {
@@ -109,9 +112,85 @@ public final class RouteRunner extends Instrumentation {
         if(untouched.getPixel(12,12)!=Color.GREEN)
             throw new AssertionError("Rejected frame modified the framebuffer");
     }
+    private WebView findWebView(View root){
+        if(root instanceof WebView)return (WebView)root;
+        if(root instanceof ViewGroup){
+            ViewGroup group=(ViewGroup)root;
+            for(int i=0;i<group.getChildCount();i++){
+                WebView found=findWebView(group.getChildAt(i));
+                if(found!=null)return found;
+            }
+        }
+        return null;
+    }
+    private String evalHost(final String expression) throws Exception {
+        WebView browser=findWebView(screen.getWindow().getDecorView());
+        if(browser==null)throw new AssertionError("Missing unified engine WebView");
+        CountDownLatch latch=new CountDownLatch(1);
+        AtomicReference<String> output=new AtomicReference<>();
+        AtomicReference<Throwable> error=new AtomicReference<>();
+        runOnMainSync(()->{
+            try{
+                browser.evaluateJavascript(expression,value->{output.set(value);latch.countDown();});
+            }catch(Throwable ex){error.set(ex);latch.countDown();}
+        });
+        if(!latch.await(12,TimeUnit.SECONDS))throw new AssertionError("WebView JavaScript timeout");
+        if(error.get()!=null)throw new AssertionError(error.get());
+        return output.get();
+    }
+    private JSONObject unifiedSnapshot() throws Exception {
+        for(int attempt=0;attempt<30;attempt++){
+            String raw=evalHost("window.BearframeHost && BearframeHost.snapshotJson()");
+            if(raw!=null && !"null".equals(raw)){
+                Object value=new JSONTokener(raw).nextValue();
+                if(value instanceof String){
+                    JSONObject state=new JSONObject((String)value);
+                    if(state.optBoolean("ready"))return state;
+                    if(state.has("error")&&!"null".equals(state.optString("error")))
+                        throw new AssertionError("Unified host failed to boot: "+state);
+                }
+            }
+            Thread.sleep(200);
+        }
+        throw new AssertionError("Unified engine did not become ready");
+    }
+    private void checkUnified(boolean second) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject loaded=unifiedSnapshot();
+        if(!"framework-test".equals(loaded.getString("project")))
+            throw new AssertionError("Wrong unified project: "+loaded);
+        int expectedSequence=second?1:0,expectedY=second?2:1;
+        if(loaded.getInt("sequence")!=expectedSequence ||
+           loaded.getInt("y")!=expectedY ||
+           loaded.getInt("savedRevision")!=expectedSequence)
+            throw new AssertionError("Unified WebView did not recover prior revision: "+loaded);
+        String direction=second?"up":"down";
+        String reply=evalHost("JSON.stringify(BearframeHost.navigate('"+direction+"'))");
+        Object parsed=new JSONTokener(reply).nextValue();
+        JSONObject moved=new JSONObject((String)parsed);
+        if(!moved.getBoolean("ok"))throw new AssertionError("Unified move rejected: "+moved);
+        JSONObject next=unifiedSnapshot();
+        if(next.getInt("sequence")!=expectedSequence+1 ||
+           next.getInt("savedRevision")!=expectedSequence+1 ||
+           next.getInt("y")!=(second?1:2) ||
+           next.getInt("validSlots")<1)
+            throw new AssertionError("Unified WebView state was not durably committed: "+next);
+        resultMeta.putString("unified",next.toString());
+    }
+    private Bundle resultMeta = new Bundle();
     @Override public void onStart(){
         Bundle result=new Bundle();
         try{
+            if(stage.equals("unified-first") || stage.equals("unified-second")){
+                checkUnified(stage.equals("unified-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
             if(stage.equals("kit")){
                 atlasSmoke();
                 result.putString("route","PASS kit");
