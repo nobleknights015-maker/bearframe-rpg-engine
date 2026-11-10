@@ -55,6 +55,7 @@ function webSelectChoice(delta){
   if(focused>=0)webControllerSelection=focused;
   const start=webControllerSelection<0?(delta>0?-1:0):webControllerSelection;
   webControllerSelection=(start+delta+choices.length)%choices.length;
+  choices.forEach((button,index)=>button.classList.toggle('controller-selected',index===webControllerSelection));
   choices[webControllerSelection].focus({preventScroll:true});
   return true;
 }
