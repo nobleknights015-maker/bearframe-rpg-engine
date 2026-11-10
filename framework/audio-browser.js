@@ -100,7 +100,9 @@ function createBearframeBrowserAudioBackend(createElement, config) {
       try{entry=create(cmd.id,cmd);}
       catch(error){return Promise.resolve({ok:false,reason:'invalid-asset',
         message:String(error&&error.message||error)});}
-      entry.element.volume=gain[cmd.bus]*cmd.gain/100;
+      // The director's play gain already combines master and bus volume.
+      // Do not multiply it by the last gain event a second time.
+      entry.element.volume=cmd.gain/100;
       if(cmd.bus==='music'){
         stopMusic();
         liveMusic=entry;
