@@ -93,6 +93,7 @@ public final class RouteRunner extends Instrumentation {
                 use("Turn 2",false);tap("Strike");walk("RRRRR");use("Sounding ridge",false);walk("RRUUU");tap("Request escort");
                 walk("DDRRRRRR");tap("Keep your name private");use("Survey complete",false);
                 use("Expedition complete · Echo ally · Crawler escort",false);
+                atlasSmoke();
             }
             result.putString("route","PASS "+stage);finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("route","FAIL "+t);finish(Activity.RESULT_CANCELED,result);}
