@@ -17,14 +17,15 @@ public final class AudioFocusRouter {
     private AudioManager manager;
     private AudioFocusRequest request;
     private boolean held;
-    private final AudioManager.OnAudioFocusChangeListener listener=change->{
-        if(change==AudioManager.AUDIOFOCUS_GAIN)return;
-        abandon();
-        activity.runOnUiThread(lossCallback);
-    };
+    private final AudioManager.OnAudioFocusChangeListener listener;
     public AudioFocusRouter(Activity activity,Runnable lossCallback) {
         this.activity=activity;
         this.lossCallback=lossCallback;
+        this.listener=change->{
+            if(change==AudioManager.AUDIOFOCUS_GAIN)return;
+            abandon();
+            this.activity.runOnUiThread(this.lossCallback);
+        };
     }
     @JavascriptInterface public synchronized boolean request() {
         if(held)return true;
