@@ -7,6 +7,8 @@ This directory is a new **game-independent** simulation and rendering contract. 
 - `framework/schema.js` — validates a complete project definition, cross-references, map geometry, exits, event scripts, items, enemies, quests and game rules.
 - `framework/runtime.js` — deterministic pure state machine. No DOM, I/O, timers or platform APIs. State owns its PRNG seed. Use `fresh()`, `step()`, `view()`, `serialize()` and `restore()`.
 - `framework/save-slots.js` — two-slot durable save journal with rolling checksum, readback verification, stale-write rejection and recovery from a corrupted latest slot.
+- `framework/save-import.js` — explicit two-phase, non-destructive source-to-journal import contract; mandates a reviewed source decoder and target mapper and rejects occupied destinations.
+- `framework/legacy-save-v1.js` — strict, read-only historical Rhino v1 snapshot envelope decoder/inspector. It does not map source fields or authorize migration.
 - `framework/session.js` — **canonical host-facing runtime** integrating `createBearframeEngine`, the durable save journal, and `createBearframeSceneComposer`. A host calls `start`, `resume`, `dispatch`, `snapshot`, and `compose`; `dispatch` never presents a simulation update before the journal confirms a durable commit.
 - `android/src/dev/bearframe/ridge/UnifiedEngineActivity.java` — internal, offline Chromium WebView host serving only packaged engine scripts, with a synchronous, namespace-restricted native Android save adapter.
 - `enginehost/index.html` and `enginehost/boot.js` — Android/browser diagnostic host for this same session, **not game story content**.
@@ -67,3 +69,7 @@ node --test tests/*.test.js
 ```
 
 The experimental framework now runs end-to-end in a separate Android WebView Activity, verified by a two-process emulator test; it has **not replaced the shipping Rhino Android launcher**. No claim of a polished final engine, actual audio playback/mixing, production save migration, large-map streaming, full party AI, release-grade touch ergonomics, or real-device thermal profiling is made here.
+
+## Historical save compatibility limitation
+
+The original installed Android game's saved `expedition` JSON is not a `framework/runtime.js` state. The new read-only native source bridge and historical v1 decoder can inspect it, but **cannot yet convert a real campaign without losing world-specific progress**. The generic importer requires an explicit source key, `decode`, `map`, target engine and empty journal. `inspect()` never writes; `commit()` rejects changed sources and occupied destinations. Production migration needs a compatible project schema, a reviewed complete field mapping, original legacy `restore()` validation, an explicit user action, and installed-device rollback tests.
