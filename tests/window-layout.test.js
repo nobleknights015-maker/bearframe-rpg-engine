@@ -1,0 +1,54 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const create=require('../framework/window-layout');
+test('Engine v1 reusable JRPG message and choice windows fit mobile layout',()=>{
+ const ui=create({viewportWidth:320,viewportHeight:240});
+ const msg=ui.messageWindow({lines:3,hasFace:true,name:'Scout'});
+ assert.equal(msg.id,'message');
+ assert.equal(msg.frame.skin,'bearframe-classic');
+ assert.equal(msg.face.width,72);
+ assert.ok(msg.contents.width>0);
+ assert.ok(msg.rect.x>=0&&msg.rect.y>=0);
+ const options=ui.choiceWindow({choices:['Talk','Inventory','Leave'],messageRect:msg.rect});
+ assert.equal(options.id,'choice');
+ assert.equal(options.items.length,3);
+ assert.equal(options.items[0].selected,true);
+ assert.ok(options.rect.x>=0&&options.rect.y>=0);
+ assert.ok(options.rect.x+options.rect.width<=320);
+});
+test('Engine v1 window pagination skips off-screen commands but preserves selection',()=>{
+ const ui=create({viewportWidth:393,viewportHeight:830});
+ const commands=Array.from({length:30},(_,i)=>({id:'cmd'+i,text:'Command '+i,enabled:i!==12}));
+ const model=ui.commandWindow({commands,maxRows:4,columns:2,index:12,width:340});
+ assert.equal(model.pagination.capacity,8);
+ assert.equal(model.pagination.page,1);
+ assert.equal(model.pagination.hasPrevious,true);
+ assert.equal(model.pagination.hasNext,true);
+ assert.equal(model.items.length,8);
+ assert.ok(model.items.some(c=>c.id==='cmd12'&&c.enabled===false&&c.selected===true));
+ assert.equal(model.items[0].index,8);
+ const last=ui.commandWindow({commands,maxRows:4,columns:2,index:29,width:340});
+ assert.equal(last.pagination.hasNext,false);
+ assert.equal(last.pagination.pageCount,4);
+});
+test('Engine v1 window sizes clamp to safe viewport and respond to device resizing',()=>{
+ const ui=create({viewportWidth:180,viewportHeight:150});
+ const one=ui.fitRect({x:-100,y:999,width:800,height:1000});
+ assert.ok(one.x>=0&&one.y>=0);
+ assert.ok(one.x+one.width<=180);
+ assert.ok(one.y+one.height<=150);
+ ui.setViewport(800,450);
+ const larger=ui.fitRect({x:10,y:10,width:600,height:300});
+ assert.equal(larger.width,600);
+ assert.equal(larger.height,300);
+ const help=ui.helpWindow({text:'Help',heightLines:2});
+ assert.equal(help.text,'Help');
+ assert.equal(help.rect.width,792);
+});
+test('window models clone mutable input and do not contain Plushbound-specific skin',()=>{
+ const ui=create();
+ const data={id:'a',rect:{x:1,y:2,width:200,height:80},info:{nested:['one']}};
+ const model=ui.windowModel(data);
+ model.info.nested[0]='modified';
+ assert.deepEqual(data.info.nested,['one']);
+ assert.equal(model.frame.skin,'bearframe-classic');
+});
