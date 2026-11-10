@@ -38,6 +38,39 @@ public final class RouteRunner extends Instrumentation {
         if(problem.get()!=null)throw new AssertionError(problem.get());
     }
     private void tap(String name){use(name,true);}
+    private void gamepadKey(int keyCode){
+        AtomicReference<Throwable> error=new AtomicReference<>();
+        runOnMainSync(()->{
+            try{
+                long t=android.os.SystemClock.uptimeMillis();
+                KeyEvent down=new KeyEvent(t,t,KeyEvent.ACTION_DOWN,keyCode,0,0,0,0,0,InputDevice.SOURCE_GAMEPAD);
+                KeyEvent up=new KeyEvent(t,t+1,KeyEvent.ACTION_UP,keyCode,0,0,0,0,0,InputDevice.SOURCE_GAMEPAD);
+                if(!screen.dispatchKeyEvent(down)||!screen.dispatchKeyEvent(up))
+                    throw new AssertionError("Gamepad key not handled: "+keyCode);
+            }catch(Throwable x){error.set(x);}
+        });
+        if(error.get()!=null)throw new AssertionError(error.get());
+    }
+    private void gamepadAxis(float axisX,float axisY){
+        AtomicReference<Throwable> error=new AtomicReference<>();
+        runOnMainSync(()->{
+            try{
+                long t=android.os.SystemClock.uptimeMillis();
+                MotionEvent.PointerProperties properties=new MotionEvent.PointerProperties();
+                properties.id=0;properties.toolType=MotionEvent.TOOL_TYPE_UNKNOWN;
+                MotionEvent.PointerCoords coords=new MotionEvent.PointerCoords();
+                coords.setAxisValue(MotionEvent.AXIS_X,axisX);
+                coords.setAxisValue(MotionEvent.AXIS_Y,axisY);
+                MotionEvent e=MotionEvent.obtain(t,t,MotionEvent.ACTION_MOVE,1,
+                    new MotionEvent.PointerProperties[]{properties},
+                    new MotionEvent.PointerCoords[]{coords},0,0,1f,1f,0,0,
+                    InputDevice.SOURCE_JOYSTICK,0);
+                boolean handled=screen.onGenericMotionEvent(e);e.recycle();
+                if(!handled)throw new AssertionError("Analog stick event not handled");
+            }catch(Throwable x){error.set(x);}
+        });
+        if(error.get()!=null)throw new AssertionError(error.get());
+    }
     private void walk(String path){
         for(char dir:path.toCharArray())tap(dir=='R'?"Move east":dir=='U'?"Move north":dir=='D'?"Move south":"Move west");
     }
@@ -85,6 +118,26 @@ public final class RouteRunner extends Instrumentation {
             }
             Intent launch=getTargetContext().getPackageManager().getLaunchIntentForPackage("dev.bearframe.ridge");
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);screen=startActivitySync(launch);
+            if(stage.equals("controller")){
+                tap("Awaken");
+                gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
+                gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
+                gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
+                use("Listen",false); // D-pad moved through the world, opening the NPC prompt.
+                gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
+                // Cancel must dismiss the prompt without choosing an action.
+                if(search(screen.getWindow().getDecorView(),"Step back",true)!=null)
+                    throw new AssertionError("Gamepad cancel did not close prompt");
+                gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
+                use("Listen",false);
+                gamepadKey(KeyEvent.KEYCODE_BUTTON_A);
+                use("“Take the drainage gallery. The roof there still holds.” The Guardian stays at its post.",false);
+                gamepadAxis(0f,0.9f);
+                gamepadAxis(0f,0f);
+                result.putString("route","PASS controller");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
             if(stage.equals("first")){
                 tap("Awaken");walk("UUU");tap("Listen");walk("DDRRRR");tap("Fit legacy bearing");walk("R");tap("Equip arc blade");
                 walk("DRRRURRR");use("Relay gallery",false);walk("RRRUUU");tap("Ask to travel together");
