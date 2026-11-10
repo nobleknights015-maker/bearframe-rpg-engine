@@ -12,7 +12,7 @@ node "$root/android/compile.js" "$work/assets/simulation.js"
 cp "$root"/game/*.webp "$work/assets/"
 unzip -p "$RHINO_JAR" META-INF/LICENSE.txt > "$work/assets/Rhino-LICENSE.txt"
 unzip -p "$RHINO_JAR" META-INF/NOTICE.txt > "$work/assets/Rhino-NOTICE.txt"
-java -m jdk.compiler/com.sun.tools.javac.Main -source 8 -target 8 -bootclasspath "$platform:$tools/core-lambda-stubs.jar" -classpath "$RHINO_JAR" -d "$work/classes" "$root/android/src/dev/bearframe/ridge/ExpeditionActivity.java"
+java -m jdk.compiler/com.sun.tools.javac.Main -source 8 -target 8 -bootclasspath "$platform:$tools/core-lambda-stubs.jar" -classpath "$RHINO_JAR" -d "$work/classes" "$root/android/src/dev/bearframe/ridge/"*.java
 (cd "$work/classes" && zip -q -r "$work/classes.jar" .)
 "$tools/d8" --min-api 28 --lib "$platform" --output "$work/dex" "$work/classes.jar" "$RHINO_JAR"
 "$tools/aapt2" link -o "$work/base.apk" --manifest "$root/android/AndroidManifest.xml" -I "$platform" -A "$work/assets"
