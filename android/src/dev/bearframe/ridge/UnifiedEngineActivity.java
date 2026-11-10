@@ -42,7 +42,20 @@ public final class UnifiedEngineActivity extends Activity {
     private int rendererRecoveries=0;
     private final LegacyArchiveExport exporter=new LegacyArchiveExport(this,result->{
         if(browser!=null){
-            String line="restored".equals(result)?
+            if("compat-restore-ready".equals(result)){
+                runOnUiThread(()->{
+                    if(browser!=null)browser.evaluateJavascript(
+                        "window.BearframeLegacyCompat&&"+
+                        "window.BearframeLegacyCompat.onFileSelected&&"+
+                        "window.BearframeLegacyCompat.onFileSelected()",null);
+                });
+                return;
+            }
+            String line="compat-restore-failed".equals(result)?
+                "Continued historical save file rejected; no progress was overwritten.":
+                "compat-restore-cancelled".equals(result)?
+                "Continued historical save selection cancelled; nothing was changed.":
+                "restored".equals(result)?
                 "Original save restored without overwriting existing progress. Open the original launcher to continue.":
                 "restore-refused".equals(result)?
                 "Restore refused: invalid backup or an original save already exists.":
@@ -57,7 +70,8 @@ public final class UnifiedEngineActivity extends Activity {
                 "Export failed; backup remains in app storage.";
             runOnUiThread(()->{
                 if(browser!=null)browser.evaluateJavascript(
-                    "var e=document.getElementById('legacy-archive-status');"+
+                    "var e=document.getElementById('"+(result.startsWith("compat-")?
+                        "legacy-compat-status":"legacy-archive-status")+"');"+
                     "if(e)e.textContent="+org.json.JSONObject.quote(line),null);
             });
         }

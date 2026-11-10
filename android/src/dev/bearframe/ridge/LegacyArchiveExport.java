@@ -21,11 +21,14 @@ import org.json.JSONObject;
 public final class LegacyArchiveExport {
     public static final int REQUEST_CODE=4917;
     public static final int RESTORE_REQUEST=4918;
+    public static final int COMPAT_RESTORE_REQUEST=4919;
     public interface ResultListener { void onResult(String result); }
     private final Activity activity;
     private final ResultListener listener;
     private String pending;
     private boolean restoring;
+    private boolean restoringCompat;
+    private String stagedCompat;
     public LegacyArchiveExport(Activity activity,ResultListener listener){
         this.activity=activity;
         this.listener=listener;
@@ -122,7 +125,7 @@ public final class LegacyArchiveExport {
         return currentCompat()!=null;
     }
     @JavascriptInterface public synchronized boolean beginCompatExport(){
-        if(pending!=null||restoring)return false;
+        if(pending!=null||restoring||restoringCompat)return false;
         String raw=currentCompat();
         if(raw==null)return false;
         pending=raw;
@@ -144,7 +147,7 @@ public final class LegacyArchiveExport {
         return archived()!=null;
     }
     @JavascriptInterface public synchronized boolean begin(){
-        if(pending!=null||restoring)return false;
+        if(pending!=null||restoring||restoringCompat)return false;
         String raw=archived();
         if(raw==null)return false;
         pending=raw;
@@ -167,7 +170,7 @@ public final class LegacyArchiveExport {
             .contains("expedition");
     }
     @JavascriptInterface public synchronized boolean beginRestore(){
-        if(pending!=null||restoring||!canRestoreIntoEmptySource())return false;
+        if(pending!=null||restoring||restoringCompat||!canRestoreIntoEmptySource())return false;
         restoring=true;
         activity.runOnUiThread(()->{
             try{
@@ -181,6 +184,37 @@ public final class LegacyArchiveExport {
             }
         });
         return true;
+    }
+    /** SAF selection does not write either the old or compatibility save.
+     * The caller still needs to confirm the JS preflight after selection. */
+    @JavascriptInterface public synchronized boolean beginCompatRestore(){
+        if(pending!=null||restoring||restoringCompat)return false;
+        try {
+            SharedPreferences journal=activity.getSharedPreferences(
+                "bearframe_unified_v1",Activity.MODE_PRIVATE);
+            String prefix="bf:legacy-expedition-compat:v1:session:";
+            if(journal.contains(prefix+"a")||journal.contains(prefix+"b"))return false;
+        }catch(RuntimeException unreadable){return false;}
+        stagedCompat=null;restoringCompat=true;
+        activity.runOnUiThread(()->{
+            try{
+                Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/json");
+                activity.startActivityForResult(intent,COMPAT_RESTORE_REQUEST);
+            }catch(RuntimeException missingPicker){
+                synchronized(LegacyArchiveExport.this){
+                    stagedCompat=null;restoringCompat=false;
+                }
+                listener.onResult("compat-restore-failed");
+            }
+        });
+        return true;
+    }
+    /** One-shot retrieval of the validated user-selected JSON.
+     * A second explicit UI confirmation writes the separate journal. */
+    @JavascriptInterface public synchronized String takeCompatRestore(){
+        String raw=stagedCompat;stagedCompat=null;return raw;
     }
     /** Called only after system document picker returns, never from JS.
      * Refuses to overwrite any present legacy key, including malformed data.
@@ -206,6 +240,29 @@ public final class LegacyArchiveExport {
             .decode(ByteBuffer.wrap(bytes.toByteArray())).toString();
     }
     public void onResult(int code,int resultCode,Intent data){
+        if(code==COMPAT_RESTORE_REQUEST){
+            boolean expected;
+            synchronized(this){
+                expected=restoringCompat;restoringCompat=false;stagedCompat=null;
+            }
+            if(!expected){listener.onResult("compat-restore-failed");return;}
+            if(resultCode!=Activity.RESULT_OK||data==null||data.getData()==null){
+                listener.onResult("compat-restore-cancelled");return;
+            }
+            try(InputStream in=activity.getContentResolver().openInputStream(data.getData())){
+                if(in==null)throw new IllegalStateException("Missing document");
+                String raw=utf8FromDocument(in);
+                if(!LegacyV1Validator.accepts(raw))
+                    throw new IllegalArgumentException("Incompatible original-format save");
+                synchronized(this){stagedCompat=raw;}
+                listener.onResult("compat-restore-ready");
+            }catch(Exception invalid){
+                synchronized(this){stagedCompat=null;}
+                listener.onResult("compat-restore-failed");
+            }
+            return;
+        }
+
         if(code==RESTORE_REQUEST){
             boolean expected;
             synchronized(this){expected=restoring;restoring=false;}
@@ -237,5 +294,5 @@ public final class LegacyArchiveExport {
             listener.onResult("failed");
         }
     }
-    public synchronized void cancel(){pending=null;restoring=false;}
+    public synchronized void cancel(){pending=null;restoring=false;restoringCompat=false;stagedCompat=null;}
 }
