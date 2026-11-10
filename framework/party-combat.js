@@ -30,6 +30,7 @@ function createBearframePartyCombat(skillBook) {
        !int(a.attack,0,9999)||!int(a.defense,0,9999)||!int(a.speed,0,9999)||
        !Array.isArray(a.skills)||!a.skills.length||a.skills.length>50||
        !a.skills.every(function(k){return has(skillBook,k);})||
+       (new Set(a.skills)).size!==a.skills.length||
        !a.resistances||typeof a.resistances!=='object'||Array.isArray(a.resistances)||
        typeof a.guarding!=='boolean'||!Array.isArray(a.statuses)||a.statuses.length>10)return false;
     for(var element in a.resistances)if(has(a.resistances,element)){
