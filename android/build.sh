@@ -15,7 +15,14 @@ cp "$root"/game/*.webp "$work/assets/"
 mkdir -p "$work/assets/framework" "$work/assets/fixtures" "$work/assets/enginehost"
 cp "$root"/framework/*.js "$work/assets/framework/"
 cp "$root"/fixtures/engine-project.js "$work/assets/fixtures/"
-cp "$root"/enginehost/* "$work/assets/enginehost/"
+cp "$root"/enginehost/*.js "$root"/enginehost/*.html "$root"/enginehost/*.css "$work/assets/enginehost/"
+# The two pixel fixtures exist only for WebView asset I/O diagnostics.
+mkdir -p "$work/assets/enginehost/assets"
+base64 --decode "$root/enginehost/fixtures/terrain.png.b64" > "$work/assets/enginehost/assets/terrain.png"
+base64 --decode "$root/enginehost/fixtures/characters.png.b64" > "$work/assets/enginehost/assets/characters.png"
+printf '%s\n' \
+  "eaaae7e1a33e854df437f592ea0cc98e530e8b955172ae47b75406378e4ea179  $work/assets/enginehost/assets/terrain.png" \
+  "c9d3ad73ed2d6a8c67d8cec169cd190841eb61cc7a51c52e040ae0f8bf573722  $work/assets/enginehost/assets/characters.png" | sha256sum -c -
 unzip -p "$RHINO_JAR" META-INF/LICENSE.txt > "$work/assets/Rhino-LICENSE.txt"
 unzip -p "$RHINO_JAR" META-INF/NOTICE.txt > "$work/assets/Rhino-NOTICE.txt"
 java -m jdk.compiler/com.sun.tools.javac.Main -source 8 -target 8 -bootclasspath "$platform:$tools/core-lambda-stubs.jar" -classpath "$RHINO_JAR" -d "$work/classes" "$root/android/src/dev/bearframe/ridge/"*.java
