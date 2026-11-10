@@ -98,6 +98,26 @@ function createBearframeAssetCache(manifest,loader,options){
     if(!cache.has(id))return false;
     memory-=cache.get(id).bytes;cache.delete(id);return true;
   }
+  // Host-triggered memory pressure: drop least-recently-used decoded assets
+  // without invalidating pending loads or mutating the authoritative game state.
+  // A zero budget also invalidates pending insertions so they cannot silently
+  // refill the cache after a critical low-memory callback.
+  function trimTo(targetBytes){
+    if(!Number.isInteger(targetBytes)||targetBytes<0||targetBytes>maxMemoryBytes)
+      throw new RangeError('Invalid asset cache target');
+    if(targetBytes===0){
+      clear();
+      return {evicted:0,memoryBytes:0};
+    }
+    var evicted=0;
+    while(memory>targetBytes&&cache.size){
+      var oldest=cache.keys().next().value;
+      memory-=cache.get(oldest).bytes;
+      cache.delete(oldest);
+      evicted++;
+    }
+    return {evicted:evicted,memoryBytes:memory};
+  }
   function clear(){
     generation++;cache.clear();inflight.clear();memory=0;
   }
@@ -107,6 +127,6 @@ function createBearframeAssetCache(manifest,loader,options){
       maxMemoryBytes:maxMemoryBytes,maxEntries:maxEntries};
   }
   return Object.freeze({descriptor:descriptor,load:load,preload:preload,get:get,
-    release:release,clear:clear,snapshot:snapshot});
+    release:release,clear:clear,trimTo:trimTo,snapshot:snapshot});
 }
 if(typeof module!=='undefined'&&module.exports)module.exports=createBearframeAssetCache;
