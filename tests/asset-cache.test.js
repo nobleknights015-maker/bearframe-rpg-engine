@@ -24,7 +24,7 @@ test('Engine v1 manifest port validates safe local asset IDs, dimensions, extens
  assert.throws(()=>validate(replace(m=>m.assets.terrain.path='assets//bad.png')),/Invalid asset descriptor/);
  assert.throws(()=>validate(replace(m=>m.assets.terrain.path='assets/bad.svg')),/Invalid asset descriptor/);
  assert.throws(()=>validate(replace(m=>m.assets.actor.path=m.assets.terrain.path)),/Duplicate asset path/);
- assert.throws(()=>validate(replace(m=>m.assets.actor.width=8192)),/Invalid image dimensions/);
+ assert.throws(()=>validate(replace(m=>{m.assets.actor.width=8192;m.assets.actor.height=8192;})),/Invalid image dimensions/);
  assert.throws(()=>validate(replace(m=>m.assets.actor.type='music')),/Incompatible asset type/);
  assert.throws(()=>validate(replace(m=>m.assets.actor.debug=true)),/Unknown asset metadata/);
  assert.throws(()=>validate(replace(m=>m.assets.theme.width=20)),/Audio asset/);
