@@ -21,6 +21,12 @@
     },function(error){audioStatus.textContent='Offline audio failed: '+error.message;});
   });
   window.addEventListener('pagehide',function(){audioProbe.dispose();});
+  window.addEventListener('blur',function(){audioProbe.suspend();});
+  window.addEventListener('focus',function(){audioProbe.resume();});
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden)audioProbe.suspend();
+    else audioProbe.resume();
+  });
   try {
     var theme={tileSize:32,clearColor:'#101018',
       atlases:{terrain:{width:64,height:32},characters:{width:64,height:48}},
@@ -100,8 +106,8 @@
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});
       },
-      suspend:function(){return snapshot();},
-      resume:function(){return show()&&snapshot();}
+      suspend:function(){audioProbe.suspend();return snapshot();},
+      resume:function(){audioProbe.resume();return show()&&snapshot();}
     });
     Array.from(document.querySelectorAll('[data-dir]')).forEach(function(button){
       button.addEventListener('click',function(){
