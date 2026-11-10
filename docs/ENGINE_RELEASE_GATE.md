@@ -29,7 +29,7 @@ Status: **development**, not production-ready. Sounding Ridge remains a frozen r
 
 ## Latest CI evidence (November 9, 2026 US Central)
 
-- 48 Node tests passed, zero failed, including simulation fuzz, content contract, rendering, audio scheduling and persistence failure injection.
+- 58 Node tests passed, zero failed, including simulation fuzz, content contract, rendering, audio scheduling and persistence failure injection.
 - Browser and portable engine modules execute in Mozilla Rhino under CI; Android APK and instrumentation APK successfully compile from GitHub checkout.
 - Android 35 emulator installed the original prototype APK, passed stage one, force-stopped it, and passed stage two after restart. **The experimental framework is not yet the installed-app runtime.**
 - These are *test results*, not a claim of production release readiness.
