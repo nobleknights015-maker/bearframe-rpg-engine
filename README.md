@@ -53,7 +53,7 @@ adb shell am instrument -w -e stage second dev.bearframe.ridge.tests/.RouteRunne
 
 ## Independent Engine Kit (engine-first development)
 
-The original Sounding Ridge Android build is preserved as a frozen regression fixture. The future reusable JRPG engine is being developed separately under \`framework/\` and is **not yet wired into the shipping Android Activity**. The new code is owned by this repository; it does not modify Plushbound Engine v1.
+The original Sounding Ridge Android build is preserved as a frozen regression fixture. The future reusable JRPG engine is being developed separately under `framework/` and is **not yet wired into the shipping Android Activity**. The new code is owned by this repository; it does not modify Plushbound Engine v1.
 
 The Engine Kit currently provides verified project/schema validation, a deterministic state machine, scripted event choices, configurable combat and inventories, a two-slot save journal, a renderer-independent scene composer, a pixel-perfect browser Canvas adapter, and an Android atlas drawing adapter. See [Framework API](docs/FRAMEWORK_API.md) and [engine release criteria](docs/ENGINE_RELEASE_GATE.md).
 
