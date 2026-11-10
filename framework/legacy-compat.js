@@ -48,7 +48,7 @@ function createBearframeLegacyCompatibility(config) {
   var prefix='bf:legacy-expedition-compat:v1:session';
   var journal=makeSlots(engine,config.storage,prefix);
   var vault=makeArchive(config.source,config.storage);
-  var staged=null,current=null;
+  var staged=null,stagedFile=null,current=null;
   function empty(){
     try{
       var h=journal.health();
@@ -70,7 +70,7 @@ function createBearframeLegacyCompatibility(config) {
     }catch(e){return {ok:false,reason:'source-unreadable'};}
   }
   function preflight(){
-    staged=null;
+    staged=null;stagedFile=null;
     if(!empty())return {ok:false,reason:'destination-occupied'};
     var src=archivedSameSource();
     if(!src.ok)return {ok:false,reason:src.reason};
@@ -80,6 +80,7 @@ function createBearframeLegacyCompatibility(config) {
       battle:src.legacy.battle!==null,prompt:src.legacy.prompt!==null};
   }
   function commit(){
+    stagedFile=null;
     if(staged===null)return {ok:false,reason:'not-staged'};
     var expected=staged;
     staged=null;
@@ -90,6 +91,44 @@ function createBearframeLegacyCompatibility(config) {
     var state={version:1,project:projectId,sequence:0,legacy:copy(src.legacy)};
     var saved=journal.save(state);
     if(!saved.ok)return {ok:false,reason:saved.reason};
+    var verified=journal.load();
+    if(!verified||JSON.stringify(verified)!==JSON.stringify(state))
+      return {ok:false,reason:'verify-failed'};
+    current=verified;
+    return {ok:true,reason:null,sequence:0};
+  }
+  /* Portable original-format restore from a user-selected external document.
+   * Unlike the initial old-source import, this supports a fresh installation
+   * with no old launcher save or local backup. Inspect is read-only, and the
+   * separate confirm action fails closed if ANY journal slot has appeared.
+   */
+  function inspectFile(raw){
+    staged=null;stagedFile=null;
+    if(!empty())return {ok:false,reason:'destination-occupied'};
+    if(typeof raw!=='string'||raw.length<2||raw.length>1900000)
+      return {ok:false,reason:'invalid-file'};
+    try {
+      var restored=decoder.decode(raw);
+      if(!validLegacy(restored))return {ok:false,reason:'invalid-original'};
+      stagedFile=raw;
+      return {ok:true,reason:null,name:restored.name,
+        location:restored.area,x:restored.x,y:restored.y,
+        battle:restored.battle!==null,prompt:restored.prompt!==null};
+    }catch(error){return {ok:false,reason:'invalid-file'};}
+  }
+  function commitFile(){
+    if(stagedFile===null)return {ok:false,reason:'not-staged'};
+    var raw=stagedFile;stagedFile=null;
+    if(!empty())return {ok:false,reason:'destination-occupied'};
+    var legacy;
+    try{
+      legacy=decoder.decode(raw);
+      if(!validLegacy(legacy))return {ok:false,reason:'invalid-original'};
+    }catch(error){return {ok:false,reason:'invalid-file'};}
+    var state={version:1,project:projectId,sequence:0,legacy:copy(legacy)};
+    var saved=journal.save(state);
+    if(!saved||!saved.ok)
+      return {ok:false,reason:saved&&saved.reason||'write-failed'};
     var verified=journal.load();
     if(!verified||JSON.stringify(verified)!==JSON.stringify(state))
       return {ok:false,reason:'verify-failed'};
@@ -125,6 +164,7 @@ function createBearframeLegacyCompatibility(config) {
       legacy:current?copy(current.legacy):null,health:journal.health()};
   }
   return Object.freeze({preflight:preflight,commit:commit,resume:resume,
+    inspectFile:inspectFile,commitFile:commitFile,
     dispatch:dispatch,snapshot:snapshot,archive:vault,
     namespace:prefix});
 }
