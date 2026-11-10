@@ -681,9 +681,12 @@ public final class RouteRunner extends Instrumentation {
         Class<?> validator=activity.getClass().getClassLoader()
             .loadClass("dev.bearframe.ridge.LegacyV1Validator");
         java.lang.reflect.Method accepts=validator.getMethod("accepts",String.class);
-        if(!(Boolean)accepts.invoke(null,raw) ||
-           (Boolean)accepts.invoke(null,raw.replace("\"x\":8","\"x\":0")))
-            throw new AssertionError("Native legacy geometry/schema validation mismatch");
+        boolean sourceValid=(Boolean)accepts.invoke(null,raw);
+        String blocked=new JSONObject(raw).put("x",0).toString();
+        boolean blockedAccepted=(Boolean)accepts.invoke(null,blocked);
+        if(!sourceValid||blockedAccepted)
+            throw new AssertionError("Native legacy validation mismatch: valid="+
+                sourceValid+" blockedAccepted="+blockedAccepted);
         if(!(Boolean)restore.invoke(exporter,raw))
             throw new AssertionError("Native restore rejected valid missing-key backup");
         if(!raw.equals(old.getString("expedition",null))||
