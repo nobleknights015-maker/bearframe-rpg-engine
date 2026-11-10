@@ -11,7 +11,8 @@ test('verified old-save export uses Android document picker, not broad filesyste
  assert.match(native,/getContentResolver\(\)\.openOutputStream/);
  assert.match(native,/legacy-v1-archive:v1:backup:a/);
  assert.match(native,/checksum\(body\)/);
- assert.doesNotMatch(native,/\.putString\("expedition"/);
+ assert.match(native,/if\(old\.contains\("expedition"\)\)return false/);
+ assert.doesNotMatch(native,/\.remove\("expedition"/);
  assert.match(activity,/addJavascriptInterface\(exporter,"BearframeArchiveExport"\)/);
  assert.match(activity,/exporter\.onResult\(requestCode,resultCode,data\)/);
  assert.match(html,/id="legacy-export"[^>]*disabled/);
