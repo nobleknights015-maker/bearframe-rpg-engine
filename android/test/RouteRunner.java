@@ -206,6 +206,36 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Unified WebView state was not durably committed: "+next);
         resultMeta.putString("unified",next.toString());
     }
+    /** Decode the packaged offline audio in the installed Chromium WebView, not
+     * merely the APK filesystem. This does not assert audible output or autoplay. */
+    private void checkUnifiedAudioDecode() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String start=evalHost("(function(){window.__bfAudioDecode='pending';" +
+            "var a=document.createElement('audio');" +
+            "a.preload='auto';" +
+            "a.onloadedmetadata=function(){window.__bfAudioDecode=" +
+                "a.duration>0&&isFinite(a.duration)?'decoded':'invalid-duration';};" +
+            "a.onerror=function(){window.__bfAudioDecode='decode-error-'+(a.error?a.error.code:'unknown');};" +
+            "a.src='/enginehost/audio/diagnostics/silence.wav';a.load();" +
+            "return 'started';})()");
+        if(!"\"started\"".equals(start))
+            throw new AssertionError("Audio decode probe failed to start: "+start);
+        String result="pending";
+        for(int attempt=0;attempt<40;attempt++){
+            result=evalHost("window.__bfAudioDecode");
+            if("\"decoded\"".equals(result))break;
+            if(!"\"pending\"".equals(result))
+                throw new AssertionError("Packaged WebView audio decode failed: "+result);
+            Thread.sleep(200);
+        }
+        if(!"\"decoded\"".equals(result))
+            throw new AssertionError("WebView audio metadata decode timed out: "+result);
+        resultMeta.putString("audio","PASS packaged WAV decoded by WebView");
+    }
     private Bundle resultMeta = new Bundle();
     @Override public void onStart(){
         Bundle result=new Bundle();
@@ -214,6 +244,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnified(stage.equals("unified-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-audio")){
+                checkUnifiedAudioDecode();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-audio");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
