@@ -6,6 +6,7 @@
 function createBearframeLegacyMigration(config){
   if(!config||!config.source||!config.storage||!config.engine||
     !config.mapping||typeof config.legacyRestore!=='function'||
+    typeof config.verifyGameplayParity!=='function'||
     typeof config.targetPrefix!=='string'||
     !/^bf:[a-z][a-z0-9_-]{0,63}:v[1-9][0-9]{0,3}(?::[a-z][a-z0-9_-]{0,63})?$/.test(config.targetPrefix))
     throw new TypeError('Explicit original restore, mapping and target namespace required');
@@ -35,6 +36,15 @@ function createBearframeLegacyMigration(config){
     stagedRaw=null;
     var safe=matchingArchive();
     if(!safe.ok)return safe;
+    // A data round-trip is not proof that future events and combat behave
+    // the same. A verified project-specific parity check must explicitly pass.
+    // Without it, the original launcher remains the sole playable option.
+    try{
+      var sourceState=legacy.decode(safe.raw);
+      var targetState=mapped.map(sourceState);
+      if(config.verifyGameplayParity(sourceState,targetState)!==true)
+        return {ok:false,reason:'behavior-incompatible'};
+    }catch(error){return {ok:false,reason:'behavior-incompatible'};}
     var result=imported.inspect();
     if(!result.ok)return result;
     stagedRaw=safe.raw;
