@@ -1,6 +1,8 @@
 # Bearframe RPG Engine — engine-first release gate
 
-Status: **development**, not production-ready. Sounding Ridge remains a frozen regression fixture and proof of concept. No new campaign content until the engine framework reaches the agreed v1 criteria. This document does not claim the game engine is finished.
+Status: **development**, not production-ready.
+
+**Versioned capability baseline:** [Engine v1 draft feature contract](ENGINE_V1_FEATURE_CONTRACT.md). It is not the final API freeze or a claim of release readiness. Sounding Ridge remains a frozen regression fixture and proof of concept. No new campaign content until the engine framework reaches the agreed v1 criteria. This document does not claim the game engine is finished.
 
 ## Invariants
 
