@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Bearframe engine host diagnostics</title>
+<link rel="stylesheet" href="host.css">
+</head><body>
+<main>
+  <p class="eyebrow">Bearframe Engine Kit · unified host</p>
+  <h1>Runtime diagnostics</h1>
+  <p id="status" role="status">Starting the unified engine…</p>
+  <canvas id="surface" width="224" height="160" aria-label="Portable atlas renderer diagnostics"></canvas>
+  <p id="metrics" aria-live="polite"></p>
+  <div class="pad" aria-label="Engine input diagnostics">
+    <button data-dir="up">↑</button><button data-dir="left">←</button>
+    <button data-dir="down">↓</button><button data-dir="right">→</button>
+  </div>
+  <p class="note">Internal engine verification. This is not a new Bearframe gameplay demo.</p>
+</main>
+<script src="../framework/schema.js"></script>
+<script src="../framework/runtime.js"></script>
+<script src="../framework/save-slots.js"></script>
+<script src="../framework/scene.js"></script>
+<script src="../framework/session.js"></script>
+<script src="../framework/canvas.js"></script>
+<script src="../fixtures/engine-project.js"></script>
+<script src="boot.js"></script>
+</body></html>
