@@ -16,6 +16,7 @@ Status: **development**, not production-ready. Sounding Ridge remains a frozen r
 | --- | --- | --- |
 | Deterministic simulation | Unit tests for state, input, combat, map transitions | Original game tests plus `tests/framework.test.js` deterministic/fuzz tests; Rhino validation passes |
 | Content data loading | Check schema, tile geometry, exit targets, event and foe references | Prototype validator plus portable `framework/schema.js` cross-reference contracts and rejection tests |
+| Asset manifest and cache | Reject unsafe paths, validate image bounds and bytes, cache/evict safely, load packaged textures | Versioned `framework/asset-manifest.js` and `framework/asset-cache.js` with tests; actual PNG atlases loaded by WebView diagnostics; large original art and device memory-pressure trials pending |
 | Save compatibility | Restart after turn advancement; reject damaged save; future schema migration coverage | Android emulator has verified both legacy two-process recovery and new WebView-to-native two-slot save recovery; corrupted-save overwrite protection tested; **legacy-to-new save migration not implemented** |
 | Android deployment | Checkout-to-APK CI build; fresh Android device install; no private keys in repository | Clean Android CI; legacy Rhino and new unified WebView two-process recovery validated on Android 35 emulator; **physical Moto G acceptance pending** |
 | Rendering & UI | Sprite layering/animation, scaling, touch gestures, accessibility/legibility | Portable atlas/camera/animation composer and Canvas adapter now execute inside a restricted offline Android WebView Activity; native Canvas adapter remains available; **final art/UI integration pending** |
@@ -48,6 +49,12 @@ The [unified engine host](UNIFIED_ENGINE_HOST.md) now packages the **same** port
 The installed APK passed Android 35 emulator tests at [CI run 42737252607](https://github.com/nobleknights015-maker/bearframe-rpg-engine/actions/runs/42737252607). In `unified-first`, the app started the WebView core, composed a Canvas scene, advanced to sequence 1, and durably saved `hub (1,2)`; after `am force-stop`, `unified-second` reloaded sequence 1 and advanced to sequence 2 at `hub (1,1)`. The original Rhino gameplay restart and gamepad checks also passed. [CI run 42737405555](https://github.com/nobleknights015-maker/bearframe-rpg-engine/actions/runs/42737405555) additionally passed **83 Node tests, zero failures**, including damaged-save overwrite protections.
 
 **Still open:** The new Activity is intentionally not the launcher, and the diagnostic test project is not Bearframe campaign content. Production map/art imports, actual Android/browser audio playback, full integrated party battle presentation, migration of existing game saves, device-specific performance/thermal tests, rotation and long-running soak checks are required for a release. Do not mark the engine finished on the strength of this integration test alone.
+
+## Verified engine-only asset loading checkpoint (November 9, 2026 Central)
+
+The [asset pipeline contract](ASSET_PIPELINE.md) now describes a reusable image/audio manifest validator, Engine v1-derived asynchronous LRU cache, local packaged-file loader, and fail-closed image-dimension checks. Android's unified WebView host no longer paints synthetic in-memory textures: it loads real PNG atlas fixtures from its APK before drawing the canvas. The fixtures are synthetic test data, not game art.
+
+[CI run 42740510268](https://github.com/nobleknights015-maker/bearframe-rpg-engine/actions/runs/42740510268) passed **90 Node tests (0 failures)**, Rhino compatibility, and a clean signed Android build. An explicit installed-app emulator rerun on the updated code is required before marking all Android integration checks verified; the CI commit carrying this note requests that run.
 
 ## Rules for marking work done
 
