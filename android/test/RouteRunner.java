@@ -123,6 +123,9 @@ public final class RouteRunner extends Instrumentation {
                 gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
                 gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
                 gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
+                JSONObject controllerState=new JSONObject(screen.getPreferences(0).getString("expedition","{}"));
+                if(!"G".equals(controllerState.optString("prompt")))
+                    throw new AssertionError("Controller movement did not open Guardian prompt: "+controllerState);
                 use("Listen",false); // D-pad moved through the world, opening the NPC prompt.
                 gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
                 // Cancel must dismiss the prompt without choosing an action.
