@@ -254,6 +254,16 @@ jobs:
             adb shell am instrument -w -e stage unified-party-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-party-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-second' "$RUNNER_TEMP/unified-party-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-party-second.txt"
+            # One native WebView v2 session owns world inventory, equipped
+            # lead attack, live battle resources, and save/restart journal.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-v2-world-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/v2-world-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-v2-world-first' "$RUNNER_TEMP/v2-world-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/v2-world-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-v2-world-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/v2-world-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-v2-world-second' "$RUNNER_TEMP/v2-world-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/v2-world-second.txt"
             # Verify selected skill and target through touch-accessible WebView
             # UI, not only the automatic diagnostic combat round.
             adb shell pm clear dev.bearframe.ridge

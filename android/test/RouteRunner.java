@@ -481,6 +481,62 @@ public final class RouteRunner extends Instrumentation {
     }
     /** Inspect installed skill/target selection UI and a real multi-command
      * round through the same durable portable v2 engine session. */
+    /** In-installed-WebView v2 integration: normal item/equipment rules, active
+     * encounter and durable party resources share ONE native v2 journal. */
+    private void checkUnifiedPartyWorldBridge(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String setup=evalHost("(function(){" +
+            "var storage={read:function(k){return BearframeNative.read(k)}," +
+            "write:function(k,v){return BearframeNative.write(k,v)}};" +
+            "window.__bfV2World=createBearframeSession(FRAMEWORK_PARTY_FIXTURE," +
+            "storage,null,{slotPrefix:'bf:framework-party-test:v2:worldbridge'});" +
+            "var s=window.__bfV2World;" +
+            "return JSON.stringify("+(restart?"s.resume()":"s.start('Bridge',47)")+");})()");
+        JSONObject started=new JSONObject((String)new JSONTokener(setup).nextValue());
+        if(!started.getBoolean("ok"))
+            throw new AssertionError("v2 world host failed to start/resume: "+setup);
+        if(!restart){
+            String result=evalHost("(function(){var s=window.__bfV2World;" +
+                "var steps=[{type:'move',dir:'right'}," +
+                "{type:'choose',id:'collect'},{type:'equip',item:'blade'}," +
+                "{type:'move',dir:'right'},{type:'move',dir:'right'}," +
+                "{type:'party-round',orders:[{actor:'pilot',skill:'pulse',target:'crawler'}]}];" +
+                "for(var i=0;i<steps.length;i++){" +
+                "var a=s.dispatch(steps[i]);if(!a.ok)return JSON.stringify({error:a.reason,step:i});}" +
+                "return JSON.stringify({view:s.snapshot().view,save:s.verifySave()});})()");
+            JSONObject info=new JSONObject((String)new JSONTokener(result).nextValue());
+            if(info.has("error"))throw new AssertionError("v2 bridge command failed "+result);
+            JSONObject view=info.getJSONObject("view");
+            if(view.getInt("sequence")!=6||view.getInt("charge")!=2||
+               view.getJSONObject("inventory").getInt("blade")!=1||
+               !"blade".equals(view.getString("weapon"))||
+               view.getJSONArray("partyActors").getJSONObject(0).getInt("attack")!=14||
+               view.getJSONArray("partyActors").getJSONObject(0).getInt("mp")!=2||
+               !info.getJSONObject("save").getBoolean("ok"))
+                throw new AssertionError("v2 equip/party battle not committed: "+result);
+        }else{
+            String result=evalHost("(function(){var s=window.__bfV2World;" +
+                "var before=s.snapshot().view;" +
+                "var action=s.dispatch({type:'party-round'," +
+                "orders:[{actor:'pilot',skill:'strike',target:'crawler'}]});" +
+                "return JSON.stringify({before:before,action:action," +
+                "after:s.snapshot().view,save:s.verifySave()});})()");
+            JSONObject info=new JSONObject((String)new JSONTokener(result).nextValue());
+            JSONObject before=info.getJSONObject("before"),after=info.getJSONObject("after");
+            if(before.getInt("sequence")!=6||before.getInt("charge")!=2||
+               before.getJSONArray("partyActors").getJSONObject(0).getInt("attack")!=14||
+               !info.getJSONObject("action").getBoolean("ok")||
+               after.getInt("sequence")!=7||
+               !info.getJSONObject("save").getBoolean("ok"))
+                throw new AssertionError("v2 equipped battle restart failed: "+result);
+        }
+        resultMeta.putString("v2world",
+            "PASS native Android v2 world inventory, equipment, live combat and restart");
+    }
     private void checkUnifiedPartyChoice() throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1312,6 +1368,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedRecreate();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-recreate");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-v2-world-first") ||
+               stage.equals("unified-v2-world-second")){
+                checkUnifiedPartyWorldBridge(stage.equals("unified-v2-world-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
