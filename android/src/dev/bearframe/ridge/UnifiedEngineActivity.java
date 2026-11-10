@@ -55,8 +55,11 @@ public final class UnifiedEngineActivity extends Activity {
                 "cancelled".equals(result)?
                 "Export cancelled; backup remains in app storage.":
                 "Export failed; backup remains in app storage.";
-            browser.evaluateJavascript("var e=document.getElementById('legacy-archive-status');"+
-                "if(e)e.textContent="+org.json.JSONObject.quote(line),null);
+            runOnUiThread(()->{
+                if(browser!=null)browser.evaluateJavascript(
+                    "var e=document.getElementById('legacy-archive-status');"+
+                    "if(e)e.textContent="+org.json.JSONObject.quote(line),null);
+            });
         }
     });
     private final AudioFocusRouter audioFocus=new AudioFocusRouter(this,()->{
