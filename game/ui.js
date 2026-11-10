@@ -40,3 +40,58 @@ window.addEventListener('keydown',e=>{
 render();
 
 for(const img of Object.values(scenery))img.addEventListener('load',()=>{if(state)paint(document.querySelector('canvas'),state)});
+
+
+// WebView/browser controller bridge. Gamepad is an optional input source:
+// touch and keyboard remain fully functional without a connected controller.
+const webGamepadInput=createBearframeControllerInput();
+let webControllerSelection=0;
+function webChoices(){
+  return Array.from(document.querySelectorAll('#choices button')).filter(b=>!b.disabled);
+}
+function webSelectChoice(delta){
+  const choices=webChoices();if(!choices.length)return false;
+  const focused=choices.indexOf(document.activeElement);
+  if(focused>=0)webControllerSelection=focused;
+  webControllerSelection=(webControllerSelection+delta+choices.length)%choices.length;
+  choices[webControllerSelection].focus({preventScroll:true});
+  return true;
+}
+function webControllerAction(event){
+  if(!state){
+    if(event.type==='confirm'&&document.activeElement?.click&&
+      ['BUTTON','SELECT'].includes(document.activeElement.tagName)){
+      document.activeElement.click();
+    }
+    return;
+  }
+  const choices=webChoices();
+  if(event.type==='navigate'){
+    if(choices.length){
+      webSelectChoice(event.direction==='up'||event.direction==='left'?-1:1);
+    }else act('move',event.direction);
+  }else if(event.type==='confirm'&&choices.length){
+    const index=choices.indexOf(document.activeElement);
+    choices[index>=0?index:Math.min(webControllerSelection,choices.length-1)].click();
+    webControllerSelection=0;
+  }else if(event.type==='cancel'){
+    if(state.prompt)act('close','');
+    else if(state.battle)act('combat','withdraw');
+  }
+  // Start/Select/shoulders are reserved for menus and party controls in the
+  // unified engine; no nonfunctional UI is shown in the frozen prototype.
+}
+function pollWebGamepads(time){
+  let connected=null;
+  try{
+    const pads=navigator.getGamepads?.()||[];
+    for(const pad of pads)if(pad?.connected){connected=pad;break;}
+  }catch{}
+  const events=webGamepadInput.poll(connected,time);
+  for(const event of events)webControllerAction(event);
+  requestAnimationFrame(pollWebGamepads);
+}
+window.addEventListener('blur',()=>webGamepadInput.clear());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)webGamepadInput.clear()});
+if(typeof navigator.getGamepads==='function'&&typeof requestAnimationFrame==='function')
+  requestAnimationFrame(pollWebGamepads);
