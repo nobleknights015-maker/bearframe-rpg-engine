@@ -65,7 +65,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -version 200 -f framework/schema.js -f framework/runtime.js -f framework/save-slots.js -f framework/scene.js -f framework/audio.js -f framework/party-combat.js -f fixtures/engine-project.js -f tests/framework-rhino.js | tee "$RUNNER_TEMP/framework-rhino-test.log"
+          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -version 200 -f framework/schema.js -f framework/runtime.js -f framework/save-slots.js -f framework/scene.js -f framework/audio.js -f framework/party-combat.js -f framework/viewport.js -f framework/performance.js -f fixtures/engine-project.js -f tests/framework-rhino.js | tee "$RUNNER_TEMP/framework-rhino-test.log"
           grep -q 'PASS portable JRPG framework' "$RUNNER_TEMP/framework-rhino-test.log"
       - name: Generate disposable build-only signing key
         shell: bash
