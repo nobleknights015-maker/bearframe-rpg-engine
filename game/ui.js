@@ -59,7 +59,13 @@ function webSelectChoice(delta){
 }
 function webControllerAction(event){
   if(!state){
-    if(event.type==='confirm'&&document.activeElement?.click&&
+    const controls=Array.from(document.querySelectorAll('#create input,#create select,#create button'));
+    if(event.type==='navigate'&&controls.length){
+      const current=controls.indexOf(document.activeElement);
+      const step=event.direction==='up'||event.direction==='left'?-1:1;
+      const next=(current<0?(step>0?-1:0):current)+step;
+      controls[(next+controls.length)%controls.length].focus({preventScroll:true});
+    }else if(event.type==='confirm'&&document.activeElement?.click&&
       ['BUTTON','SELECT'].includes(document.activeElement.tagName)){
       document.activeElement.click();
     }
