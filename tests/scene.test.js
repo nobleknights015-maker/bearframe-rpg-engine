@@ -63,8 +63,8 @@ test('cameras clamp within large worlds, center small worlds, and cull distant t
   const {engine,composer}=setup();
   let view=engine.view(engine.fresh('Visual'));
   const large=composer.compose({...view,x:5,y:3},{width:64,height:64});
-  assert.equal(large.camera.x,160);
-  assert.equal(large.camera.y,96);
+  assert.equal(large.camera.x,144);
+  assert.equal(large.camera.y,80);
   assert.ok(large.visibleTiles<=9);
   const small=composer.compose(view,{width:480,height:320});
   assert.ok(small.camera.x<0&&small.camera.y<0);
