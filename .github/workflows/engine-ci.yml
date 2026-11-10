@@ -165,6 +165,12 @@ jobs:
             adb shell am instrument -w -e stage unified-party-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-party-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-second' "$RUNNER_TEMP/unified-party-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-party-second.txt"
+            # Verify selected skill and target through touch-accessible WebView
+            # UI, not only the automatic diagnostic combat round.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-choice dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-party-choice.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-choice' "$RUNNER_TEMP/unified-party-choice.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-party-choice.txt"
             # Exercise real Android Activity recreation and persistence through
             # a new WebView instance. Does not change the legacy launcher.
             adb shell pm clear dev.bearframe.ridge

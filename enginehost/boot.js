@@ -70,6 +70,12 @@
     // but in its own synthetic project journal. No other save key is changed.
     var partyProbe=createBearframePartyProbe(storage);
     var partyStatus=document.getElementById('party-status');
+    var panel=createBearframePartyCommandPanel(
+      document.getElementById('party-controls'),partyProbe,
+      FRAMEWORK_PARTY_FIXTURE.partyCombat.skills,function(result){
+        describeParty();
+        if(!result.ok)partyStatus.textContent='Party order rejected: '+result.reason;
+      });
     function describeParty(){
       var p=partyProbe.snapshot();
       partyStatus.textContent=!p.ready?'Party diagnostic unavailable: '+p.error:
@@ -79,14 +85,14 @@
       return p;
     }
     document.getElementById('party-start').addEventListener('click',function(){
-      var r=partyProbe.begin();describeParty();
+      var r=partyProbe.begin();describeParty();panel.render();
       if(!r.ok)partyStatus.textContent='Party start blocked: '+r.reason;
     });
     document.getElementById('party-round').addEventListener('click',function(){
-      var r=partyProbe.round();describeParty();
+      var r=partyProbe.round();describeParty();panel.render();
       if(!r.ok)partyStatus.textContent='Party round blocked: '+r.reason;
     });
-    describeParty();
+    describeParty();panel.render();
     var load=engine.resume();
     if(!load.ok&&load.reason==='no-save')load=engine.start('Engine host',8735);
     if(!load.ok)throw new Error('Safe engine startup blocked: '+load.reason);

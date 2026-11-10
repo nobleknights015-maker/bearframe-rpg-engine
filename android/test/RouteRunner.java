@@ -478,6 +478,33 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Party session crossed the base engine journal");
         resultMeta.putString("party","PASS v2 party turn, UI and durable revision "+expected);
     }
+    /** Inspect installed skill/target selection UI and a real multi-command
+     * round through the same durable portable v2 engine session. */
+    private void checkUnifiedPartyChoice() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        evalHost("document.getElementById('party-start').click()");
+        String prepared=evalHost("(function(){var s=document.querySelector('[data-party-skill=pilot]');" +
+            "if(!s)return 'missing-select';s.value='pulse';" +
+            "s.dispatchEvent(new Event('change'));" +
+            "var t=document.querySelector('[data-party-target=pilot]');" +
+            "if(!t||t.value!=='crawler')return 'wrong-target';" +
+            "document.getElementById('party-commit').click();return 'submitted';})()");
+        if(!"\"submitted\"".equals(prepared))
+            throw new AssertionError("Installed party UI did not submit chosen commands: "+prepared);
+        String raw=evalHost("JSON.stringify(BearframeHost.party.snapshot())");
+        JSONObject after=new JSONObject((String)new JSONTokener(raw).nextValue());
+        if(after.getInt("sequence")!=7||after.getInt("savedRevision")!=7||
+           after.getInt("playerMp")!=2||after.getInt("targetHp")>=48)
+            throw new AssertionError("Selected pulse was not durably processed: "+after);
+        JSONObject world=unifiedSnapshot();
+        if(world.getInt("sequence")!=0||world.getInt("savedRevision")!=0)
+            throw new AssertionError("Party command changed base engine journal");
+        resultMeta.putString("partyChoice","PASS chosen ability/target, UI and durable MP");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -540,6 +567,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedRecreate();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-recreate");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-party-choice")){
+                checkUnifiedPartyChoice();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-party-choice");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

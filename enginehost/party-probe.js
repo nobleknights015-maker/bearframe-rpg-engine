@@ -20,6 +20,7 @@ function createBearframePartyProbe(storage) {
       phase:battle?battle.phase:'none',targetHp:battle?battle.foes[0].hp:null,
       partyCount:battle?battle.party.length:null,
       playerHp:battle?battle.party[0].hp:null,
+      playerMp:battle?battle.party[0].mp:null,
       savedRevision:snap.journal.latestSequence,
       validSlots:snap.journal.validSlots};
   }
@@ -36,6 +37,16 @@ function createBearframePartyProbe(storage) {
     var current=snapshot();
     return {ok:current.phase==='active',reason:current.phase==='active'?null:'no-encounter'};
   }
+  function battle(){
+    var view=session.snapshot().view;
+    return view&&view.partyBattle?
+      JSON.parse(JSON.stringify(view.partyBattle.encounter)):null;
+  }
+  function submit(orders) {
+    if(startupError)return {ok:false,reason:startupError};
+    if(!battle())return {ok:false,reason:'not-in-battle'};
+    return session.dispatch({type:'party-round',orders:orders});
+  }
   function round() {
     if(startupError)return {ok:false,reason:startupError};
     var view=session.snapshot().view;
@@ -46,7 +57,8 @@ function createBearframePartyProbe(storage) {
     });
     return session.dispatch({type:'party-round',orders:orders});
   }
-  return Object.freeze({snapshot:snapshot,begin:begin,round:round});
+  return Object.freeze({snapshot:snapshot,begin:begin,round:round,
+    battle:battle,submit:submit});
 }
 if(typeof module!=='undefined'&&module.exports)
   module.exports=createBearframePartyProbe;
