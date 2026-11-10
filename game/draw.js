@@ -1,7 +1,8 @@
 // Small, authored pixel shapes. Each frame is drawn on demand at a fixed resolution.
-const scenery=Object.fromEntries(Object.keys(WORLD).map(area=>{
-  const img=new Image();img.src=area+'.webp';return [area,img];
-}));
+const scenery={};
+for(const area of Object.keys(WORLD)){
+  const img=new Image();img.src=area+'.webp';scenery[area]=img;
+}
 function paint(canvas,s){
   const c=canvas.getContext('2d'), map=WORLD[s.area], w=canvas.width,h=canvas.height;
   const rect=(x,y,a,b,color)=>{c.fillStyle=color;c.fillRect(x|0,y|0,a,b)};
