@@ -177,6 +177,16 @@ jobs:
             adb shell am instrument -w -e stage unified-restore-native dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-restore-native.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-restore-native' "$RUNNER_TEMP/unified-restore-native.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-restore-native.txt"
+            # Verify deliberate legacy archive+playable import, original-rule combat,
+            # and exact separate save recovery after killing the Android process.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-compat-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-compat-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-first' "$RUNNER_TEMP/unified-compat-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-compat-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-compat-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-compat-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-second' "$RUNNER_TEMP/unified-compat-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-compat-second.txt"
             # Exercise the versioned party-combat core and UI through the
             # installed WebView, including process-stop journal recovery.
             adb shell pm clear dev.bearframe.ridge

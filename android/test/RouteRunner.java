@@ -650,6 +650,89 @@ public final class RouteRunner extends Instrumentation {
         }
         resultMeta.putString("archive","PASS exact historical archive, original source and separate journal");
     }
+    /** Emulator-only historical compatibility acceptance through the installed offline WebView.
+     * Explicit source archive, explicit copy, original combat, and process restart. */
+    private void checkUnifiedLegacyCompat(boolean restart) throws Exception {
+        android.content.SharedPreferences old=getTargetContext()
+            .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
+        if(!restart){
+            JSONObject flags=new JSONObject();
+            for(String id:new String[]{"bearing","E","D","H","echoAlly","gridAlly","met"})
+                flags.put(id,false);
+            flags.put("bearing",true);
+            String fixture=new JSONObject().put("v",1).put("name","Legacy playable")
+                .put("finish","Slate").put("area","gallery").put("x",8).put("y",4)
+                .put("hp",35).put("charge",3).put("weapon","lance")
+                .put("flags",flags).put("battle",new JSONObject()
+                    .put("key","H").put("hp",24).put("turn",1))
+                .put("prompt",JSONObject.NULL).put("message","Historical battle").toString();
+            if(!old.edit().putString("expedition",fixture)
+                .putString("untouched","yes").commit())
+                throw new AssertionError("Cannot seed historical playable source");
+        }
+        String original=old.getString("expedition",null);
+        if(original==null)throw new AssertionError("Original legacy game save absent");
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject portable=unifiedSnapshot();
+        if(portable.getInt("savedRevision")!=0||portable.getInt("sequence")!=0)
+            throw new AssertionError("Compatibility test altered canonical engine");
+        JSONObject early=new JSONObject((String)new JSONTokener(
+            evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+        if(early.getBoolean("active"))
+            throw new AssertionError("Legacy session launched without consent");
+        if(!restart){
+            if(!"true".equals(evalHost(
+                "document.getElementById('legacy-compat-confirm').disabled")))
+                throw new AssertionError("Legacy import consent auto-enabled");
+            evalHost("document.getElementById('legacy-preview').click()");
+            evalHost("document.getElementById('legacy-confirm').click()");
+            if(!"true".equals(evalHost(
+                "JSON.parse(BearframeLegacyCompat.snapshotJson()).health.validSlots===0")))
+                throw new AssertionError("Archival implicitly started playable compatibility");
+            evalHost("document.getElementById('legacy-compat-preview').click()");
+            if(!"false".equals(evalHost(
+                "document.getElementById('legacy-compat-confirm').disabled")))
+                throw new AssertionError("Archive did not enable explicit import");
+            evalHost("document.getElementById('legacy-compat-confirm').click()");
+        }else{
+            evalHost("document.getElementById('legacy-compat-resume').click()");
+        }
+        JSONObject loaded=new JSONObject((String)new JSONTokener(
+            evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+        if(!loaded.getBoolean("active")||loaded.getInt("sequence")!=(restart?1:0)||
+           loaded.getJSONObject("health").optInt("validSlots",0)<1)
+            throw new AssertionError("Historical session not recovered: "+loaded);
+        JSONObject legacy=loaded.getJSONObject("legacy");
+        if(!"gallery".equals(legacy.getString("area"))||
+           !"lance".equals(legacy.getString("weapon"))||
+           legacy.getJSONObject("battle").getInt("hp")!=(restart?17:24))
+            throw new AssertionError("Historical battle/gear state lost: "+legacy);
+        String action=restart?"Pulse":"Strike";
+        String did=evalHost("(function(){var buttons=document.querySelectorAll(" +
+            "'#legacy-compat-actions button');for(var i=0;i<buttons.length;i++){" +
+            "if(buttons[i].textContent==='"+action+"'){buttons[i].click();return true;}}return false;})()");
+        if(!"true".equals(did))
+            throw new AssertionError("Legacy combat action unavailable: "+action+" "+did);
+        JSONObject advanced=new JSONObject((String)new JSONTokener(
+            evalHost("BearframeLegacyCompat.snapshotJson()")).nextValue());
+        if(advanced.getInt("sequence")!=(restart?2:1)||
+           advanced.getJSONObject("legacy").getJSONObject("battle")
+               .getInt("hp")!=(restart?3:17)||
+           advanced.getJSONObject("health").getInt("latestSequence")!=(restart?2:1))
+            throw new AssertionError("Original combat not durably committed: "+advanced);
+        if(!original.equals(old.getString("expedition",null))||
+           !"yes".equals(old.getString("untouched",null)))
+            throw new AssertionError("Legacy compatibility overwrote original save");
+        JSONObject after=unifiedSnapshot();
+        if(after.getInt("sequence")!=portable.getInt("sequence")||
+           after.getInt("savedRevision")!=portable.getInt("savedRevision"))
+            throw new AssertionError("Legacy compatibility touched canonical journal");
+        resultMeta.putString("legacyCompat",
+            "PASS verified source, original combat, isolated journal and restart");
+    }
     /** Test-only native recovery acceptance without opening a document picker.
      * The actual restore UI always requires ACTION_OPEN_DOCUMENT user choice. */
     private void checkUnifiedRestoreNative() throws Exception {
@@ -815,6 +898,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedAssetPack();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-pack");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-compat-first") || stage.equals("unified-compat-second")){
+                checkUnifiedLegacyCompat(stage.equals("unified-compat-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
