@@ -125,3 +125,9 @@ The experimental WebView now has an installed Android 35 instrumentation route `
 The experimental `UnifiedEngineActivity` now handles `WebViewClient.onRenderProcessGone` by detaching and discarding the defunct WebView and constructing a fresh **restricted, offline** WebView that reopens the existing Android durable journal; the recovery callback does not mutate gameplay or legacy preference data. Recovery attempts are bounded to two per Activity, after which a visible fail-closed message instructs a restart instead of repeatedly relaunching a crashing renderer.
 
 Installed Android 35 CI `unified-renderer` deterministically invokes the real WebViewClient callback, validates replacement of the WebView, restoration of previously committed sequence/position and packaged art, then commits a second movement. This establishes callback-path acceptance only: an actual OS-induced renderer crash under memory pressure, physical Moto G acceptance and hours-long reliability still require separate validation.
+
+## Android audio-focus wiring checkpoint — November 10, 2026
+
+The experimental WebView now uses a narrow `BearframeAudioFocus` interface to Android `AudioManager`, through `AudioFocusRouter.java`. Its focus request occurs only when the user presses the offline audio diagnostic play control; failure prevents playback. Rejection, background/blur, renderer disposal and Activity destruction release focus. On a platform focus-loss callback, the host suspends audio, and focus gain **does not autoplay**. This alters no world state or saved data.
+
+The installed Android 35 emulator stage `unified-focus` requests focus through the real native bridge, checks repeat request and release semantics, and verifies unchanged durable journal. Passing the emulator will demonstrate native API wiring only, not speaker output, call interruptions, Bluetooth compatibility or physical Moto G measurements. Those remain OPEN.

@@ -1,0 +1,22 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+test('Android focus is requested only on a media gesture, abandoned on background and never saved',()=>{
+ const native=fs.readFileSync(path.join(__dirname,'../android/src/dev/bearframe/ridge/AudioFocusRouter.java'),'utf8');
+ const activity=fs.readFileSync(path.join(__dirname,'../android/src/dev/bearframe/ridge/UnifiedEngineActivity.java'),'utf8');
+ const host=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
+ const route=fs.readFileSync(path.join(__dirname,'../android/test/RouteRunner.java'),'utf8');
+ const ci=fs.readFileSync(path.join(__dirname,'../.github/workflows/engine-ci.yml'),'utf8');
+ assert.match(native,/AudioFocusRequest\.Builder/);
+ assert.match(native,/AudioAttributes\.USAGE_GAME/);
+ assert.match(native,/AUDIOFOCUS_REQUEST_GRANTED/);
+ assert.match(native,/@JavascriptInterface public synchronized boolean request\(\)/);
+ assert.match(native,/@JavascriptInterface public synchronized void abandon\(\)/);
+ assert.match(activity,/addJavascriptInterface\(audioFocus,"BearframeAudioFocus"\)/);
+ assert.match(activity,/audioFocus\.abandon\(\)/);
+ assert.match(activity,/removeJavascriptInterface\("BearframeAudioFocus"\)/);
+ assert.match(host,/if\(androidFocus&&!androidFocus\.request\(\)\)/);
+ assert.match(host,/audioProbe\.play\(\)\.then/);
+ assert.match(host,/if\(!result\.ok\)releaseFocus\(\)/);
+ assert.match(host,/pagehide',function\(\)\{audioProbe\.dispose\(\);releaseFocus\(\)/);
+ assert.match(route,/checkUnifiedAudioFocus\(\)/);
+ assert.match(ci,/stage unified-focus/);
+});
