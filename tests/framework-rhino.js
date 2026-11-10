@@ -112,3 +112,18 @@ ensure(unifiedReload.resume().ok,'unified Rhino session resumes');
 ensure(unifiedReload.snapshot().view.sequence===1,'unified Rhino retained committed revision');
 ensure(unifiedReload.compose({width:96,height:96,tick:0}).commands.length>3,'unified Rhino composed scene');
 print('PASS unified session under Rhino using the same core as WebView');
+
+var portableAssetManifest={
+ version:1,assets:{terrain:{type:'atlas',path:'enginehost/assets/terrain.png',
+   width:64,height:32,preload:true,pixelArt:true}}
+};
+ensure(validateBearframeAssets(portableAssetManifest)===portableAssetManifest,
+  'validated source manifest under Rhino');
+var refusedUnsafePath=false;
+try{
+ validateBearframeAssets({version:1,assets:{
+   unsafe:{type:'atlas',path:'../private.png',width:64,height:32}
+ }});
+}catch(error){refusedUnsafePath=true;}
+ensure(refusedUnsafePath,'rejected unsafe asset path under Rhino');
+print('PASS validated local asset manifest under Rhino');
