@@ -27,7 +27,8 @@ import java.util.Map;
  *
  * This Activity is deliberately NOT the launcher until its release gate passes.
  * It uses only packaged trusted scripts. No network, remote navigation or
- * arbitrary filesystem access is enabled. No original game save is touched.
+ * arbitrary filesystem access is enabled. The separate, exact-key legacy
+ * source bridge is read-only; no original game save is modified.
  */
 public final class UnifiedEngineActivity extends Activity {
     public static final String ORIGIN = "https://appassets.androidplatform.net";
@@ -47,6 +48,22 @@ public final class UnifiedEngineActivity extends Activity {
         @JavascriptInterface public String read(String key) {
             if (!allowedSaveKey(key)) return null;
             return preferences().getString(key,null);
+        }
+        /**
+         * Legacy ExpeditionActivity.getPreferences(MODE_PRIVATE) uses the
+         * Activity local class name as its SharedPreferences file name.
+         * Read-only, single-key compatibility bridge. This method MUST NOT
+         * remove, rewrite, or implicitly migrate the source snapshot.
+         */
+        @JavascriptInterface public String readLegacyExpedition() {
+            try {
+                String raw=UnifiedEngineActivity.this
+                    .getSharedPreferences("ExpeditionActivity", MODE_PRIVATE)
+                    .getString("expedition",null);
+                return raw==null || raw.length()==0 || raw.length()>1900000 ? null : raw;
+            } catch(RuntimeException unreadable) {
+                return null; // Fail closed for wrong preference types or storage faults.
+            }
         }
         @JavascriptInterface public boolean write(String key,String value) {
             if (!allowedSaveKey(key) || value == null || value.length() > 2000000)

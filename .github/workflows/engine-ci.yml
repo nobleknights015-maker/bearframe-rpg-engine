@@ -117,6 +117,12 @@ jobs:
             adb shell am instrument -w -e stage controller dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/gamepad-controller.txt"
             grep -F 'route=PASS controller' "$RUNNER_TEMP/gamepad-controller.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/gamepad-controller.txt"
+            # Exercise read-only transport from the original ExpeditionActivity
+            # preferences file; never run a writeback or migration here.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-legacy dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-legacy.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-legacy' "$RUNNER_TEMP/unified-legacy.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-legacy.txt"
             # Exercise native onTrimMemory, packaged atlas recovery and journal isolation.
             adb shell pm clear dev.bearframe.ridge
             adb shell am instrument -w -e stage unified-memory dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-memory.txt"

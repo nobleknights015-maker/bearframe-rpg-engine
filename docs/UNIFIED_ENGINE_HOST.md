@@ -32,3 +32,9 @@ Do not label the unified Android runtime release-ready until *both WebView emula
 6. Browser-based renderer/audio asset adapters must be completed before the engine becomes the default launcher.
 
 This is the integration architecture, not an assertion that the engine is finished.
+
+## Read-only legacy save source bridge — November 10, 2026
+
+The original Rhino `ExpeditionActivity` uses Android `Activity.getPreferences(MODE_PRIVATE)`, whose preferences file is named `ExpeditionActivity`, with a single `expedition` JSON string key. The experimental `UnifiedEngineActivity.NativeSaveBridge.readLegacyExpedition()` now reads **only** that exact old key from the corresponding Android preferences file, with a 1,900,000-character upper bound and fail-closed handling of absent or wrong-type values. It does not accept arbitrary keys or expose any legacy write/remove API. Existing engine journal `read/write` methods still reject `expedition`.
+
+The installed-APK emulator stage `unified-legacy` seeds a source snapshot matching the frozen legacy v1 schema, checks exact byte-for-byte JS bridge transport, verifies legacy values and the separate unified journal remain unchanged, and rejects missing/wrong-type source data. This is a **read-only transport gate**, not a mapping or successful migration claim. A reviewed field-by-field adapter into a compatible project schema, explicit import UI/consent, conflict/rollback testing and physical-device migration remain release blockers. Keep the original launcher and saves unchanged.

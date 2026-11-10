@@ -249,6 +249,53 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Recovery changed journal: "+after);
         resultMeta.putString("memory","PASS native trim, atlas reload, canvas and unchanged journal");
     }
+    /** Verify the *actual* legacy Activity preferences are available through a
+     * narrow read-only bridge without exposing destination writes or mutating
+     * either the old source or unified engine journal. */
+    private void checkUnifiedLegacyRead() throws Exception {
+        android.content.SharedPreferences legacy=getTargetContext()
+            .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
+        JSONObject flags=new JSONObject();
+        for(String flag:new String[]{"bearing","E","D","H","echoAlly","gridAlly","met"})
+            flags.put(flag,false);
+        String raw=new JSONObject().put("v",1).put("name","Migration fixture")
+            .put("finish","Ash").put("area","pod").put("x",3).put("y",4)
+            .put("hp",30).put("charge",2).put("weapon",JSONObject.NULL)
+            .put("flags",flags).put("battle",JSONObject.NULL)
+            .put("prompt",JSONObject.NULL).put("message","Read-only source snapshot")
+            .toString();
+        if(!legacy.edit().putString("expedition",raw).putString("other","preserve").commit())
+            throw new AssertionError("Cannot prepare existing source preference");
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        Object value=new JSONTokener(evalHost("BearframeNative.readLegacyExpedition()")).nextValue();
+        if(!(value instanceof String)||!raw.equals(value))
+            throw new AssertionError("Read-only bridge lost original legacy bytes");
+        if(!"false".equals(evalHost("BearframeNative.write('expedition','overwrite')")) ||
+           !"null".equals(evalHost("BearframeNative.read('expedition')")) ||
+           !"\"undefined\"".equals(evalHost("typeof BearframeNative.writeLegacyExpedition")))
+            throw new AssertionError("Legacy namespace writable through engine bridge");
+        if(!raw.equals(legacy.getString("expedition",null)) ||
+           !"preserve".equals(legacy.getString("other",null)))
+            throw new AssertionError("Legacy preferences mutated by inspection");
+        JSONObject after=unifiedSnapshot();
+        if(before.getInt("sequence")!=after.getInt("sequence") ||
+           before.getInt("savedRevision")!=after.getInt("savedRevision"))
+            throw new AssertionError("Inspection modified unified engine journal");
+        // Wrong type and missing source must fail closed without crashing WebView.
+        if(!legacy.edit().putInt("expedition",42).commit())
+            throw new AssertionError("Cannot set corrupt source fixture");
+        if(!"null".equals(evalHost("BearframeNative.readLegacyExpedition()")))
+            throw new AssertionError("Wrong-type legacy source was accepted");
+        if(!legacy.edit().remove("expedition").commit())
+            throw new AssertionError("Cannot clear test fixture");
+        if(!"null".equals(evalHost("BearframeNative.readLegacyExpedition()")))
+            throw new AssertionError("Missing legacy source was accepted");
+        resultMeta.putString("legacy","PASS exact-key read-only bridge, corruption and journal isolation");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -290,6 +337,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnified(stage.equals("unified-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-legacy")){
+                checkUnifiedLegacyRead();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-legacy");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

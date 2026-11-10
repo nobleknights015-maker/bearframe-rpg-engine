@@ -1,0 +1,30 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+test('legacy Android snapshot source matches the original Activity preference contract',()=>{
+ const legacy=read('android/src/dev/bearframe/ridge/ExpeditionActivity.java');
+ const unified=read('android/src/dev/bearframe/ridge/UnifiedEngineActivity.java');
+ assert.match(legacy,/getPreferences\(MODE_PRIVATE\)\.getString\("expedition"/);
+ assert.match(legacy,/getPreferences\(MODE_PRIVATE\)\.edit\(\)\.putString\("expedition"/);
+ assert.match(unified,/getSharedPreferences\("ExpeditionActivity", MODE_PRIVATE\)/);
+ assert.match(unified,/@JavascriptInterface public String readLegacyExpedition\(\)/);
+ assert.match(unified,/getString\("expedition",null\)/);
+ assert.match(unified,/raw\.length\(\)>1900000/);
+ assert.match(unified,/catch\(RuntimeException unreadable\)/);
+ assert.doesNotMatch(unified,/@JavascriptInterface public (?:boolean|void) (?:write|remove)Legacy/);
+ assert.match(unified,/key\.matches\("bf:/);
+});
+test('installed Android emulator checks exact legacy readback and original journal isolation',()=>{
+ const runner=read('android/test/RouteRunner.java');
+ const ci=read('.github/workflows/engine-ci.yml');
+ assert.match(runner,/checkUnifiedLegacyRead\(\)/);
+ assert.match(runner,/readLegacyExpedition\(\)/);
+ assert.match(runner,/legacy\.getString\("expedition",null\)/);
+ assert.match(runner,/savedRevision"\)\s*!=\s*after\.getInt\("savedRevision"/);
+ assert.match(runner,/stage\.equals\("unified-legacy"\)/);
+ assert.match(ci,/stage unified-legacy dev\.bearframe\.ridge\.tests\/\.RouteRunner/);
+ assert.match(ci,/INSTRUMENTATION_RESULT: route=PASS unified-legacy/);
+});
