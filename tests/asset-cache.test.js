@@ -138,3 +138,36 @@ test('critical memory pressure cancels pending cache insertions',async()=>{
  assert.deepEqual(cache.snapshot().loaded,[]);
  assert.equal(cache.snapshot().memoryBytes,0);
 });
+
+test('host low-memory callback blocks input until scene atlases reload, without altering saves',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const boot=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
+ const native=fs.readFileSync(path.join(__dirname,
+  '../android/src/dev/bearframe/ridge/UnifiedEngineActivity.java'),'utf8');
+ assert.match(native,/@Override public void onTrimMemory\(int level\)/);
+ assert.match(native,/super\.onTrimMemory\(level\)/);
+ assert.match(native,/browser\.evaluateJavascript\(/);
+ assert.match(native,/BearframeHost\.memoryPressure/);
+ assert.match(boot,/memoryPressure:memoryPressure/);
+ assert.match(boot,/assets\.trimTo\(target\)/);
+ assert.match(boot,/assets\.preload\(\['terrain','characters'\]\)/);
+ assert.match(boot,/if\(restoring\|\|!assets\.get\('terrain'\)\|\|!assets\.get\('characters'\)\)/);
+ assert.match(boot,/reason:'assets-restoring'/);
+ assert.match(boot,/Scene restoration failed/);
+});
+test('critical trim and rehydration require a new decode and preserve prior values',async()=>{
+ let requests=0;
+ const cache=create(manifest,async d=>{requests++;return fake(d);});
+ const first=await cache.preload(['terrain','actor']);
+ assert.equal(requests,2);
+ const before=cache.snapshot().memoryBytes;
+ assert.ok(before>0);
+ cache.trimTo(0);
+ assert.equal(cache.get('terrain'),null);
+ assert.equal(cache.get('actor'),null);
+ const second=await cache.preload(['terrain','actor']);
+ assert.equal(requests,4);
+ assert.notStrictEqual(first.terrain,second.terrain);
+ assert.equal(cache.snapshot().memoryBytes,before);
+ assert.deepEqual(cache.snapshot().loaded,['terrain','actor']);
+});
