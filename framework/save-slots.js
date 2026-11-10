@@ -68,9 +68,14 @@ function createBearframeSaveSlots(engine,storage,prefix){
       return {ok:false,reason:'verify-failed'};
     return {ok:true,slot:target,unchanged:false};
   }
+  function occupied(key){
+    try {var raw=storage.read(key);return typeof raw==='string'&&raw.length>0;}
+    catch(error){return true;} // Fail closed when storage is unreadable.
+  }
   function health(){
     var a=readSlot(A),b=readSlot(B),newest=latest();
-    return {validSlots:(a?1:0)+(b?1:0),latestSequence:newest&&!newest.conflict?newest.sequence:null,
+    return {validSlots:(a?1:0)+(b?1:0),occupiedSlots:(occupied(A)?1:0)+(occupied(B)?1:0),
+      latestSequence:newest&&!newest.conflict?newest.sequence:null,
       conflict:!!(newest&&newest.conflict)};
   }
   return Object.freeze({load:load,save:save,health:health,keys:Object.freeze([A,B])});
