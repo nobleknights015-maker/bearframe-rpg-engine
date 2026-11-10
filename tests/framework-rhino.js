@@ -79,3 +79,10 @@ v1Budget.recordFrame(20);
 ensure(v1Budget.health().healthy===true,'Engine v1 performance monitor');
 ensure(v1Budget.assess({visibleTiles:1100}).level==='moderate','Engine v1 tile pressure');
 print('PASS Engine v1 viewport and performance systems under Rhino');
+
+var v1Windows=createBearframeWindowLayout({viewportWidth:320,viewportHeight:240});
+var msgBox=v1Windows.messageWindow({lines:3,hasFace:true,name:'Observer'});
+var menuBox=v1Windows.choiceWindow({choices:['Continue','Back'],messageRect:msgBox.rect});
+ensure(msgBox.face.width>0&&menuBox.items.length===2,'ported Engine v1 windows');
+ensure(menuBox.rect.x+menuBox.rect.width<=320,'ported window viewport fit');
+print('PASS Engine v1 classic JRPG windows under Rhino');
