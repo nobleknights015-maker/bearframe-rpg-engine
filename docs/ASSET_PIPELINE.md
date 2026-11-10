@@ -57,3 +57,9 @@ The two tiny files in `enginehost/fixtures/*.png.b64` are deterministic, synthet
 `tests/asset-cache.test.js` covers manifest rejection, local path safety, dimension mismatches, concurrent loading, LRU eviction, memory budgets and async invalidation. `tests/framework-rhino.js` checks the manifest contract in the legacy interpreter. Android's installed-app `RouteRunner` tests that **two packaged atlases are actually loaded** and verifies the expected first pixel of the Canvas frame from the real PNG. The existing dual-process save/restart tests are retained.
 
 Further work before engine-v1 release: manifest tooling that packages user-supplied original art with asset IDs, per-scene dependency groups and mobile memory-pressure callbacks, load-time telemetry, asset replacement and compatibility validation, audio decoding/playback, and physical-device performance under large original art sets. None of those items is represented as completed.
+
+## Memory-pressure cache control (November 10, 2026)
+
+The portable cache exposes `trimTo(targetBytes)` for a host-managed low-memory policy. It evicts decoded resources in least-recently-used order until the resident estimate is within the requested target, returning the number evicted and remaining estimated bytes. The target must be a nonnegative integer no larger than the configured cache budget. `trimTo(0)` performs a critical purge using `clear()`, invalidating in-flight insertions so late image decodes cannot silently repopulate memory. This changes only cached resources, **not** engine simulation or saves. Node regressions cover LRU ordering, budget validation, and critical-pressure races.
+
+**Integration still required:** Android `onTrimMemory` delivery to the WebView, safe asset rehydration before the next Canvas frame, and real-device memory profiling. Until those exist, this is a tested cache primitive, not a completed Android low-memory acceptance gate.
