@@ -10,7 +10,7 @@ test('offline v2 party integration uses its own durable journal across process r
  const disk=storage(),probe=createProbe(disk);
  assert.deepEqual(Object.assign({},probe.snapshot()),{
   ready:true,error:null,engineVersion:2,sequence:0,phase:'none',
-  targetHp:null,partyCount:null,playerHp:null,savedRevision:0,validSlots:1
+  targetHp:null,partyCount:null,playerHp:null,playerMp:null,savedRevision:0,validSlots:1
  });
  assert.equal(probe.begin().ok,true);
  assert.equal(probe.snapshot().sequence,6);
