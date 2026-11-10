@@ -9,7 +9,7 @@ Object.keys(original.WORLD).forEach(id=>{
  const old=original.WORLD[id],events={},exits={};
  old.rows.forEach((row,y)=>[...row].forEach((cell,x)=>{
   const point=x+','+y;
-  if(original.TEXT[cell])events[point]=cell;
+  if(original.TEXT[cell])events[point]=cell.toLowerCase();
   if(old.exits[cell]){const to=old.exits[cell];exits[point]={map:to[0],x:to[1],y:to[2]};}
  }));
  maps[id]={name:old.name,
@@ -18,12 +18,12 @@ Object.keys(original.WORLD).forEach(id=>{
 });
 const events={};
 Object.keys(original.ACTIONS).forEach(key=>{
- events[key]={text:original.TEXT[key],choices:original.ACTIONS[key].map(([id,title])=>({
+ events[key.toLowerCase()]={text:original.TEXT[key],choices:original.ACTIONS[key].map(([id,title])=>({
    id,text:title,effects:[]}))};
 });
 const foes={};
 Object.keys(original.FOES).forEach(id=>{
- foes[id]={name:original.FOES[id].name,hp:original.FOES[id].hp,
+ foes[id.toLowerCase()]={name:original.FOES[id].name,hp:original.FOES[id].hp,
    attack:original.FOES[id].power,period:original.FOES[id].period};
 });
 const project={
@@ -36,8 +36,8 @@ const project={
 const mapping={
  maps:{pod:'pod',gallery:'gallery',ridge:'ridge'},
  weapons:{blade:'blade',lance:'lance'},
- foes:{H:'H',E:'E',D:'D'},
- prompts:{G:'G',C:'C',E:'E',T:'T',D:'D',H:'H',M:'M'},
+ foes:{H:'h',E:'e',D:'d'},
+ prompts:{G:'g',C:'c',E:'e',T:'t',D:'d',H:'h',M:'m'},
  allies:{echoAlly:'echo',gridAlly:'grid'}
 };
 module.exports={project,mapping};
