@@ -136,6 +136,24 @@
       archiveStatus.textContent='Historical source bridge unavailable in this host.';
     }
     window.BearframeLegacyVault=vault;
+    if(vault){
+      // Keep the historical runtime confined to a user-confirmed, isolated
+      // save session. It deliberately uses the frozen ORIGINAL rules.
+      attachBearframeLegacyCompatibilityUI({
+        source:{read:function(key){
+          return key==='expedition'?window.BearframeNative.readLegacyExpedition():null;
+        }},
+        storage:storage,
+        original:buildEngine({WORLD:WORLD,FOES:FOES,TEXT:TEXT,ACTIONS:ACTIONS}),
+        world:{WORLD:WORLD,ACTIONS:ACTIONS}
+      });
+    }else{
+      ['legacy-compat-preview','legacy-compat-confirm','legacy-compat-resume'].forEach(function(id){
+        document.getElementById(id).disabled=true;
+      });
+      document.getElementById('legacy-compat-status').textContent=
+        'Historical compatibility requires the local Android source bridge.';
+    }
     var engine=createBearframeSession(FRAMEWORK_FIXTURE,storage,theme,
       {slotPrefix:'bf:framework-test:v1:diagnostics'});
     // Opt-in v2 combat runs through the same canonical engine/session API,

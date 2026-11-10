@@ -16,6 +16,11 @@ mkdir -p "$work/assets/framework" "$work/assets/fixtures" "$work/assets/engineho
 cp "$root"/framework/*.js "$work/assets/framework/"
 cp "$root"/fixtures/*.js "$work/assets/fixtures/"
 cp "$root"/enginehost/*.js "$root"/enginehost/*.html "$root"/enginehost/*.css "$work/assets/enginehost/"
+# Package the exact unchanged historical game logic ONLY for explicit
+# legacy-save compatibility; do not replace the canonical portable engine.
+mkdir -p "$work/assets/enginehost/legacy"
+cp "$root/game/world.js" "$work/assets/enginehost/legacy/world.js"
+cp "$root/game/engine.js" "$work/assets/enginehost/legacy/engine.js"
 # The two pixel fixtures exist only for WebView asset I/O diagnostics.
 mkdir -p "$work/assets/enginehost/assets"
 base64 --decode "$root/enginehost/fixtures/terrain.png.b64" > "$work/assets/enginehost/assets/terrain.png"

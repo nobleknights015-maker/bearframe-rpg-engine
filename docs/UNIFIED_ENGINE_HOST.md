@@ -62,3 +62,23 @@ The installed `unified-party-choice` emulator route selects `pulse` rather than 
 The experimental Android host now offers explicit, separate buttons for historical save inspection and confirmation of a **lossless backup archive**. The Android bridge can only read the old `ExpeditionActivity/expedition` value; `framework/legacy-archive.js` writes the original bytes into an isolated versioned engine journal and verifies readback. Existing source saves remain unchanged, and old-game progress made after archival does not overwrite the archived snapshot. No archive or migration occurs during startup; the new host does not replace the old launcher.
 
 The `unified-archive-first` / `unified-archive-second` installed Android emulator stages verify UI consent, source isolation, durable readback after process death and detection of changed legacy bytes. **Do not interpret an archive as conversion to a playable world state.** That still needs a versioned project-specific mapping and acceptance on a real device.
+
+## Non-destructive playable historical compatibility session
+
+When the user explicitly confirms a previously verified original Rhino archive,
+`framework/legacy-compat.js` can now copy the exact old-save state to an
+independent `bf:legacy-expedition-compat:v1:session:{a,b}` journal. This
+compatibility adapter uses the **unchanged original** `game/world.js` and
+`game/engine.js` rules packaged into the restricted offline WebView at
+`/enginehost/legacy/`. It is **not** a conversion to the newer portable
+project's incompatible event/combat mechanics. The original launcher/save key
+is never written or erased. The UI provides separate inspect, explicit import
+confirmation, resume, old-style movement, prompt choices and combat commands;
+all gameplay transitions commit synchronously before UI presentation.
+
+On failure or when returning to the old launcher, the original historical save
+still exists at its import-time progress. New progress made inside the isolated
+compatibility journal does **not** automatically update the old launcher. A
+verified cross-engine migration to the canonical runtime, exported recovery
+for new compatibility progress, and physical-device acceptance remain distinct
+open gates. No new game content was developed.

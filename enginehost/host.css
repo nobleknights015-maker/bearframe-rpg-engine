@@ -4,3 +4,10 @@
 .party-command p{margin:0;font-size:14px}
 .party-command label{display:grid;gap:4px;font-size:14px}
 .party-command select,#party-commit{min-height:44px;width:100%;padding:8px;border-radius:6px;border:1px solid #768da4;background:#253346;color:#fff}
+
+fieldset{border:1px solid #454c5d;border-radius:8px;margin:14px 0;padding:12px}
+fieldset legend{padding:0 6px;font-weight:600}
+fieldset button{min-height:44px;padding:8px 12px;margin:3px;border:1px solid #768da4;border-radius:6px;background:#253346;color:#fff}
+fieldset button:disabled{opacity:.45}
+#legacy-compat-board{white-space:pre-wrap;overflow-x:auto;font-size:13px;background:#0f1822;padding:12px;line-height:1.35}
+#legacy-compat-actions{display:flex;flex-wrap:wrap;gap:5px}

@@ -29,6 +29,16 @@
     <button id="legacy-export" type="button" disabled>Export verified backup JSON to chosen file</button>
     <button id="legacy-restore" type="button" disabled>Restore an external old-save JSON (only if missing)</button>
     <p id="legacy-archive-status" role="status" aria-live="polite">Historical save archive has not been requested.</p>
+    <fieldset aria-label="Play historical save without changing original">
+      <legend>Historical save compatibility</legend>
+      <p>After making a verified backup above, you can copy your original progress into a separate playable save using the original rules. The old launcher and original save remain unchanged. Returning to the old launcher restores the original import-time progress.</p>
+      <button id="legacy-compat-preview" type="button">Check playable compatibility</button>
+      <button id="legacy-compat-confirm" type="button" disabled>Confirm copy to playable legacy session</button>
+      <button id="legacy-compat-resume" type="button" disabled>Resume saved legacy session</button>
+      <p id="legacy-compat-status" role="status" aria-live="polite">Compatibility session not requested.</p>
+      <pre id="legacy-compat-board" aria-label="Legacy map and status" aria-live="polite">No compatible session loaded.</pre>
+      <div id="legacy-compat-actions" aria-label="Historical game controls"></div>
+    </fieldset>
   </section>
   <button id="audio-probe" type="button">Test offline audio</button>
   <p id="audio-status" role="status">Audio test awaits user gesture.</p>
@@ -41,6 +51,10 @@
 <script src="../framework/save-slots.js"></script>
 <script src="../framework/legacy-save-v1.js"></script>
 <script src="../framework/legacy-archive.js"></script>
+<script src="../framework/legacy-compat.js"></script>
+<script src="legacy/world.js"></script>
+<script src="legacy/engine.js"></script>
+<script src="legacy-compat-ui.js"></script>
 <script src="../framework/scene.js"></script>
 <script src="../framework/session.js"></script>
 <script src="../framework/canvas.js"></script>
