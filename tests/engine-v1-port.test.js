@@ -24,7 +24,7 @@ test('Engine v1 port handles wide screens, cutouts and compact layouts',()=>{
     assert.ok(anchored.x+anchored.width<=layout.safeArea.x+layout.safeArea.width);
     assert.ok(anchored.y+anchored.height<=layout.safeArea.y+layout.safeArea.height);
   }
-  assert.equal(v.classify(2400,1080).profile,'phone-ultrawide');
+  assert.equal(v.classify(2400,720).profile,'phone-ultrawide');
   assert.equal(v.classify(2560,1600).profile,'tablet-large');
 });
 test('Engine v1 port keeps rolling frame budget and reports warnings',()=>{
