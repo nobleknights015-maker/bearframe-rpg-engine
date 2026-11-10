@@ -98,7 +98,8 @@ function createBearframePartyCombat(skillBook) {
     return null;
   }
   function round(previous,orders){
-    if(!stateValid(previous)||previous.phase!=='active'||!Array.isArray(orders))return previous;
+    // Refuse advancement at the journal's turn ceiling instead of throwing after a valid round.
+    if(!stateValid(previous)||previous.phase!=='active'||previous.turn>=1000000||!Array.isArray(orders))return previous;
     var alive=previous.party.filter(function(a){return a.hp>0;});
     if(orders.length!==alive.length)return previous;
     var seen={};
