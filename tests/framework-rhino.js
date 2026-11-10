@@ -69,3 +69,13 @@ var played=partyCombat.round(battle,[{actor:'hero',skill:'strike',target:'enemy'
 ensure(played.turn===2&&played.foes[0].hp<25,'party combat round');
 ensure(partyCombat.restore(partyCombat.serialize(played)).turn===2,'party combat restore');
 print('PASS multi-character combat engine under Rhino');
+
+var v1Viewport=createBearframeViewport(320,240);
+var vp=v1Viewport.fit(393,830,{top:24,bottom:16});
+var mapped=vp.screenToLogical(vp.logicalToScreen(70,90).x,vp.logicalToScreen(70,90).y);
+ensure(Math.abs(mapped.x-70)<0.001&&Math.abs(mapped.y-90)<0.001,'Engine v1 touch mapping port');
+var v1Budget=createBearframePerformanceBudget({profile:'conservative',windowSize:10});
+v1Budget.recordFrame(20);
+ensure(v1Budget.health().healthy===true,'Engine v1 performance monitor');
+ensure(v1Budget.assess({visibleTiles:1100}).level==='moderate','Engine v1 tile pressure');
+print('PASS Engine v1 viewport and performance systems under Rhino');
