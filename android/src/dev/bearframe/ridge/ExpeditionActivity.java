@@ -77,7 +77,8 @@ public final class ExpeditionActivity extends Activity {
     }
     private Button button(LinearLayout parent,String text,Runnable action){
         Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(15);
-        b.setMinHeight(dp(44));b.setOnClickListener(v->action.run());parent.addView(b);return b;
+        b.setMinHeight(dp(44));b.setFocusableInTouchMode(true);
+        b.setOnClickListener(v->action.run());parent.addView(b);return b;
     }
     private void intro(boolean unreadable){
         label(content,"BEARFRAME LABS   /   SURFACE EXPEDITION",12,ACCENT);
