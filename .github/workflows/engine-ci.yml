@@ -15,6 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Guard public source repository against ROMs and secrets
+        run: python3 scripts/check_repository_hygiene.py
       - name: Verify source syntax
         run: |
           set -euo pipefail
