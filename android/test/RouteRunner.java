@@ -159,6 +159,21 @@ public final class RouteRunner extends Instrumentation {
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         screen=startActivitySync(launch);
+        // Verify the installed APK actually contains the original offline WAV.
+        try(java.io.InputStream audio=getTargetContext().getAssets()
+                .open("enginehost/audio/diagnostics/silence.wav")){
+            byte[] header=new byte[44];
+            int count=0;
+            while(count<header.length){
+                int n=audio.read(header,count,header.length-count);
+                if(n<0)break;
+                count+=n;
+            }
+            if(count!=44 || header[0]!='R'||header[1]!='I'||header[2]!='F'||header[3]!='F'||
+               header[8]!='W'||header[9]!='A'||header[10]!='V'||header[11]!='E'||
+               header[36]!='d'||header[37]!='a'||header[38]!='t'||header[39]!='a')
+                throw new AssertionError("Packaged offline WAV missing or invalid");
+        }
         JSONObject loaded=unifiedSnapshot();
         if(!"framework-test".equals(loaded.getString("project")))
             throw new AssertionError("Wrong unified project: "+loaded);
