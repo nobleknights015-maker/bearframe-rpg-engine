@@ -76,3 +76,63 @@ test('native WebView response CSP permits same-origin audio without remote media
  assert.match(java,/if \(path\.endsWith\("\.ogg"\)\) return "audio\/ogg";/);
  assert.match(java,/if \(path\.endsWith\("\.mp3"\)\) return "audio\/mpeg";/);
 });
+
+test('background suspension stops active audio and requires a new user gesture',async()=>{
+ const elements=[];
+ const probe=makeProbe(()=>{const e={src:'',playCount:0,pauseCount:0,
+   play(){this.playCount++;return Promise.resolve();},
+   pause(){this.pauseCount++;},removeAttribute(){this.src='';},load(){}};
+   elements.push(e);return e;});
+ assert.equal((await probe.play()).ok,true);
+ assert.equal(elements[0].playCount,1);
+ probe.suspend();
+ probe.suspend();
+ assert.equal(probe.status().suspended,true);
+ assert.equal(elements[0].src,'');
+ assert.equal(elements[0].pauseCount,1);
+ assert.equal((await probe.play()).reason,'suspended');
+ assert.equal(elements.length,1);
+ probe.resume();
+ probe.resume();
+ assert.equal(probe.status().suspended,false);
+ assert.equal(elements.length,1,'foreground must not autoplay');
+ assert.equal((await probe.play()).ok,true);
+ assert.equal(elements.length,2,'a new gesture creates a fresh media element');
+ probe.dispose();
+ assert.equal(elements[1].src,'');
+ assert.equal(probe.status().disposed,true);
+ probe.resume();
+ assert.equal((await probe.play()).reason,'disposed');
+});
+test('suspending while media playback is pending prevents stale active sound',async()=>{
+ let resolvePlay;
+ const elements=[];
+ const probe=makeProbe(()=>{const e={src:'',pauseCount:0,
+   play(){return new Promise(resolve=>{resolvePlay=resolve;});},
+   pause(){this.pauseCount++;},removeAttribute(){this.src='';},load(){}};
+   elements.push(e);return e;});
+ const pending=probe.play();
+ await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ probe.suspend();
+ assert.equal(probe.status().activeSfx,0);
+ assert.equal(elements[0].src,'');
+ resolvePlay();
+ await pending;
+ assert.equal(probe.status().activeSfx,0);
+ probe.resume();
+ assert.equal(probe.status().activeSfx,0);
+ probe.dispose();
+});
+test('native and browser visibility lifecycle routes both suspend and resume',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const boot=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
+ const native=fs.readFileSync(path.join(__dirname,
+   '../android/src/dev/bearframe/ridge/UnifiedEngineActivity.java'),'utf8');
+ assert.match(boot,/visibilitychange/);
+ assert.match(boot,/audioProbe\.suspend\(\)/);
+ assert.match(boot,/audioProbe\.resume\(\)/);
+ assert.match(native,/browser\.onPause\(\)/);
+ assert.match(native,/browser\.onResume\(\)/);
+ assert.match(native,/BearframeHost&&window\.BearframeHost\.suspend\(\)/);
+ assert.match(native,/BearframeHost&&window\.BearframeHost\.resume\(\)/);
+});
