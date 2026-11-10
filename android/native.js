@@ -1,5 +1,6 @@
 // Android presentation adapter. The simulator and pixel-art renderer are shared with the browser.
 function Image(){this.complete=true;this.naturalWidth=592;}
+validateWorldContent({WORLD:WORLD,FOES:FOES,TEXT:TEXT,ACTIONS:ACTIONS});
 var nativeGame=buildEngine({WORLD:WORLD,FOES:FOES,TEXT:TEXT,ACTIONS:ACTIONS});
 var nativeState=null;
 function nativeDispatch(raw){
