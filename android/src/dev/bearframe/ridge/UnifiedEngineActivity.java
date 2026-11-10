@@ -138,13 +138,20 @@ public final class UnifiedEngineActivity extends Activity {
     public WebView getEngineWebView(){return browser;}
 
     @Override protected void onPause() {
-        if(browser!=null)browser.evaluateJavascript(
-            "window.BearframeHost&&window.BearframeHost.suspend()",null);
+        if(browser!=null){
+            browser.evaluateJavascript(
+                "window.BearframeHost&&window.BearframeHost.suspend()",null);
+            browser.onPause();
+        }
         super.onPause();
     }
     @Override protected void onResume() {
         super.onResume();
-        if(browser!=null)browser.onResume();
+        if(browser!=null){
+            browser.onResume();
+            browser.evaluateJavascript(
+                "window.BearframeHost&&window.BearframeHost.resume()",null);
+        }
     }
     @Override protected void onDestroy() {
         if(browser!=null){
