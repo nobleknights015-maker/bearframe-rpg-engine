@@ -228,8 +228,14 @@ function createBearframeEngine(project) {
           if(s.equipment.weapon!==null){s.equipment.weapon=null;changed=true;}
           break;
         case 'use':
-          if(has(project.items,command.item)&&project.items[command.item].kind==='consumable'&&s.inventory[command.item]&&s.player.hp<s.player.maxHp){
-            take(s,command.item,1);s.player.hp=Math.min(s.player.maxHp,s.player.hp+project.items[command.item].heal);changed=true;
+          if(has(project.items,command.item)&&project.items[command.item].kind==='consumable'&&s.inventory[command.item]){
+            var healed=false;
+            if(party)healed=party.healTarget(s,command.target,project.items[command.item].heal);
+            else if(s.player.hp<s.player.maxHp){
+              s.player.hp=Math.min(s.player.maxHp,s.player.hp+project.items[command.item].heal);
+              healed=true;
+            }
+            if(healed){take(s,command.item,1);changed=true;}
           }
           break;
         case 'interact':

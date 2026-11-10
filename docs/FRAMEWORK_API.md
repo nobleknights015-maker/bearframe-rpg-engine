@@ -135,3 +135,22 @@ skills and statuses. Top-level `view.hp` and `view.charge` also reflect
 the active lead actor's battle HP/MP. This is read-only presentation; the
 single v2 engine state and two-slot journal remain authoritative. No new
 game content, game-specific party logic, or v1 save format changes.
+
+
+## v2 party consumable targets
+
+Out of battle, the portable `use` command accepts an optional
+`target` actor ID when the project opts into v2 party combat:
+`{type:'use',item:'patch',target:'scout'}`. Omitting `target` heals
+the lead character, preserving the earlier command. The engine checks
+that the target is a currently recruited actor, has missing HP, and
+that the consumable exists in the saved shared inventory. A successful
+use updates that actor's persistent world resources and deducts exactly
+one consumable within the **same save-before-render transaction**.
+Unknown, unrecruited or full-health targets are refused without consuming
+anything. Healing during a battle remains a party skill command.
+
+The generic mobile inventory panel shows individual labeled targets for
+a v2 party. V1 save data and v1 item commands retain their existing
+behavior. This bridges recruited allies to world inventory but does not
+yet implement general per-member equipment or skill progression.

@@ -58,8 +58,17 @@ function createBearframeRuntimePanels(eventRoot,gearRoot,status,project,view,dis
           'data-inventory-equip',id,{type:'equip',item:id},
           locked||v.weapon===id);
       }else if(item.kind==='consumable'){
-        action(line,'Use '+item.name,'data-inventory-use',id,
-          {type:'use',item:id},locked||v.hp>=v.maxHp);
+        if(v.partyActors&&v.partyActors.length>1){
+          v.partyActors.forEach(function(actor){
+            action(line,'Use '+item.name+' on '+actor.name,
+              'data-inventory-use',id,
+              {type:'use',item:id,target:actor.id},
+              locked||actor.hp>=actor.maxHp);
+          });
+        }else{
+          action(line,'Use '+item.name,'data-inventory-use',id,
+            {type:'use',item:id},locked||v.hp>=v.maxHp);
+        }
       }
       gearRoot.appendChild(line);
     });

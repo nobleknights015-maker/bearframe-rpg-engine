@@ -86,6 +86,20 @@ function createBearframePartyRuntime(spec, project, rules) {
     // Outside encounters resources come from persisted player/ally state.
     return state.partyBattle?copy(state.partyBattle.encounter.party):worldRoster(state);
   }
+  function healTarget(state,actorId,amount){
+    if(!Number.isInteger(amount)||amount<1)return false;
+    if(actorId===undefined||actorId===player.id){
+      if(state.player.hp===state.player.maxHp)return false;
+      state.player.hp=Math.min(state.player.maxHp,state.player.hp+amount);
+      return true;
+    }
+    if(typeof actorId!=='string'||state.allies.indexOf(actorId)===-1||
+       !has(state.allyStats,actorId))return false;
+    var stats=state.allyStats[actorId],template=spec.allies[actorId];
+    if(!template||stats.hp===template.maxHp)return false;
+    stats.hp=Math.min(template.maxHp,stats.hp+amount);
+    return true;
+  }
   function begin(state,foe,origin){
     if(!has(spec.enemies,foe)||state.partyBattle!==null)
       throw new TypeError('Unknown or overlapping party battle');
@@ -129,7 +143,8 @@ function createBearframePartyRuntime(spec, project, rules) {
     return true;
   }
   return Object.freeze({initialize:initialize,addAlly:addAlly,valid:valid,
-    begin:begin,round:round,rosterView:rosterView,playerId:player.id});
+    begin:begin,round:round,rosterView:rosterView,
+    healTarget:healTarget,playerId:player.id});
 }
 if(typeof module!=='undefined'&&module.exports)
   module.exports=createBearframePartyRuntime;
