@@ -39,6 +39,10 @@ public final class UnifiedEngineActivity extends Activity {
     private static final String PREFERENCES = "bearframe_unified_v1";
     private WebView browser;
     private int rendererRecoveries=0;
+    private final AudioFocusRouter audioFocus=new AudioFocusRouter(this,()->{
+        if(browser!=null)browser.evaluateJavascript(
+            "window.BearframeHost&&window.BearframeHost.suspend()",null);
+    });
 
     private static boolean allowedSaveKey(String key) {
         return key != null && key.length() <= 150 &&
@@ -150,6 +154,7 @@ public final class UnifiedEngineActivity extends Activity {
                 // Renderer process is dead: discard WebView without touching
                 // Android durable journal, then rehydrate from packaged code.
                 browser=null;
+                audioFocus.abandon();
                 if(view.getParent() instanceof ViewGroup)
                     ((ViewGroup)view.getParent()).removeView(view);
                 view.destroy();
@@ -178,6 +183,7 @@ public final class UnifiedEngineActivity extends Activity {
             }
         });
         browser.addJavascriptInterface(new NativeSaveBridge(),"BearframeNative");
+        browser.addJavascriptInterface(audioFocus,"BearframeAudioFocus");
         setContentView(browser);
         browser.loadUrl(DIAGNOSTICS);
     }
@@ -198,6 +204,7 @@ public final class UnifiedEngineActivity extends Activity {
     }
 
     @Override protected void onPause() {
+        audioFocus.abandon();
         if(browser!=null){
             browser.evaluateJavascript(
                 "window.BearframeHost&&window.BearframeHost.suspend()",null);
@@ -214,8 +221,10 @@ public final class UnifiedEngineActivity extends Activity {
         }
     }
     @Override protected void onDestroy() {
+        audioFocus.abandon();
         if(browser!=null){
             browser.removeJavascriptInterface("BearframeNative");
+            browser.removeJavascriptInterface("BearframeAudioFocus");
             browser.stopLoading();
             browser.destroy();
             browser=null;
