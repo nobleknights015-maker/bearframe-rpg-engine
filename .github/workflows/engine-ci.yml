@@ -188,6 +188,12 @@ jobs:
             adb shell am instrument -w -e stage unified-memory dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-memory.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-memory' "$RUNNER_TEMP/unified-memory.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-memory.txt"
+            # Request and release real Android AudioManager focus from the
+            # restricted WebView; physical audible output remains unverified.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-focus dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-focus.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-focus' "$RUNNER_TEMP/unified-focus.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-focus.txt"
             # Decode the actual packaged WAV through Chromium's media stack.
             adb shell pm clear dev.bearframe.ridge
             adb shell am instrument -w -e stage unified-audio dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-audio.txt"
