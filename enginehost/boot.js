@@ -21,27 +21,17 @@
         {atlas:'characters',x:32,y:0,w:32,h:48}
       ]}}
     };
-    function atlas(width,height,paint) {
-      var canvas=document.createElement('canvas');
-      canvas.width=width;canvas.height=height;
-      var ctx=canvas.getContext('2d');
-      if(!ctx)throw new Error('Browser Canvas unavailable');
-      paint(ctx);return canvas;
-    }
-    var terrain=atlas(64,32,function(ctx){
-      ctx.fillStyle='#344457';ctx.fillRect(0,0,32,32);
-      ctx.fillStyle='#46667a';ctx.fillRect(0,0,32,4);
-      ctx.fillStyle='#172435';ctx.fillRect(32,0,32,32);
-      ctx.fillStyle='#354c64';ctx.fillRect(34,2,28,5);
-    });
-    var characters=atlas(64,48,function(ctx){
-      ctx.fillStyle='#e4e6f2';ctx.fillRect(6,9,20,35);
-      ctx.fillStyle='#c5b7e9';ctx.fillRect(8,4,16,10);
-      ctx.fillStyle='#7f87d9';ctx.fillRect(7,18,18,5);
-      ctx.fillStyle='#e4e6f2';ctx.fillRect(38,9,20,35);
-      ctx.fillStyle='#c5b7e9';ctx.fillRect(40,4,16,10);
-      ctx.fillStyle='#7f87d9';ctx.fillRect(39,18,18,5);
-    });
+    var assets=createBearframeAssetCache(BEARFRAME_HOST_ASSETS,function(descriptor,id){
+      return new Promise(function(resolve,reject){
+        var image=new Image();
+        image.onload=function(){resolve(image);};
+        image.onerror=function(){reject(new Error('Missing or corrupt packaged atlas '+id));};
+        // The deployed WebView serves only local packaged files from its own origin.
+        // Browsers opened from the source tree use the same relative asset path.
+        image.src=(location.protocol==='file:'?'./':'/')+
+          (location.protocol==='file:'?descriptor.path.replace(/^enginehost\//,''):descriptor.path);
+      });
+    },{maxEntries:32,maxMemoryBytes:16777216});
     var storage=window.BearframeNative&&
       typeof window.BearframeNative.read==='function'&&
       typeof window.BearframeNative.write==='function'
@@ -65,6 +55,8 @@
       var snap=engine.snapshot(),v=snap.view;
       if(!v)throw new Error('Engine state unavailable');
       var frame=engine.compose({width:224,height:160,tick:v.sequence%100});
+      var terrain=assets.get('terrain'),characters=assets.get('characters');
+      if(!terrain||!characters)throw new Error('Required scene atlases are not loaded');
       drawBearframeSceneCanvas(surface,frame,{terrain:terrain,characters:characters});
       status.textContent='Unified runtime ready · '+(window.BearframeNative?'Android WebView':'Browser');
       metrics.textContent='Map '+v.mapName+' · Pos '+v.x+','+v.y+
@@ -85,8 +77,10 @@
         map:v?v.map:null,x:v?v.x:null,y:v?v.y:null,
         savedRevision:snap.journal.latestSequence,
         validSlots:snap.journal.validSlots,conflict:snap.journal.conflict,
+        assetsLoaded:assets.snapshot().loaded.length,atlasSource:'packaged-png',
         renderer:surface.width+'x'+surface.height};
     }
+    assets.preload().then(function(){
     window.BearframeHost=Object.freeze({
       snapshot:snapshot,
       snapshotJson:function(){return JSON.stringify(snapshot());},
@@ -103,6 +97,13 @@
       });
     });
     show();
+    }).catch(function(error){
+      status.textContent='Asset loading failed: '+error.message;
+      metrics.textContent='Existing save preserved; no partial scene was presented.';
+      window.BearframeHost=Object.freeze({
+        snapshotJson:function(){return JSON.stringify({ready:false,error:error.message});}
+      });
+    });
   }catch(error) {
     status.textContent='Engine diagnostics failed: '+error.message;
     metrics.textContent='The previous saved state is preserved. See the test log.';
