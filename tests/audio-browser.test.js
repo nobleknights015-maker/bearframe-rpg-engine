@@ -122,3 +122,54 @@ test('consumes real platform-neutral audio director commands',async()=>{
  await backend.execute(action.commands);
  assert.equal(backend.status().music,null);
 });
+
+test('serializes concurrent batches so a later stop cannot overtake play',async()=>{
+ let release;
+ const gate=new Promise(resolve=>{release=resolve;});
+ const elements=[];
+ const backend=create(()=>{
+   const e={src:'',volume:1,loop:false,currentTime:0,
+     play(){return gate;},pause(){},load(){},
+     removeAttribute(){this.src='';}};
+   elements.push(e);return e;
+ });
+ const started=backend.execute([music()]);
+ const stopped=backend.execute([{type:'stop',bus:'music',id:'theme'}]);
+ await Promise.resolve();
+ await Promise.resolve();
+ assert.equal(elements.length,1);
+ assert.equal(backend.status().music,'theme');
+ release();
+ assert.deepEqual(await started,[{ok:true}]);
+ assert.deepEqual(await stopped,[{ok:true}]);
+ assert.equal(backend.status().music,null);
+ assert.equal(elements[0].src,'');
+});
+test('cleans failed music autoplay and does not leak a stale playing track',async()=>{
+ const {backend,elements}=rig({rejectPlay:true});
+ const result=await backend.execute([music()]);
+ assert.equal(result[0].reason,'play-rejected');
+ assert.equal(backend.status().music,null);
+ assert.equal(elements[0].src,'');
+ assert.equal((await backend.execute([{type:'resume',bus:'music',id:'theme'}]))[0].reason,'no-music');
+});
+test('disposal during pending playback prevents queued commands from starting',async()=>{
+ let release;
+ const gate=new Promise(resolve=>{release=resolve;});
+ const elements=[];
+ const backend=create(()=>{
+   const e={src:'',volume:1,loop:false,currentTime:0,
+     play(){return gate;},pause(){},load(){},
+     removeAttribute(){this.src='';}};
+   elements.push(e);return e;
+ });
+ const first=backend.execute([music()]);
+ const second=backend.execute([sfx()]);
+ await Promise.resolve();await Promise.resolve();
+ backend.dispose();
+ release();
+ await first;
+ assert.deepEqual(await second,[{ok:false,reason:'destroyed'}]);
+ assert.equal(elements.length,1);
+ assert.equal(backend.status().music,null);
+});
