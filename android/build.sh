@@ -10,6 +10,12 @@ mkdir -p "$work/classes" "$work/dex" "$work/assets"
 echo "2427fdcbc149ca0a25ccfbb7c71b01f39ad42708773a47816cd2342861766b63  $RHINO_JAR" | sha256sum -c -
 node "$root/android/compile.js" "$work/assets/simulation.js"
 cp "$root"/game/*.webp "$work/assets/"
+# The portable Engine Kit executes unchanged inside the offline Android WebView.
+# Keep existing Rhino output and assets intact as regression baselines.
+mkdir -p "$work/assets/framework" "$work/assets/fixtures" "$work/assets/enginehost"
+cp "$root"/framework/*.js "$work/assets/framework/"
+cp "$root"/fixtures/engine-project.js "$work/assets/fixtures/"
+cp "$root"/enginehost/* "$work/assets/enginehost/"
 unzip -p "$RHINO_JAR" META-INF/LICENSE.txt > "$work/assets/Rhino-LICENSE.txt"
 unzip -p "$RHINO_JAR" META-INF/NOTICE.txt > "$work/assets/Rhino-NOTICE.txt"
 java -m jdk.compiler/com.sun.tools.javac.Main -source 8 -target 8 -bootclasspath "$platform:$tools/core-lambda-stubs.jar" -classpath "$RHINO_JAR" -d "$work/classes" "$root/android/src/dev/bearframe/ridge/"*.java
