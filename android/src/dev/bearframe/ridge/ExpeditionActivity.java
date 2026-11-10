@@ -189,6 +189,15 @@ public final class ExpeditionActivity extends Activity {
         return false;
     }
     @Override public boolean dispatchKeyEvent(KeyEvent event){
+        // While creating a character, native Android manages D-pad focus.
+        // Treat controller South as native focused-button/selector activation.
+        if(title==null && ControllerInputRouter.isController(event) &&
+            event.getKeyCode()==KeyEvent.KEYCODE_BUTTON_A &&
+            event.getAction()==KeyEvent.ACTION_DOWN && event.getRepeatCount()==0){
+            View focused=getCurrentFocus();
+            if(focused instanceof Button || focused instanceof Spinner)
+                return focused.performClick();
+        }
         if(gamepad.onKeyEvent(event))return true;
         return super.dispatchKeyEvent(event);
     }
