@@ -206,6 +206,51 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Unified WebView state was not durably committed: "+next);
         resultMeta.putString("unified",next.toString());
     }
+    /** Installed-app low-memory acceptance: purge decoded atlases, recover them
+     * asynchronously, and prove that the durable journal did not change. */
+    private void checkUnifiedMemoryRecovery() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        int revision=before.getInt("sequence");
+        int saved=before.getInt("savedRevision");
+        if(before.getInt("assetsLoaded")!=2)
+            throw new AssertionError("Missing baseline packaged atlases: "+before);
+        // Use the native Activity callback, rather than invoking JS directly:
+        // this verifies Android -> WebView -> cache -> rehydration wiring.
+        AtomicReference<Throwable> callbackError=new AtomicReference<>();
+        runOnMainSync(()->{
+            try{screen.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE);}
+            catch(Throwable error){callbackError.set(error);}
+        });
+        if(callbackError.get()!=null)throw new AssertionError(callbackError.get());
+        boolean observedEviction=false;
+        boolean recovered=false;
+        for(int attempt=0;attempt<50;attempt++){
+            String raw=evalHost("JSON.stringify({state:BearframeHost.snapshot()," +
+                "restoring:BearframeHost.navigate('invalid').reason," +
+                "loaded:BearframeHost.snapshot().assetsLoaded})");
+            JSONObject state=new JSONObject((String)new JSONTokener(raw).nextValue());
+            JSONObject snap=state.getJSONObject("state");
+            if(snap.getInt("sequence")!=revision || snap.getInt("savedRevision")!=saved)
+                throw new AssertionError("Memory recovery mutated saved gameplay: "+snap);
+            int loaded=state.getInt("loaded");
+            if(loaded<2)observedEviction=true;
+            if(loaded==2 && observedEviction){recovered=true;break;}
+            Thread.sleep(200);
+        }
+        if(!recovered)
+            throw new AssertionError("WebView did not prove eviction and atlas rehydration");
+        String pixel=evalHost("document.getElementById('surface').getContext('2d').getImageData(0,0,1,1).data[0]");
+        if(!"23".equals(pixel))
+            throw new AssertionError("Restored canvas did not draw packaged pixels: "+pixel);
+        JSONObject after=unifiedSnapshot();
+        if(after.getInt("sequence")!=revision || after.getInt("savedRevision")!=saved)
+            throw new AssertionError("Recovery changed journal: "+after);
+        resultMeta.putString("memory","PASS native trim, atlas reload, canvas and unchanged journal");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -247,6 +292,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnified(stage.equals("unified-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-memory")){
+                checkUnifiedMemoryRecovery();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-memory");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
