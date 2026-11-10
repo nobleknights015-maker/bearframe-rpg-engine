@@ -66,6 +66,27 @@
        };
     var engine=createBearframeSession(FRAMEWORK_FIXTURE,storage,theme,
       {slotPrefix:'bf:framework-test:v1:diagnostics'});
+    // Opt-in v2 combat runs through the same canonical engine/session API,
+    // but in its own synthetic project journal. No other save key is changed.
+    var partyProbe=createBearframePartyProbe(storage);
+    var partyStatus=document.getElementById('party-status');
+    function describeParty(){
+      var p=partyProbe.snapshot();
+      partyStatus.textContent=!p.ready?'Party diagnostic unavailable: '+p.error:
+        p.phase==='active'?'Battle active · Target HP '+p.targetHp+
+          ' · Revision '+p.sequence:
+        'Party diagnostic revision '+p.sequence+' · No active battle';
+      return p;
+    }
+    document.getElementById('party-start').addEventListener('click',function(){
+      var r=partyProbe.begin();describeParty();
+      if(!r.ok)partyStatus.textContent='Party start blocked: '+r.reason;
+    });
+    document.getElementById('party-round').addEventListener('click',function(){
+      var r=partyProbe.round();describeParty();
+      if(!r.ok)partyStatus.textContent='Party round blocked: '+r.reason;
+    });
+    describeParty();
     var load=engine.resume();
     if(!load.ok&&load.reason==='no-save')load=engine.start('Engine host',8735);
     if(!load.ok)throw new Error('Safe engine startup blocked: '+load.reason);
@@ -133,6 +154,7 @@
       snapshot:snapshot,
       snapshotJson:function(){return JSON.stringify(snapshot());},
       memoryPressure:memoryPressure,
+      party:partyProbe,
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});

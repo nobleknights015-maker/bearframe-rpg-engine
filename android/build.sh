@@ -14,7 +14,7 @@ cp "$root"/game/*.webp "$work/assets/"
 # Keep existing Rhino output and assets intact as regression baselines.
 mkdir -p "$work/assets/framework" "$work/assets/fixtures" "$work/assets/enginehost"
 cp "$root"/framework/*.js "$work/assets/framework/"
-cp "$root"/fixtures/engine-project.js "$work/assets/fixtures/"
+cp "$root"/fixtures/*.js "$work/assets/fixtures/"
 cp "$root"/enginehost/*.js "$root"/enginehost/*.html "$root"/enginehost/*.css "$work/assets/enginehost/"
 # The two pixel fixtures exist only for WebView asset I/O diagnostics.
 mkdir -p "$work/assets/enginehost/assets"

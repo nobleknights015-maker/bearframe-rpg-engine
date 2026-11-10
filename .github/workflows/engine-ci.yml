@@ -65,8 +65,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -version 200 -f framework/schema.js -f framework/runtime.js -f framework/save-slots.js -f framework/scene.js -f framework/session.js -f framework/audio.js -f framework/party-combat.js -f framework/viewport.js -f framework/performance.js -f framework/window-layout.js -f framework/save-migrations.js -f framework/asset-manifest.js -f fixtures/engine-project.js -f tests/framework-rhino.js | tee "$RUNNER_TEMP/framework-rhino-test.log"
+          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -version 200 -f framework/schema.js -f framework/runtime.js -f framework/save-slots.js -f framework/scene.js -f framework/session.js -f framework/audio.js -f framework/party-combat.js -f framework/party-runtime.js -f framework/viewport.js -f framework/performance.js -f framework/window-layout.js -f framework/save-migrations.js -f framework/asset-manifest.js -f fixtures/engine-project.js -f fixtures/party-engine-project.js -f tests/framework-rhino.js -f tests/party-rhino.js | tee "$RUNNER_TEMP/framework-rhino-test.log"
           grep -q 'PASS portable JRPG framework' "$RUNNER_TEMP/framework-rhino-test.log"
+          grep -q 'PASS opt-in party runtime Rhino' "$RUNNER_TEMP/framework-rhino-test.log"
       - name: Generate disposable build-only signing key
         shell: bash
         run: |
@@ -154,6 +155,16 @@ jobs:
             adb shell am instrument -w -e stage unified-legacy dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-legacy.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-legacy' "$RUNNER_TEMP/unified-legacy.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-legacy.txt"
+            # Exercise the versioned party-combat core and UI through the
+            # installed WebView, including process-stop journal recovery.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-party-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-first' "$RUNNER_TEMP/unified-party-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-party-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-party-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-second' "$RUNNER_TEMP/unified-party-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-party-second.txt"
             # Exercise real Android Activity recreation and persistence through
             # a new WebView instance. Does not change the legacy launcher.
             adb shell pm clear dev.bearframe.ridge

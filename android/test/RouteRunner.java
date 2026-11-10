@@ -429,6 +429,55 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Post-recreate journal did not commit: "+finalState);
         resultMeta.putString("recreate","PASS WebView Activity recreation, asset reload and save rev 1 to 2");
     }
+    /** Real installed WebView diagnostic exercises v2 party turns and journal
+     * through touch-button event listeners and preserves the existing v1
+     * diagnostic save revision in its separate namespace. */
+    private void checkUnifiedParty(boolean second) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject baseline=unifiedSnapshot();
+        if(baseline.getInt("savedRevision")!=0 ||
+           baseline.getInt("sequence")!=0)
+            throw new AssertionError("Party test disturbed baseline engine save: "+baseline);
+        String raw=evalHost("JSON.stringify(BearframeHost.party.snapshot())");
+        JSONObject initial=new JSONObject((String)new JSONTokener(raw).nextValue());
+        if(!initial.getBoolean("ready")||initial.getInt("engineVersion")!=2||
+           initial.getInt("sequence")!=(second?7:0) ||
+           initial.getInt("savedRevision")!=(second?7:0))
+            throw new AssertionError("Party journal failed initial restore: "+initial);
+        if(!second){
+            evalHost("document.getElementById('party-start').click()");
+            String begin=evalHost("JSON.stringify(BearframeHost.party.snapshot())");
+            JSONObject started=new JSONObject((String)new JSONTokener(begin).nextValue());
+            if(!"active".equals(started.getString("phase"))||
+               started.getInt("sequence")!=6||started.getInt("partyCount")!=1||
+               started.getInt("savedRevision")!=6)
+                throw new AssertionError("Party encounter not durably started: "+started);
+        }else{
+            if(!"active".equals(initial.getString("phase"))||
+               initial.getInt("targetHp")>=48)
+                throw new AssertionError("Party encounter did not survive process death: "+initial);
+        }
+        evalHost("document.getElementById('party-round').click()");
+        String next=evalHost("JSON.stringify(BearframeHost.party.snapshot())");
+        JSONObject advanced=new JSONObject((String)new JSONTokener(next).nextValue());
+        int expected=second?8:7;
+        if(!"active".equals(advanced.getString("phase"))||
+           advanced.getInt("sequence")!=expected||
+           advanced.getInt("savedRevision")!=expected ||
+           advanced.getInt("targetHp")>=48 ||
+           advanced.getInt("validSlots")!=2)
+            throw new AssertionError("Installed party turn not durably committed: "+advanced);
+        String label=evalHost("document.getElementById('party-status').textContent");
+        if(label==null||label.indexOf("Battle active")<0)
+            throw new AssertionError("Party diagnostic screen did not present battle state");
+        JSONObject after=unifiedSnapshot();
+        if(after.getInt("savedRevision")!=0||after.getInt("sequence")!=0)
+            throw new AssertionError("Party session crossed the base engine journal");
+        resultMeta.putString("party","PASS v2 party turn, UI and durable revision "+expected);
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -491,6 +540,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedRecreate();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-recreate");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-party-first") || stage.equals("unified-party-second")){
+                checkUnifiedParty(stage.equals("unified-party-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
