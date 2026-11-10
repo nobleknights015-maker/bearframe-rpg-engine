@@ -274,6 +274,12 @@ public final class RouteRunner extends Instrumentation {
         Object value=new JSONTokener(evalHost("BearframeNative.readLegacyExpedition()")).nextValue();
         if(!(value instanceof String)||!raw.equals(value))
             throw new AssertionError("Read-only bridge lost original legacy bytes");
+        String checked=evalHost("JSON.stringify(BearframeLegacyV1.inspect(BearframeNative.readLegacyExpedition()))");
+        JSONObject described=new JSONObject((String)new JSONTokener(checked).nextValue());
+        if(!described.getBoolean("ok") || described.getInt("version")!=1 ||
+           !"Migration fixture".equals(described.getString("name")) ||
+           !"pod".equals(described.getString("area")))
+            throw new AssertionError("Installed engine rejected legacy v1 snapshot: "+described);
         if(!"false".equals(evalHost("BearframeNative.write('expedition','overwrite')")) ||
            !"null".equals(evalHost("BearframeNative.read('expedition')")) ||
            !"\"undefined\"".equals(evalHost("typeof BearframeNative.writeLegacyExpedition")))
@@ -288,7 +294,8 @@ public final class RouteRunner extends Instrumentation {
         // Wrong type and missing source must fail closed without crashing WebView.
         if(!legacy.edit().putInt("expedition",42).commit())
             throw new AssertionError("Cannot set corrupt source fixture");
-        if(!"null".equals(evalHost("BearframeNative.readLegacyExpedition()")))
+        if(!"null".equals(evalHost("BearframeNative.readLegacyExpedition()")) ||
+           !"\"false\"".equals(evalHost("String(BearframeLegacyV1.inspect(BearframeNative.readLegacyExpedition()).ok)")))
             throw new AssertionError("Wrong-type legacy source was accepted");
         if(!legacy.edit().remove("expedition").commit())
             throw new AssertionError("Cannot clear test fixture");
