@@ -86,3 +86,14 @@ var menuBox=v1Windows.choiceWindow({choices:['Continue','Back'],messageRect:msgB
 ensure(msgBox.face.width>0&&menuBox.items.length===2,'ported Engine v1 windows');
 ensure(menuBox.rect.x+menuBox.rect.width<=320,'ported window viewport fit');
 print('PASS Engine v1 classic JRPG windows under Rhino');
+
+var v1Migrate=createBearframeSaveMigrator({
+ schemaVersion:2,
+ migrations:{1:function(payload){payload.state.maxHp=payload.state.hp;return payload;}},
+ validate:function(s){return s.maxHp===s.hp;}
+});
+var beforeSave={schemaVersion:1,project:'bearframe',state:{hp:42}};
+var afterSave=v1Migrate.migrate(beforeSave);
+ensure(afterSave.schemaVersion===2&&afterSave.state.maxHp===42,'ported save migration');
+ensure(beforeSave.state.maxHp===undefined,'save migrations do not mutate inputs');
+print('PASS Engine v1 save migrations under Rhino');
