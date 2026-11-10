@@ -17,8 +17,14 @@ function createBearframeSaveImporter(config) {
     throw new TypeError('Explicit source key required');
   var staged=null;
   function targetEmpty() {
-    var h=config.destination.health();
-    return h&&!h.conflict&&h.occupiedSlots===0&&h.validSlots===0;
+    // An unavailable or throwing journal health check is not evidence of an empty target.
+    // Import must fail closed rather than propagating an adapter error or guessing.
+    try {
+      var h=config.destination.health();
+      return !!(h&&h.conflict===false&&h.occupiedSlots===0&&h.validSlots===0);
+    } catch(error) {
+      return false;
+    }
   }
   function inspect() {
     staged=null;
