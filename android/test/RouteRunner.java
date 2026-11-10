@@ -162,6 +162,11 @@ public final class RouteRunner extends Instrumentation {
         JSONObject loaded=unifiedSnapshot();
         if(!"framework-test".equals(loaded.getString("project")))
             throw new AssertionError("Wrong unified project: "+loaded);
+        // The WebView storage bridge must never touch legacy game saves or
+        // arbitrary preference keys; its allowed namespace is engine-only.
+        if(!"false".equals(evalHost("BearframeNative.write('expedition','overwrite')")) ||
+           !"null".equals(evalHost("BearframeNative.read('expedition')")))
+            throw new AssertionError("Unified WebView bridge exposed legacy save keys");
         int expectedSequence=second?1:0,expectedY=second?2:1;
         if(loaded.getInt("sequence")!=expectedSequence ||
            loaded.getInt("y")!=expectedY ||
