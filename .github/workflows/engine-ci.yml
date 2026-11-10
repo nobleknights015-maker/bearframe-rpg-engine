@@ -154,6 +154,12 @@ jobs:
             adb shell am instrument -w -e stage unified-legacy dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-legacy.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-legacy' "$RUNNER_TEMP/unified-legacy.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-legacy.txt"
+            # Exercise real Android Activity recreation and persistence through
+            # a new WebView instance. Does not change the legacy launcher.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-recreate dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-recreate.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-recreate' "$RUNNER_TEMP/unified-recreate.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-recreate.txt"
             # Exercise native onTrimMemory, packaged atlas recovery and journal isolation.
             adb shell pm clear dev.bearframe.ridge
             adb shell am instrument -w -e stage unified-memory dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-memory.txt"

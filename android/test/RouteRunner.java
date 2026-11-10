@@ -386,6 +386,49 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Packaged asset probe mutated game state");
         resultMeta.putString("pack","PASS original synthetic PNG pixels decoded from installed custom pack");
     }
+    /** Installed Activity recreation acceptance. This is not a physical device
+     * orientation/thermal claim. It exercises real onPause/onDestroy/onCreate
+     * and the same durable two-slot journal through the Android WebView host. */
+    private void checkUnifiedRecreate() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject initial=unifiedSnapshot();
+        if(initial.getInt("sequence")!=0||initial.getInt("savedRevision")!=0 ||
+           initial.getInt("x")!=1||initial.getInt("y")!=1)
+            throw new AssertionError("Recreate test started with stale state: "+initial);
+        String moved=evalHost("JSON.stringify(BearframeHost.navigate('down'))");
+        JSONObject movedResult=new JSONObject((String)new JSONTokener(moved).nextValue());
+        if(!movedResult.getBoolean("ok"))throw new AssertionError("Pre-recreate move rejected");
+        JSONObject committed=unifiedSnapshot();
+        if(committed.getInt("sequence")!=1||committed.getInt("savedRevision")!=1||
+           committed.getInt("y")!=2)
+            throw new AssertionError("Move not durable before Activity recreation: "+committed);
+        Activity old=screen;
+        ActivityMonitor monitor=addMonitor("dev.bearframe.ridge.UnifiedEngineActivity",null,false);
+        try{
+            runOnMainSync(()->old.recreate());
+            Activity restored=waitForMonitorWithTimeout(monitor,15000);
+            if(restored==null||restored==old)
+                throw new AssertionError("WebView Activity did not recreate");
+            screen=restored;
+            waitForIdleSync();
+        }finally{removeMonitor(monitor);}
+        JSONObject recovered=unifiedSnapshot();
+        if(recovered.getInt("sequence")!=1||recovered.getInt("savedRevision")!=1||
+           recovered.getInt("x")!=1||recovered.getInt("y")!=2||
+           recovered.getInt("assetsLoaded")!=2)
+            throw new AssertionError("Activity recreation lost durable state or atlases: "+recovered);
+        String result=evalHost("JSON.stringify(BearframeHost.navigate('up'))");
+        JSONObject outcome=new JSONObject((String)new JSONTokener(result).nextValue());
+        if(!outcome.getBoolean("ok"))throw new AssertionError("Post-recreate move rejected");
+        JSONObject finalState=unifiedSnapshot();
+        if(finalState.getInt("sequence")!=2||finalState.getInt("savedRevision")!=2 ||
+           finalState.getInt("y")!=1||finalState.getInt("validSlots")!=2)
+            throw new AssertionError("Post-recreate journal did not commit: "+finalState);
+        resultMeta.putString("recreate","PASS WebView Activity recreation, asset reload and save rev 1 to 2");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -441,6 +484,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedLegacyRead();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-legacy");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-recreate")){
+                checkUnifiedRecreate();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-recreate");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
