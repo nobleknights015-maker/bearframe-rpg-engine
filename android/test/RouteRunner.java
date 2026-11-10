@@ -45,6 +45,8 @@ public final class RouteRunner extends Instrumentation {
                 long t=android.os.SystemClock.uptimeMillis();
                 KeyEvent down=new KeyEvent(t,t,KeyEvent.ACTION_DOWN,keyCode,0,0,0,0,0,InputDevice.SOURCE_GAMEPAD);
                 KeyEvent up=new KeyEvent(t,t+1,KeyEvent.ACTION_UP,keyCode,0,0,0,0,0,InputDevice.SOURCE_GAMEPAD);
+                if(!down.isFromSource(InputDevice.SOURCE_GAMEPAD))
+                    throw new AssertionError("Synthetic key did not preserve GAMEPAD source: "+down.getSource());
                 if(!screen.dispatchKeyEvent(down)||!screen.dispatchKeyEvent(up))
                     throw new AssertionError("Gamepad key not handled: "+keyCode);
             }catch(Throwable x){error.set(x);}
@@ -120,6 +122,16 @@ public final class RouteRunner extends Instrumentation {
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);screen=startActivitySync(launch);
             if(stage.equals("controller")){
                 tap("Awaken");
+                Object activityTitle=screen.getClass().getDeclaredField("title");
+                java.lang.reflect.Field titleField=screen.getClass().getDeclaredField("title");
+                titleField.setAccessible(true);
+                if(titleField.get(screen)==null)throw new AssertionError("Controller test not in gameplay");
+                java.lang.reflect.Field padField=screen.getClass().getDeclaredField("gamepad");
+                padField.setAccessible(true);
+                Object router=padField.get(screen);
+                java.lang.reflect.Field enabledField=router.getClass().getDeclaredField("enabled");
+                enabledField.setAccessible(true);
+                if(!enabledField.getBoolean(router))throw new AssertionError("Native gamepad adapter disabled during gameplay");
                 gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
                 gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
                 gamepadKey(KeyEvent.KEYCODE_DPAD_UP);
