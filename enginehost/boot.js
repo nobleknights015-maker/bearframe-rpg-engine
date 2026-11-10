@@ -9,6 +9,18 @@
   var metrics=document.getElementById('metrics');
   var surface=document.getElementById('surface');
   function text(id,value){document.getElementById(id).textContent=String(value);}
+  // Audio is a host-only diagnostic. Never touch the simulation journal.
+  var audioProbe=createBearframeAudioProbe(function(tag){return document.createElement(tag);});
+  var audioStatus=document.getElementById('audio-status');
+  document.getElementById('audio-probe').addEventListener('click',function(){
+    // Invoke play synchronously from the gesture callback to satisfy browser
+    // media activation; the backend reports policy/decoder failures explicitly.
+    audioProbe.play().then(function(result){
+      audioStatus.textContent=result.ok?'Offline WAV playback started':
+        'Offline audio unavailable: '+result.reason;
+    },function(error){audioStatus.textContent='Offline audio failed: '+error.message;});
+  });
+  window.addEventListener('pagehide',function(){audioProbe.dispose();});
   try {
     var theme={tileSize:32,clearColor:'#101018',
       atlases:{terrain:{width:64,height:32},characters:{width:64,height:48}},
