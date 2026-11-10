@@ -1,0 +1,114 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const create=require('../framework/audio-browser');
+const director=require('../framework/audio');
+function rig(options={}){
+  const elements=[];
+  function factory(tag){
+    assert.equal(tag,'audio');
+    const e={src:'',volume:1,loop:false,preload:null,paused:false,
+      currentTime:0,playCount:0,pauses:0,loads:0,
+      async play(){this.playCount++;
+        if(options.rejectPlay)throw new Error('gesture required');
+        this.paused=false;
+      },
+      pause(){this.pauses++;this.paused=true;},
+      load(){this.loads++;},
+      removeAttribute(name){if(name==='src')this.src='';}};
+    elements.push(e);return e;
+  }
+  return {elements,backend:create(factory,options)};
+}
+const music=(id='theme')=>({type:'play',bus:'music',id,
+  path:'audio/music/theme.ogg',loop:true,gain:80});
+const sfx=(id='impact')=>({type:'play',bus:'sfx',id,
+  path:'audio/sfx/impact.wav',loop:false,gain:65});
+test('plays, pauses, resumes, replaces, and stops music via offline assets',async()=>{
+ const {backend,elements}=rig({assetPrefix:'enginehost/assets/'});
+ assert.deepEqual(await backend.execute([music()]),[{ok:true}]);
+ assert.equal(backend.status().music,'theme');
+ assert.equal(elements[0].src,'enginehost/assets/audio/music/theme.ogg');
+ assert.equal(elements[0].volume,.8);
+ assert.equal(elements[0].loop,true);
+ await backend.execute([{type:'pause',bus:'music',id:'theme'}]);
+ assert.equal(elements[0].paused,true);
+ await backend.execute([{type:'resume',bus:'music',id:'theme'}]);
+ assert.equal(elements[0].playCount,2);
+ await backend.execute([music('new-theme')]);
+ assert.equal(backend.status().music,'new-theme');
+ assert.equal(elements[0].src,'');
+ assert.equal(elements[0].pauses,2);
+ assert.equal(elements[1].playCount,1);
+ await backend.execute([{type:'stop',bus:'music',id:'new-theme'}]);
+ assert.equal(backend.status().music,null);
+ assert.equal(elements[1].src,'');
+});
+test('caps concurrent sound effects, cleans ended sounds and disposes safely',async()=>{
+ const {backend,elements}=rig({maxSfxVoices:2});
+ await backend.execute([sfx('one'),sfx('two'),sfx('three')]);
+ assert.equal(backend.status().activeSfx,2);
+ assert.equal(elements[0].src,'');
+ assert.equal(elements[0].pauses,1);
+ elements[1].onended();
+ assert.equal(backend.status().activeSfx,1);
+ assert.equal(elements[1].src,'');
+ backend.dispose();
+ assert.equal(backend.status().destroyed,true);
+ assert.equal(backend.status().activeSfx,0);
+ assert.equal(elements[2].src,'');
+ assert.deepEqual(await backend.execute([music()]),[{ok:false,reason:'destroyed'}]);
+ backend.dispose();
+});
+test('respects channel-gain changes and explicit muting without state mutation',async()=>{
+ const {backend,elements}=rig();
+ await backend.execute([music(),sfx()]);
+ await backend.execute([{type:'gain',bus:'music',gain:25},
+   {type:'gain',bus:'sfx',gain:0}]);
+ assert.equal(elements[0].volume,.25);
+ assert.equal(elements[1].volume,0);
+ await backend.execute([{type:'gain',bus:'sfx',gain:40}]);
+ assert.equal(elements[1].volume,.4);
+ assert.equal((await backend.execute([{type:'gain',bus:'music',gain:101}]))[0].reason,'invalid-gain');
+ assert.equal(elements[0].volume,.25);
+});
+test('rejects path traversal, remote URLs, invalid factories and unrecognized commands',async()=>{
+ assert.throws(()=>create(null),/factory/);
+ assert.throws(()=>create(()=>null, {assetPrefix:'https://remote/'}),/Local audio asset prefix/);
+ const {backend,elements}=rig();
+ for(const path of ['../secrets.wav','https://evil/a.wav','audio/../bad.wav',
+   '/absolute/track.ogg','audio/track.svg']){
+   const result=await backend.execute([{...music(),path}]);
+   assert.equal(result[0].reason,'invalid-asset');
+ }
+ assert.equal(elements.length,0);
+ assert.equal((await backend.execute([{type:'unknown'}]))[0].reason,'unknown-command');
+ await assert.rejects(backend.execute(Array.from({length:65},()=>sfx())),/at most 64/);
+});
+test('reports autoplay rejection without unhandled promise and frees failed SFX',async()=>{
+ const {backend}=rig({rejectPlay:true});
+ const m=await backend.execute([music()]);
+ assert.equal(m[0].reason,'play-rejected');
+ const fx=await backend.execute([sfx()]);
+ assert.equal(fx[0].reason,'play-rejected');
+ assert.equal(backend.status().activeSfx,0);
+ backend.dispose();
+});
+test('consumes real platform-neutral audio director commands',async()=>{
+ const catalog={theme:{type:'music',path:'audio/music/theme.ogg'},
+   effect:{type:'sfx',path:'audio/sfx/effect.wav'}};
+ const d=director(catalog),{backend,elements}=rig();
+ let s=d.fresh();
+ let action=d.apply(s,{type:'music',id:'theme'});s=action.state;
+ assert.equal((await backend.execute(action.commands))[0].ok,true);
+ action=d.apply(s,{type:'volume',bus:'music',value:50});s=action.state;
+ await backend.execute(action.commands);
+ assert.equal(elements[0].volume,.5);
+ action=d.apply(s,{type:'pause'});s=action.state;
+ await backend.execute(action.commands);
+ assert.equal(elements[0].paused,true);
+ action=d.apply(s,{type:'resume'});s=action.state;
+ await backend.execute(action.commands);
+ assert.equal(elements[0].paused,false);
+ action=d.apply(s,{type:'stopMusic'});
+ await backend.execute(action.commands);
+ assert.equal(backend.status().music,null);
+});
