@@ -113,6 +113,10 @@ jobs:
             adb shell am instrument -w -e stage second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/native-stage-two.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS second' "$RUNNER_TEMP/native-stage-two.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/native-stage-two.txt"
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage controller dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/gamepad-controller.txt"
+            grep -F 'route=PASS controller' "$RUNNER_TEMP/gamepad-controller.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/gamepad-controller.txt"
       - name: Publish non-release test APKs
         uses: actions/upload-artifact@v4
         with:
