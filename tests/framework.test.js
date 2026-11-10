@@ -166,3 +166,21 @@ test('hundreds of seeded commands remain restorable and never mutate input state
     }
   }
 });
+
+test('game projects can tune base stats, combat and progression without modifying engine code',()=>{
+  const p=changed(d=>{d.rules={playerHp:40,playerCharge:5,baseAttack:12,pulseBonus:9,
+    pulseCost:3,guardReduction:7,foeBurstBonus:2,foeVariance:1,victoryXp:100};});
+  const e=create(p);let s=e.fresh('Pilot',99);
+  assert.equal(s.player.maxHp,40);assert.equal(s.player.charge,5);
+  s=supply(e,s);s=act(e,s,'move',{dir:'right'});
+  s=act(e,s,'move',{dir:'right'});
+  assert.ok(s.battle);
+  const first=act(e,s,'combat',{id:'pulse'});
+  assert.equal(first.player.charge,2);
+  assert.equal(first.battle.hp,3); // 24 - (12+9)
+  const second=act(e,first,'combat',{id:'strike'});
+  assert.equal(second.battle,null);
+  assert.equal(second.player.xp,100);
+  assert.throws(()=>validate(changed(p=>{p.rules={unknown:5};})),/unknown rule/);
+  assert.throws(()=>validate(changed(p=>{p.rules={playerHp:0};})),/rule playerHp/);
+});
