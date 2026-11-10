@@ -45,7 +45,7 @@ for(const img of Object.values(scenery))img.addEventListener('load',()=>{if(stat
 // WebView/browser controller bridge. Gamepad is an optional input source:
 // touch and keyboard remain fully functional without a connected controller.
 const webGamepadInput=createBearframeControllerInput();
-let webControllerSelection=0;
+let webControllerSelection=-1;
 function webChoices(){
   return Array.from(document.querySelectorAll('#choices button')).filter(b=>!b.disabled);
 }
@@ -53,7 +53,8 @@ function webSelectChoice(delta){
   const choices=webChoices();if(!choices.length)return false;
   const focused=choices.indexOf(document.activeElement);
   if(focused>=0)webControllerSelection=focused;
-  webControllerSelection=(webControllerSelection+delta+choices.length)%choices.length;
+  const start=webControllerSelection<0?(delta>0?-1:0):webControllerSelection;
+  webControllerSelection=(start+delta+choices.length)%choices.length;
   choices[webControllerSelection].focus({preventScroll:true});
   return true;
 }
@@ -78,8 +79,8 @@ function webControllerAction(event){
     }else act('move',event.direction);
   }else if(event.type==='confirm'&&choices.length){
     const index=choices.indexOf(document.activeElement);
-    choices[index>=0?index:Math.min(webControllerSelection,choices.length-1)].click();
-    webControllerSelection=0;
+    choices[index>=0?index:Math.max(0,Math.min(webControllerSelection,choices.length-1))].click();
+    webControllerSelection=-1;
   }else if(event.type==='cancel'){
     if(state.prompt)act('close','');
     else if(state.battle)act('combat','withdraw');
