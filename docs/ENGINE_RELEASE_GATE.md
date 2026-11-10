@@ -67,3 +67,9 @@ The [asset pipeline contract](ASSET_PIPELINE.md) now describes a reusable image/
 ## Browser audio lifecycle regression checkpoint (November 9, 2026 Central)
 
 The offline HTMLMediaElement host adapter now serializes overlapping command batches so UI and lifecycle requests cannot reorder music stop/play transitions. Failed music autoplay cleans up the active element; disposal blocks queued playback commands. Three new deterministic Node regressions exercise these races. The adapter remains an isolated host component: Android WebView audio playback, packaged audio fixtures, audio-focus handling and physical-device verification are **not yet proven**. The engine release gate remains open.
+
+## Offline WebView audio integration checkpoint — November 9, 2026 Central
+
+The portable `framework/audio.js` director is now connected to the `framework/audio-browser.js` HTMLMediaElement adapter through an isolated `enginehost/audio-probe.js` gesture-triggered diagnostic. `scripts/generate_audio_fixture.js` generates a deterministic original 8 kHz/16-bit mono silent WAV, packaged under the WebView's own `enginehost/audio/diagnostics/` directory. The host CSP permits `media-src 'self'` only; remote media remain blocked. This probe is separate from gameplay state and does not alter the legacy launcher, saves, or campaign.
+
+`tests/audio-probe.test.js` covers WAV byte structure/determinism, local media path, non-autoplay behavior, browser rejection cleanup, CSP and build packaging wiring. **Do not mark audio complete** until the installed Android WebView actually decodes/plays the packaged fixture, audio-focus/lifecycle and real music/SFX behavior are tested, and physical-device audio acceptance passes. The new tests and APK build require CI verification.
