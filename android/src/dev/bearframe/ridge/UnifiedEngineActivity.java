@@ -11,6 +11,9 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.RenderProcessGoneDetail;
+import android.view.ViewGroup;
+import android.widget.TextView;
 import android.webkit.WebChromeClient;
 import android.net.Uri;
 import java.io.ByteArrayInputStream;
@@ -35,6 +38,7 @@ public final class UnifiedEngineActivity extends Activity {
     private static final String DIAGNOSTICS = ORIGIN + "/enginehost/index.html";
     private static final String PREFERENCES = "bearframe_unified_v1";
     private WebView browser;
+    private int rendererRecoveries=0;
 
     private static boolean allowedSaveKey(String key) {
         return key != null && key.length() <= 150 &&
@@ -122,6 +126,10 @@ public final class UnifiedEngineActivity extends Activity {
         super.onCreate(saved);
         getWindow().setStatusBarColor(Color.rgb(17,20,28));
         getWindow().setNavigationBarColor(Color.rgb(17,20,28));
+        createOfflineBrowser();
+    }
+
+    private void createOfflineBrowser() {
         browser=new WebView(this);
         browser.setBackgroundColor(Color.rgb(17,20,28));
         WebSettings settings=browser.getSettings();
@@ -136,6 +144,29 @@ public final class UnifiedEngineActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         browser.setWebChromeClient(new WebChromeClient());
         browser.setWebViewClient(new WebViewClient() {
+            @Override public boolean onRenderProcessGone(
+                WebView view, RenderProcessGoneDetail detail) {
+                if(view!=browser)return false;
+                // Renderer process is dead: discard WebView without touching
+                // Android durable journal, then rehydrate from packaged code.
+                browser=null;
+                if(view.getParent() instanceof ViewGroup)
+                    ((ViewGroup)view.getParent()).removeView(view);
+                view.destroy();
+                if(isFinishing()||isDestroyed())return true;
+                rendererRecoveries++;
+                if(rendererRecoveries>2){
+                    // Fail visibly rather than spin in a renderer crash loop.
+                    TextView warning=new TextView(UnifiedEngineActivity.this);
+                    warning.setText("Engine renderer unavailable. Saved progress remains preserved. Restart the app.");
+                    warning.setTextColor(Color.WHITE);
+                    warning.setPadding(24,24,24,24);
+                    setContentView(warning);
+                    return true;
+                }
+                createOfflineBrowser();
+                return true;
+            }
             @Override public WebResourceResponse shouldInterceptRequest(
                 WebView view, WebResourceRequest request) {
                 return asset(request);

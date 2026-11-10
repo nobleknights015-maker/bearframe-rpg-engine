@@ -117,3 +117,9 @@ A new installed-APK `unified-soak-first` emulator stage exercises **256 consecut
 ## Installed Android Activity recreation regression — November 10, 2026
 
 The experimental WebView now has an installed Android 35 instrumentation route `unified-recreate`: it starts from an empty diagnostic journal, commits a movement to sequence 1, invokes the real Activity `recreate()`, waits for a **new Activity instance**, verifies the offline scene atlases and journal restore exactly at sequence 1, then commits a second movement at sequence 2. A failure blocks the CI emulator job. This isolates lifecycle recovery from story content and does not alter `ExpeditionActivity` or legacy saves. **This is not a forced physical orientation change or physical Moto G acceptance**; landscape/portrait transitions, accessibility, RAM/thermal profiling and prolonged device testing remain OPEN.
+
+## WebView renderer-process recovery — November 10, 2026
+
+The experimental `UnifiedEngineActivity` now handles `WebViewClient.onRenderProcessGone` by detaching and discarding the defunct WebView and constructing a fresh **restricted, offline** WebView that reopens the existing Android durable journal; the recovery callback does not mutate gameplay or legacy preference data. Recovery attempts are bounded to two per Activity, after which a visible fail-closed message instructs a restart instead of repeatedly relaunching a crashing renderer.
+
+Installed Android 35 CI `unified-renderer` deterministically invokes the real WebViewClient callback, validates replacement of the WebView, restoration of previously committed sequence/position and packaged art, then commits a second movement. This establishes callback-path acceptance only: an actual OS-induced renderer crash under memory pressure, physical Moto G acceptance and hours-long reliability still require separate validation.

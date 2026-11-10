@@ -505,6 +505,49 @@ public final class RouteRunner extends Instrumentation {
             throw new AssertionError("Party command changed base engine journal");
         resultMeta.putString("partyChoice","PASS chosen ability/target, UI and durable MP");
     }
+    /** Inject the WebView renderer-terminated callback via the real client.
+     * This is deterministic callback-path coverage, not an actual OS renderer
+     * crash. It verifies durable recovery, PNG decode and fail-closed UI. */
+    private void checkUnifiedRendererRecovery() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        if(before.getInt("sequence")!=0||before.getInt("savedRevision")!=0)
+            throw new AssertionError("Renderer recovery started with stale journal");
+        String result=evalHost("JSON.stringify(BearframeHost.navigate('down'))");
+        JSONObject step=new JSONObject((String)new JSONTokener(result).nextValue());
+        if(!step.getBoolean("ok"))throw new AssertionError("Cannot commit baseline step");
+        JSONObject saved=unifiedSnapshot();
+        if(saved.getInt("sequence")!=1||saved.getInt("savedRevision")!=1)
+            throw new AssertionError("Pre-crash state not durably saved");
+        WebView old=findWebView(screen.getWindow().getDecorView());
+        AtomicReference<Boolean> handled=new AtomicReference<>(false);
+        AtomicReference<Throwable> error=new AtomicReference<>();
+        runOnMainSync(()->{
+            try{handled.set(old.getWebViewClient().onRenderProcessGone(old,null));}
+            catch(Throwable failure){error.set(failure);}
+        });
+        if(error.get()!=null)throw new AssertionError(error.get());
+        if(!handled.get())throw new AssertionError("Renderer callback was not handled");
+        WebView fresh=findWebView(screen.getWindow().getDecorView());
+        if(fresh==null||fresh==old)
+            throw new AssertionError("Renderer callback did not replace dead WebView");
+        JSONObject restored=unifiedSnapshot();
+        if(restored.getInt("sequence")!=1||restored.getInt("savedRevision")!=1||
+           restored.getInt("y")!=2||restored.getInt("assetsLoaded")!=2)
+            throw new AssertionError("Renderer replacement did not rehydrate: "+restored);
+        // Verify navigation remains transactional after the new renderer boots.
+        String reply=evalHost("JSON.stringify(BearframeHost.navigate('up'))");
+        JSONObject advance=new JSONObject((String)new JSONTokener(reply).nextValue());
+        if(!advance.getBoolean("ok"))throw new AssertionError("Recovered renderer could not dispatch");
+        JSONObject after=unifiedSnapshot();
+        if(after.getInt("sequence")!=2||after.getInt("savedRevision")!=2||
+           after.getInt("y")!=1)
+            throw new AssertionError("Recovered renderer failed durable commit: "+after);
+        resultMeta.putString("renderer","PASS callback recovery, offline texture reload, journal revision 2");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -581,6 +624,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedParty(stage.equals("unified-party-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-renderer")){
+                checkUnifiedRendererRecovery();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-renderer");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

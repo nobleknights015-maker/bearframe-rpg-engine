@@ -177,6 +177,12 @@ jobs:
             adb shell am instrument -w -e stage unified-recreate dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-recreate.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-recreate' "$RUNNER_TEMP/unified-recreate.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-recreate.txt"
+            # Inject the native WebView renderer-terminated callback and
+            # require fresh restricted WebView + exact journal state recovery.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-renderer dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-renderer.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-renderer' "$RUNNER_TEMP/unified-renderer.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-renderer.txt"
             # Exercise native onTrimMemory, packaged atlas recovery and journal isolation.
             adb shell pm clear dev.bearframe.ridge
             adb shell am instrument -w -e stage unified-memory dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-memory.txt"
