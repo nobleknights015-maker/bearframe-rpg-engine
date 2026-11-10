@@ -101,3 +101,21 @@ ordinary `session.dispatch` commands, with the same save-before-display
 guarantee. Interactions are disabled during combat or another pending prompt.
 The synthetic diagnostic host demonstrates this contract without introducing
 new game content. This is not a final production-grade menu.
+
+
+## Immutable project and presentation configuration snapshots
+
+At construction, `createBearframeEngine(project)` and
+`createBearframeSceneComposer(project, theme)` validate and capture independent
+JSON snapshots of their input. They validate the copied project again before
+using it. This prevents later changes to the caller's map geometry, event
+choices/effects, item stats, enemies, party actor templates, skills, or
+presentation atlas/animation metadata from silently changing the behavior of
+an existing engine or renderer. The original caller objects are **not**
+frozen or modified; a newly constructed engine may use a revised project.
+The existing v1/v2 state and journal formats are unchanged.
+
+Do **not** interpret this as a cross-version content migration guarantee:
+constructing a *new* engine with a different project definition under the
+same project ID could still change how a saved game behaves. Explicit project
+schema/version binding remains an open release requirement.

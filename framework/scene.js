@@ -4,10 +4,19 @@
 function createBearframeSceneComposer(project,theme){
   var validate=(typeof module!=='undefined'&&module.exports)?require('./schema.js'):validateEngineProject;
   validate(project);
+  // The renderer must keep exactly the same validated map geometry even if a
+  // caller reuses and later edits their project/theme objects.
+  try{project=JSON.parse(JSON.stringify(project));}
+  catch(error){throw new TypeError('Scene project must be JSON-serializable');}
+  validate(project);
   var own=Object.prototype.hasOwnProperty;
   function has(o,k){return !!o&&own.call(o,k);}
   function integer(v,a,b){return Number.isInteger(v)&&v>=a&&v<=b;}
-  if(!theme||typeof theme!=='object'||!integer(theme.tileSize,8,128))
+  if(!theme||typeof theme!=='object')
+    throw new TypeError('theme.tileSize must be 8..128');
+  try{theme=JSON.parse(JSON.stringify(theme));}
+  catch(error){throw new TypeError('Scene theme must be JSON-serializable');}
+  if(!theme||!integer(theme.tileSize,8,128))
     throw new TypeError('theme.tileSize must be 8..128');
   if(!theme.atlases||typeof theme.atlases!=='object')throw new TypeError('theme atlases required');
   var color=/^#[0-9a-fA-F]{6}$/;

@@ -5,6 +5,12 @@
 function createBearframeEngine(project) {
   var validate=(typeof module!=='undefined'&&module.exports)?require('./schema.js'):validateEngineProject;
   validate(project);
+  // Capture the entire validated project before constructing any rule or party
+  // adapters. Runtime determinism must not depend on mutable host-owned data.
+  // This is an internal snapshot; save format and command semantics are unchanged.
+  try{project=JSON.parse(JSON.stringify(project));}
+  catch(error){throw new TypeError('Project must be JSON-serializable');}
+  validate(project); // A custom toJSON must not bypass content validation.
   var own=Object.prototype.hasOwnProperty;
   var VERSION=project.partyCombat?2:1;
   var RULES={playerHp:30,playerCharge:3,baseAttack:5,pulseBonus:6,pulseCost:1,
