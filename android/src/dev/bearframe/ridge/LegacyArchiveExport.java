@@ -69,6 +69,77 @@ public final class LegacyArchiveExport {
         if(a!=null&&b!=null&&!a.equals(b))return null;
         return a!=null?a:b;
     }
+    /** Verified playable-compatibility journal selection, fail closed on
+     * malformed/ambiguous occupied slots. Export only the original-format
+     * fields, so the old validator and missing-only restore can accept it. */
+    private static final class CompatEntry {
+        final String body;
+        final String original;
+        final long sequence;
+        CompatEntry(String body,String original,long sequence){
+            this.body=body;this.original=original;this.sequence=sequence;
+        }
+    }
+    private static CompatEntry parseCompat(String raw){
+        if(raw==null||raw.length()<30||raw.length()>2000000)return null;
+        try{
+            JSONObject envelope=new JSONObject(raw);
+            if(envelope.length()!=6||envelope.getInt("format")!=1||
+               !"legacy-expedition-compat".equals(envelope.getString("project"))||
+               envelope.getInt("version")!=1)return null;
+            long sequence=envelope.getLong("sequence");
+            if(sequence<0||sequence>2147483647L)return null;
+            String body=envelope.getString("body");
+            if(!checksum(body).equals(envelope.getString("checksum")))return null;
+            JSONObject state=new JSONObject(body);
+            if(state.length()!=4||state.getInt("version")!=1||
+               !"legacy-expedition-compat".equals(state.getString("project"))||
+               state.getLong("sequence")!=sequence)return null;
+            Object value=state.get("legacy");
+            if(!(value instanceof JSONObject))return null;
+            String original=((JSONObject)value).toString();
+            if(!LegacyV1Validator.accepts(original))return null;
+            return new CompatEntry(body,original,sequence);
+        }catch(Exception invalid){return null;}
+    }
+    private String currentCompat(){
+        SharedPreferences p=activity.getSharedPreferences("bearframe_unified_v1",Activity.MODE_PRIVATE);
+        String prefix="bf:legacy-expedition-compat:v1:session:";
+        try{
+            String a=p.getString(prefix+"a",null),b=p.getString(prefix+"b",null);
+            CompatEntry first=parseCompat(a),second=parseCompat(b);
+            if((a!=null&&first==null)||(b!=null&&second==null))
+                return null;
+            if(first==null&&second==null)return null;
+            if(first!=null&&second!=null&&first.sequence==second.sequence &&
+               !first.body.equals(second.body))return null;
+            CompatEntry latest=second==null?first:first==null?second:
+                first.sequence>=second.sequence?first:second;
+            return latest.original;
+        }catch(RuntimeException invalid){return null;}
+    }
+    @JavascriptInterface public boolean hasPlayableCompat(){
+        return currentCompat()!=null;
+    }
+    @JavascriptInterface public synchronized boolean beginCompatExport(){
+        if(pending!=null||restoring)return false;
+        String raw=currentCompat();
+        if(raw==null)return false;
+        pending=raw;
+        activity.runOnUiThread(()->{
+            try{
+                Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/json");
+                intent.putExtra(Intent.EXTRA_TITLE,"bearframe-legacy-continued.json");
+                activity.startActivityForResult(intent,REQUEST_CODE);
+            }catch(RuntimeException missingPicker){
+                synchronized(LegacyArchiveExport.this){pending=null;}
+                listener.onResult("failed");
+            }
+        });
+        return true;
+    }
     @JavascriptInterface public boolean hasVerifiedArchive(){
         return archived()!=null;
     }

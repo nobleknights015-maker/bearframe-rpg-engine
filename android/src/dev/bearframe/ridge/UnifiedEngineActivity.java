@@ -51,7 +51,7 @@ public final class UnifiedEngineActivity extends Activity {
                 "restore-cancelled".equals(result)?
                 "Restore cancelled; no original save was changed.":
                 "saved".equals(result)?
-                "Backup JSON saved to the selected document.":
+                "Save JSON exported to the selected document.":
                 "cancelled".equals(result)?
                 "Export cancelled; backup remains in app storage.":
                 "Export failed; backup remains in app storage.";

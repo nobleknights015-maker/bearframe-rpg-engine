@@ -9,6 +9,15 @@ function attachBearframeLegacyCompatibilityUI(config){
     board=document.getElementById('legacy-compat-board'),
     controls=document.getElementById('legacy-compat-actions');
   var compat=createBearframeLegacyCompatibility(config);
+  var exportButton=document.getElementById('legacy-compat-export');
+  var nativeExport=window.BearframeArchiveExport&&
+    typeof window.BearframeArchiveExport.beginCompatExport==='function'?
+    window.BearframeArchiveExport:null;
+  exportButton.addEventListener('click',function(){
+    if(!nativeExport||!nativeExport.beginCompatExport())
+      text('Current historical progress cannot be exported until a verified playable save exists.');
+    else text('Select a file for your continued historical progress. The original remains intact.');
+  });
   function text(v){status.textContent=String(v);}
   function draw(){
     var snap=compat.snapshot(),s=snap.legacy;
@@ -59,18 +68,19 @@ function attachBearframeLegacyCompatibilityUI(config){
     var result=compat.commit();
     text(result.ok?'Playable historical progress copied and durably verified. Original unchanged.':
       'Import refused: '+result.reason);
-    if(result.ok){resume.disabled=false;draw();}
+    if(result.ok){resume.disabled=false;exportButton.disabled=!nativeExport;draw();}
   });
   resume.addEventListener('click',function(){
     var result=compat.resume();
     text(result.ok?'Historical session resumed from verified separate save.':
       'Resume refused: '+result.reason);
-    if(result.ok)draw();
+    if(result.ok){exportButton.disabled=!nativeExport;draw();}
   });
   // Existing compatibility journal is read-only on startup; user must press
   // Resume to enter it. Old-save import never runs implicitly.
   var health=compat.snapshot().health;
   resume.disabled=health.validSlots===0||health.conflict;
+  exportButton.disabled=!nativeExport||health.validSlots===0||health.conflict;
   draw();
   window.BearframeLegacyCompat=Object.freeze({
     snapshot:compat.snapshot,
