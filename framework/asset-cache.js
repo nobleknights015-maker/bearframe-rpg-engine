@@ -106,8 +106,9 @@ function createBearframeAssetCache(manifest,loader,options){
     if(!Number.isInteger(targetBytes)||targetBytes<0||targetBytes>maxMemoryBytes)
       throw new RangeError('Invalid asset cache target');
     if(targetBytes===0){
+      var count=cache.size;
       clear();
-      return {evicted:0,memoryBytes:0};
+      return {evicted:count,memoryBytes:0};
     }
     var evicted=0;
     while(memory>targetBytes&&cache.size){
