@@ -226,19 +226,17 @@ public final class RouteRunner extends Instrumentation {
             catch(Throwable error){callbackError.set(error);}
         });
         if(callbackError.get()!=null)throw new AssertionError(callbackError.get());
-        boolean observedEviction=false;
         boolean recovered=false;
         for(int attempt=0;attempt<50;attempt++){
-            String raw=evalHost("JSON.stringify({state:BearframeHost.snapshot()," +
-                "restoring:BearframeHost.navigate('invalid').reason," +
-                "loaded:BearframeHost.snapshot().assetsLoaded})");
-            JSONObject state=new JSONObject((String)new JSONTokener(raw).nextValue());
-            JSONObject snap=state.getJSONObject("state");
+            JSONObject snap=new JSONObject((String)new JSONTokener(
+                evalHost("BearframeHost.snapshotJson()")
+            ).nextValue());
             if(snap.getInt("sequence")!=revision || snap.getInt("savedRevision")!=saved)
                 throw new AssertionError("Memory recovery mutated saved gameplay: "+snap);
-            int loaded=state.getInt("loaded");
-            if(loaded<2)observedEviction=true;
-            if(loaded==2 && observedEviction){recovered=true;break;}
+            if(snap.getInt("trimCount")>0 && snap.getInt("recoveryCount")>0 &&
+               !snap.getBoolean("restoring") && snap.getInt("assetsLoaded")==2){
+                recovered=true;break;
+            }
             Thread.sleep(200);
         }
         if(!recovered)
