@@ -110,3 +110,31 @@ test('mutating returned descriptors does not mutate manifest metadata',async()=>
  const audio=await cache.load('theme');
  assert.equal(typeof audio,'object');
 });
+
+test('memory pressure trims least-recently-used textures without touching game state',async()=>{
+ const cache=create(manifest,async d=>fake(d),{maxMemoryBytes:65536});
+ await cache.load('terrain');
+ await cache.load('actor');
+ await cache.load('icon');
+ assert.equal(cache.snapshot().memoryBytes,64*32*4+64*48*4+16*16*4);
+ cache.get('terrain'); // actor becomes oldest
+ const result=cache.trimTo(64*32*4+16*16*4);
+ assert.deepEqual(result,{evicted:1,memoryBytes:64*32*4+16*16*4});
+ assert.deepEqual(cache.snapshot().loaded,['icon','terrain']);
+ assert.equal(cache.get('actor'),null);
+ assert.equal(cache.get('terrain').naturalWidth,64);
+ assert.throws(()=>cache.trimTo(-1),/Invalid asset cache target/);
+ assert.throws(()=>cache.trimTo(65537),/Invalid asset cache target/);
+ assert.throws(()=>cache.trimTo(1.5),/Invalid asset cache target/);
+});
+test('critical memory pressure cancels pending cache insertions',async()=>{
+ let resolve;
+ const cache=create(manifest,()=>new Promise(r=>{resolve=r;}));
+ const pending=cache.load('terrain');
+ await Promise.resolve();
+ assert.equal(cache.trimTo(0).evicted,0);
+ resolve(fake(manifest.assets.terrain));
+ await pending;
+ assert.deepEqual(cache.snapshot().loaded,[]);
+ assert.equal(cache.snapshot().memoryBytes,0);
+});
