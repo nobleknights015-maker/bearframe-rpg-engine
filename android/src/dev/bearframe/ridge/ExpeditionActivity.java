@@ -143,7 +143,7 @@ public final class ExpeditionActivity extends Activity {
     private int controllerChoiceCount(){return options==null?0:options.getChildCount();}
     private boolean controllerShift(int delta){
         if(title==null||controllerChoiceCount()==0)return false;
-        int count=controllerChoiceCount(),start=controllerChoice;
+        int count=controllerChoiceCount(),start=controllerChoice<0?(delta>0?-1:0):controllerChoice;
         for(int i=0;i<count;i++){
             int next=(start+delta*(i+1)%count+count*4)%count;
             View candidate=options.getChildAt(next);
