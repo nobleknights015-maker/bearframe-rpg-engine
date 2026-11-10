@@ -97,3 +97,18 @@ var afterSave=v1Migrate.migrate(beforeSave);
 ensure(afterSave.schemaVersion===2&&afterSave.state.maxHp===42,'ported save migration');
 ensure(beforeSave.state.maxHp===undefined,'save migrations do not mutate inputs');
 print('PASS Engine v1 save migrations under Rhino');
+
+var unifiedMemory={};
+var unifiedStorage={
+  read:function(k){return Object.prototype.hasOwnProperty.call(unifiedMemory,k)?unifiedMemory[k]:null;},
+  write:function(k,v){unifiedMemory[k]=v;return true;}
+};
+var unified=createBearframeSession(FRAMEWORK_FIXTURE,unifiedStorage,art,{slotPrefix:'bf:rhino:v1:unified'});
+ensure(unified.start('Shared core',79).ok,'unified Rhino session starts');
+ensure(unified.dispatch({type:'move',dir:'down'}).ok,'unified Rhino move');
+ensure(unified.snapshot().view.y===2,'unified Rhino moved to row 2');
+var unifiedReload=createBearframeSession(FRAMEWORK_FIXTURE,unifiedStorage,art,{slotPrefix:'bf:rhino:v1:unified'});
+ensure(unifiedReload.resume().ok,'unified Rhino session resumes');
+ensure(unifiedReload.snapshot().view.sequence===1,'unified Rhino retained committed revision');
+ensure(unifiedReload.compose({width:96,height:96,tick:0}).commands.length>3,'unified Rhino composed scene');
+print('PASS unified session under Rhino using the same core as WebView');
