@@ -56,3 +56,16 @@ ensure(audioPaused.state.paused===true,'audio paused');
 var audioResumed=audio.apply(audioPaused.state,{type:'resume'});
 ensure(audioResumed.commands[0].type==='resume','audio resumed');
 print('PASS portable audio command scheduler under Rhino');
+
+var skills={strike:{kind:'damage',power:4,cost:0,element:'physical'},
+ guard:{kind:'guard',power:0,cost:0,element:'physical'}};
+var partyCombat=createBearframePartyCombat(skills);
+var hero={id:'hero',name:'Hero',hp:30,maxHp:30,mp:2,maxMp:2,attack:7,defense:3,
+ speed:5,skills:['strike','guard'],resistances:{}};
+var enemy={id:'enemy',name:'Enemy',hp:25,maxHp:25,mp:0,maxMp:0,attack:3,defense:1,
+ speed:3,skills:['strike'],resistances:{}};
+var battle=partyCombat.begin([hero],[enemy],33);
+var played=partyCombat.round(battle,[{actor:'hero',skill:'strike',target:'enemy'}]);
+ensure(played.turn===2&&played.foes[0].hp<25,'party combat round');
+ensure(partyCombat.restore(partyCombat.serialize(played)).turn===2,'party combat restore');
+print('PASS multi-character combat engine under Rhino');
