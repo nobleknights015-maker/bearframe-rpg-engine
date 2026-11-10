@@ -142,7 +142,12 @@ test('installed Android WebView checks real packaged WAV metadata decoding',()=>
  const runner=fs.readFileSync(path.join(__dirname,'../android/test/RouteRunner.java'),'utf8');
  const workflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/engine-ci.yml'),'utf8');
  assert.match(runner,/checkUnifiedAudioDecode\(\)/);
- assert.match(runner,/a\.onloadedmetadata=function\(\)/);
+ assert.match(runner,/a\\.onloadedmetadata=function\\(\\)/);
+ assert.match(runner,/a\\.onloadeddata=function\\(\\)/);
+ assert.match(runner,/a\\.readyState>=a\\.HAVE_CURRENT_DATA/);
+ assert.match(runner,/a\\.buffered\\.length>0/);
+ assert.match(runner,/a\\.buffered\\.end\\(0\\)>0/);
+ assert.match(runner,/no-decoded-data/);
  assert.match(runner,/a\.duration>0&&isFinite\(a\.duration\)/);
  assert.match(runner,/a\.onerror=function\(\)/);
  assert.match(runner,/stage\.equals\("unified-audio"\)/);
