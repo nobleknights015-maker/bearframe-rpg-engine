@@ -57,7 +57,7 @@ jobs:
           set -euo pipefail
           export TYPESCRIPT_PATH="$GITHUB_WORKSPACE/node_modules/typescript/lib/typescript.js"
           node android/compile.js "$RUNNER_TEMP/simulation.js"
-          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -f "$RUNNER_TEMP/simulation.js" -f tests/native-adapter.js | tee "$RUNNER_TEMP/rhino-native-test.log"
+          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -version 200 -f "$RUNNER_TEMP/simulation.js" -f tests/native-adapter.js | tee "$RUNNER_TEMP/rhino-native-test.log"
           grep -q 'PASS native adapter expedition' "$RUNNER_TEMP/rhino-native-test.log"
       - name: Generate disposable build-only signing key
         shell: bash
