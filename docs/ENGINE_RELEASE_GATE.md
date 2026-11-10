@@ -14,18 +14,18 @@ Status: **development**, not production-ready. Sounding Ridge remains a frozen r
 
 | Capability | Minimum acceptance test | Current verified status |
 | --- | --- | --- |
-| Deterministic simulation | Unit tests for state, input, combat, map transitions | Basic slice tests in `tests/systems.test.js` |
-| Content data loading | Check schema, tile geometry, exit targets, event and foe references | `game/content-validator.js` validation gate |
-| Save compatibility | Restart after turn advancement; reject damaged save; future schema migration coverage | Earlier two-process emulator evidence, no migration system yet |
-| Android deployment | Checkout-to-APK CI build; fresh Android device install; no private keys in repository | CI added; device acceptance pending |
-| Rendering & UI | Sprite layering/animation, scaling, touch gestures, accessibility/legibility | Prototype renderer only |
-| Combat framework | Reusable encounters, statuses, abilities, elemental types, enemy behavior and party turns | Single-actor prototype only |
-| World & events | Data-driven maps, scripted NPC events, robust collisions, camera and scenes | Three hardcoded sample maps only |
-| Progression & inventory | Modular items, equipment, party, quests, character creation, upgrades | Prototype equipment and recruitment only |
+| Deterministic simulation | Unit tests for state, input, combat, map transitions | Original game tests plus `tests/framework.test.js` deterministic/fuzz tests; Rhino validation passes |
+| Content data loading | Check schema, tile geometry, exit targets, event and foe references | Prototype validator plus portable `framework/schema.js` cross-reference contracts and rejection tests |
+| Save compatibility | Restart after turn advancement; reject damaged save; future schema migration coverage | Installed Android emulator two-process restart passed for legacy app; separate `framework/save-slots.js` fail-closed two-slot journal tested; **migration to new runtime not implemented** |
+| Android deployment | Checkout-to-APK CI build; fresh Android device install; no private keys in repository | Clean Android CI and two-stage Android 35 emulator test passed; **physical Moto G acceptance pending** |
+| Rendering & UI | Sprite layering/animation, scaling, touch gestures, accessibility/legibility | Portable atlas/camera/animation scene composer, Canvas adapter and Android atlas renderer added; **new renderer not connected to Activity** |
+| Combat framework | Reusable encounters, statuses, abilities, elemental types, enemy behavior and party turns | Configurable single-character combat in portable framework; statuses, skills, elemental mechanics and full party turns outstanding |
+| World & events | Data-driven maps, scripted NPC events, robust collisions, camera and scenes | Legacy three-map prototype; portable framework now validates and runs independent maps/events/exits, but large-map pipeline untested |
+| Progression & inventory | Modular items, equipment, party, quests, character creation, upgrades | Portable item/equipment/quest/recruitment effects tested; full party progression and UX not implemented |
 | Audio | BGM/SFX scheduling, mixing, mute, pause/resume and asset validation | Not implemented |
 | Performance | Frame-time, RAM and thermal profiling on representative Android device | Not measured |
-| Stability | Soak tests, resume/rotation, process death, malformed assets, failed save, recovery | Emulator replay only |
-| Documentation | Stable module API, asset schemas, build & debugging guide, known limits | Partial |
+| Stability | Soak tests, resume/rotation, process death, malformed assets, failed save, recovery | Android emulator restart replay passed; save-journal fault injection passed; rotation, low-memory and long-running soak tests outstanding |
+| Documentation | Stable module API, asset schemas, build & debugging guide, known limits | Portable framework API and release criteria documented; stable public API/versioning and full debugging guides pending |
 
 ## Rules for marking work done
 
