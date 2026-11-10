@@ -63,3 +63,7 @@ The [asset pipeline contract](ASSET_PIPELINE.md) now describes a reusable image/
 3. Don't erase previous test evidence or rename a prototype to 'complete engine'.
 4. Keep all signing materials external to GitHub; CI uses an ephemeral key that cannot update production installations.
 5. Preserve existing save compatibility unless a verified migration exists.
+
+## Browser audio lifecycle regression checkpoint (November 9, 2026 Central)
+
+The offline HTMLMediaElement host adapter now serializes overlapping command batches so UI and lifecycle requests cannot reorder music stop/play transitions. Failed music autoplay cleans up the active element; disposal blocks queued playback commands. Three new deterministic Node regressions exercise these races. The adapter remains an isolated host component: Android WebView audio playback, packaged audio fixtures, audio-focus handling and physical-device verification are **not yet proven**. The engine release gate remains open.
