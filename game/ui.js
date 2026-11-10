@@ -1,3 +1,4 @@
+validateWorldContent({WORLD,FOES,TEXT,ACTIONS});
 const game=buildEngine({WORLD,FOES,TEXT,ACTIONS}), $=id=>document.getElementById(id);
 let state=null;
 try{const raw=localStorage.getItem(game.key);state=game.restore(raw);
