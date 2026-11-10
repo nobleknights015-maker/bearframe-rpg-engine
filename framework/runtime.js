@@ -7,6 +7,9 @@ function createBearframeEngine(project) {
   validate(project);
   var own=Object.prototype.hasOwnProperty;
   var VERSION=1;
+  var RULES={playerHp:30,playerCharge:3,baseAttack:5,pulseBonus:6,pulseCost:1,
+    guardReduction:5,foeBurstBonus:3,foeVariance:3,victoryXp:10};
+  if(project.rules)Object.keys(project.rules).forEach(function(k){RULES[k]=project.rules[k];});
   function has(o,k){return !!o&&own.call(o,k);}
   function clone(v){return JSON.parse(JSON.stringify(v));}
   function number(v,min,max){return Number.isInteger(v)&&v>=min&&v<=max;}
@@ -19,7 +22,8 @@ function createBearframeEngine(project) {
     var value=number(seed,1,4294967295)?seed:0x9e3779b9;
     return {version:VERSION,project:project.id,sequence:0,rng:value>>>0,
       player:{name:id,map:project.start.map,x:project.start.x,y:project.start.y,
-        hp:30,maxHp:30,charge:3,maxCharge:3,xp:0},
+        hp:RULES.playerHp,maxHp:RULES.playerHp,
+        charge:RULES.playerCharge,maxCharge:RULES.playerCharge,xp:0},
       inventory:{},equipment:{weapon:null},flags:{},quests:{},allies:[],
       battle:null,prompt:null,message:'System initialized.'};
   }
@@ -156,22 +160,22 @@ function createBearframeEngine(project) {
       s.battle=null;s.message='You disengage.';return true;
     }
     if(['strike','pulse','guard'].indexOf(id)===-1)return false;
-    if(id==='pulse'&&s.player.charge<1)return false;
+    if(id==='pulse'&&s.player.charge<RULES.pulseCost)return false;
     var guard=id==='guard';
     if(guard)s.player.charge=Math.min(s.player.maxCharge,s.player.charge+1);
     var power=s.equipment.weapon?project.items[s.equipment.weapon].power:0;
-    var damage=guard?0:5+power+(id==='pulse'?6:0);
-    if(id==='pulse')s.player.charge--;
+    var damage=guard?0:RULES.baseAttack+power+(id==='pulse'?RULES.pulseBonus:0);
+    if(id==='pulse')s.player.charge-=RULES.pulseCost;
     b.hp=Math.max(0,b.hp-damage);
     if(b.hp===0){
       var origin=b.origin;
       if(origin.indexOf('encounter:')===0)s.flags[origin]=true;
-      s.battle=null;s.player.xp=Math.min(2147483647,s.player.xp+10);
+      s.battle=null;s.player.xp=Math.min(2147483647,s.player.xp+RULES.victoryXp);
       s.message=foe.name+' defeated.';return true;
     }
     // Every battle action consumes exactly one deterministic PRNG step.
-    var roll=nextRand(s)%3;
-    var incoming=Math.max(1,foe.attack+(b.turn%foe.period===0?3:0)+roll-(guard?5:0));
+    var roll=nextRand(s)%RULES.foeVariance;
+    var incoming=Math.max(1,foe.attack+(b.turn%foe.period===0?RULES.foeBurstBonus:0)+roll-(guard?RULES.guardReduction:0));
     s.player.hp=Math.max(0,s.player.hp-incoming);
     b.turn++;
     s.message='You deal '+damage+'. '+foe.name+' deals '+incoming+'.';
