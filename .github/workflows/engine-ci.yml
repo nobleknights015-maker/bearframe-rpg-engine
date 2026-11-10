@@ -71,6 +71,23 @@ jobs:
         shell: bash
         run: |
           keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/ci-only.p12" -alias ci -keyalg RSA -keysize 2048 -validity 1 -storepass android-ci -keypass android-ci -dname 'CN=CI temporary build'
+      - name: Build a deterministic synthetic asset-pack integration fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - "$RUNNER_TEMP" <<'NODE'
+          const fs=require('node:fs'),path=require('node:path');
+          const root=process.argv[2];
+          const source=path.join(root,'bf-asset-source');
+          const nested=path.join(source,'diagnostic');
+          fs.mkdirSync(nested,{recursive:true});
+          const png=Buffer.from(fs.readFileSync('enginehost/fixtures/terrain.png.b64','utf8').trim(),'base64');
+          fs.writeFileSync(path.join(nested,'test.png'),png);
+          const manifest={version:1,assets:{test:{type:'atlas',path:'diagnostic/test.png',
+            width:png.readUInt32BE(16),height:png.readUInt32BE(20),preload:true}}};
+          require('./scripts/package_assets')(manifest,source,path.join(root,'bf-asset-pack'));
+          require('./scripts/verify_asset_pack')(path.join(root,'bf-asset-pack'));
+          NODE
       - name: Build and verify Android APK and instrumentation package
         shell: bash
         env:
@@ -80,10 +97,18 @@ jobs:
           export RHINO_JAR="$RUNNER_TEMP/rhino.jar"
           export TYPESCRIPT_PATH="$GITHUB_WORKSPACE/node_modules/typescript/lib/typescript.js"
           export SIGNING_KEY="$RUNNER_TEMP/ci-only.p12"
+          export BF_ASSET_PACK_DIR="$RUNNER_TEMP/bf-asset-pack"
           bash android/build.sh "$RUNNER_TEMP/bearframe-ci.apk"
           bash android/test/build.sh "$RUNNER_TEMP/route-test-ci.apk"
           test -s "$RUNNER_TEMP/bearframe-ci.apk"
           test -s "$RUNNER_TEMP/route-test-ci.apk"
+          # The verified custom asset-pack actually made it inside the APK;
+          # no narrative/game art has been introduced into the test bundle.
+          unzip -p "$RUNNER_TEMP/bearframe-ci.apk" \
+            assets/enginehost/packs/active/asset-index.json | grep -q '"test"'
+          unzip -p "$RUNNER_TEMP/bearframe-ci.apk" \
+            assets/enginehost/packs/active/diagnostic/test.png | sha256sum | \
+            grep -q '^eaaae7e1a33e854df437f592ea0cc98e530e8b955172ae47b75406378e4ea179 '
           "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --verbose "$RUNNER_TEMP/bearframe-ci.apk"
           sha256sum "$RUNNER_TEMP/bearframe-ci.apk"
       - name: Enable KVM for Android emulator

@@ -23,6 +23,13 @@ base64 --decode "$root/enginehost/fixtures/characters.png.b64" > "$work/assets/e
 printf '%s\n' \
   "eaaae7e1a33e854df437f592ea0cc98e530e8b955172ae47b75406378e4ea179  $work/assets/enginehost/assets/terrain.png" \
   "c9d3ad73ed2d6a8c67d8cec169cd190841eb61cc7a51c52e040ae0f8bf573722  $work/assets/enginehost/assets/characters.png" | sha256sum -c -
+# Opt-in original-asset pack is verified again at build time, never trusted
+# solely because its index claims a checksum. Leave the current default assets
+# and diagnostic launcher unchanged when no external pack is provided.
+if [[ -n "${BF_ASSET_PACK_DIR:-}" ]]; then
+  node "$root/scripts/verify_asset_pack.js" "$BF_ASSET_PACK_DIR" \
+    "$work/assets/enginehost/packs/active"
+fi
 # A generated, original silent WAV proves local audio packaging without game media.
 node "$root/scripts/generate_audio_fixture.js" "$work/assets/enginehost/audio/diagnostics/silence.wav"
 unzip -p "$RHINO_JAR" META-INF/LICENSE.txt > "$work/assets/Rhino-LICENSE.txt"

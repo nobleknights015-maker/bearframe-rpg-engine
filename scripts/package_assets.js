@@ -84,6 +84,7 @@ function packageAssets(manifest,sourceDir,targetDir){
  return index;
 }
 module.exports=packageAssets;
+module.exports.validSignature=validSignature;
 if(require.main===module){
  if(process.argv.length!==5){
   console.error('Usage: node scripts/package_assets.js MANIFEST.json SOURCE_DIR OUTPUT_DIR');
