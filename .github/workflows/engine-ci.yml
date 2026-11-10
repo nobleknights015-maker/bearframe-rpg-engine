@@ -59,6 +59,12 @@ jobs:
           node android/compile.js "$RUNNER_TEMP/simulation.js"
           java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -version 200 -f "$RUNNER_TEMP/simulation.js" -f tests/native-adapter.js | tee "$RUNNER_TEMP/rhino-native-test.log"
           grep -q 'PASS native adapter expedition' "$RUNNER_TEMP/rhino-native-test.log"
+      - name: Run standalone JRPG engine kit under Rhino
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -cp "$RUNNER_TEMP/rhino.jar" org.mozilla.javascript.tools.shell.Main -version 200 -f framework/schema.js -f framework/runtime.js -f framework/save-slots.js -f fixtures/engine-project.js -f tests/framework-rhino.js | tee "$RUNNER_TEMP/framework-rhino-test.log"
+          grep -q 'PASS portable JRPG framework' "$RUNNER_TEMP/framework-rhino-test.log"
       - name: Generate disposable build-only signing key
         shell: bash
         run: |
