@@ -82,10 +82,20 @@
     var inspectButton=document.getElementById('legacy-preview');
     var confirmButton=document.getElementById('legacy-confirm');
     var exportButton=document.getElementById('legacy-export');
+    var restoreButton=document.getElementById('legacy-restore');
     var archiveExport=window.BearframeArchiveExport&&
       typeof window.BearframeArchiveExport.begin==='function'?
       window.BearframeArchiveExport:null;
     exportButton.disabled=true;
+    restoreButton.disabled=!archiveExport||
+      typeof archiveExport.beginRestore!=='function'||
+      !archiveExport.canRestoreIntoEmptySource();
+    restoreButton.addEventListener('click',function(){
+      if(!archiveExport||!archiveExport.beginRestore())
+        archiveStatus.textContent='Restore refused: original save already exists or picker unavailable.';
+      else
+        archiveStatus.textContent='Select a previously exported historical JSON backup.';
+    });
     exportButton.addEventListener('click',function(){
       if(!archiveExport||!archiveExport.begin()){
         archiveStatus.textContent='Verified archive unavailable for export.';

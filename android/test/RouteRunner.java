@@ -649,6 +649,56 @@ public final class RouteRunner extends Instrumentation {
         }
         resultMeta.putString("archive","PASS exact historical archive, original source and separate journal");
     }
+    /** Test-only native recovery acceptance without opening a document picker.
+     * The actual restore UI always requires ACTION_OPEN_DOCUMENT user choice. */
+    private void checkUnifiedRestoreNative() throws Exception {
+        android.content.SharedPreferences old=getTargetContext()
+            .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
+        if(!old.edit().remove("expedition").putString("other","preserve").commit())
+            throw new AssertionError("Cannot prepare missing source");
+        JSONObject flags=new JSONObject();
+        for(String id:new String[]{"bearing","E","D","H","echoAlly","gridAlly","met"})
+            flags.put(id,false);
+        flags.put("bearing",true);
+        String raw=new JSONObject().put("v",1).put("name","Recovery test")
+            .put("finish","Slate").put("area","gallery").put("x",8).put("y",4)
+            .put("hp",35).put("charge",3).put("weapon","blade")
+            .put("flags",flags).put("battle",JSONObject.NULL)
+            .put("prompt","H").put("message","Restored old progress").toString();
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        Object activity=screen;
+        java.lang.reflect.Field field=activity.getClass().getDeclaredField("exporter");
+        field.setAccessible(true);
+        Object exporter=field.get(activity);
+        java.lang.reflect.Method restore=exporter.getClass()
+            .getDeclaredMethod("restoreIntoEmptySource",String.class);
+        restore.setAccessible(true);
+        Class<?> validator=activity.getClass().getClassLoader()
+            .loadClass("dev.bearframe.ridge.LegacyV1Validator");
+        java.lang.reflect.Method accepts=validator.getMethod("accepts",String.class);
+        if(!(Boolean)accepts.invoke(null,raw) ||
+           (Boolean)accepts.invoke(null,raw.replace("\"x\":8","\"x\":0")))
+            throw new AssertionError("Native legacy geometry/schema validation mismatch");
+        if(!(Boolean)restore.invoke(exporter,raw))
+            throw new AssertionError("Native restore rejected valid missing-key backup");
+        if(!raw.equals(old.getString("expedition",null))||
+           !"preserve".equals(old.getString("other",null)))
+            throw new AssertionError("Native restore did not preserve exact old JSON");
+        if((Boolean)restore.invoke(exporter,raw.replace("Recovery test","Overwrite attempt")) ||
+           !raw.equals(old.getString("expedition",null)))
+            throw new AssertionError("Native import overwrote existing original save");
+        if(!"false".equals(evalHost("BearframeArchiveExport.canRestoreIntoEmptySource()")))
+            throw new AssertionError("UI did not block overwrite after restoration");
+        JSONObject after=unifiedSnapshot();
+        if(after.getInt("sequence")!=before.getInt("sequence")||
+           after.getInt("savedRevision")!=before.getInt("savedRevision"))
+            throw new AssertionError("Native restore modified new-engine journal");
+        resultMeta.putString("restore","PASS native validation, restore-to-missing-only, no overwrite");
+    }
     /** Decode the packaged offline audio in the installed Chromium WebView, not
      * merely the APK filesystem. Require decoded media data, not only metadata.\n     * This does not assert audible output or autoplay. */
     private void checkUnifiedAudioDecode() throws Exception {
@@ -704,6 +754,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedArchive(stage.equals("unified-archive-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-restore-native")){
+                checkUnifiedRestoreNative();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-restore-native");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

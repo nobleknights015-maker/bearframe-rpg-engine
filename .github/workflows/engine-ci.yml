@@ -165,6 +165,12 @@ jobs:
             adb shell am instrument -w -e stage unified-archive-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-archive-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-archive-second' "$RUNNER_TEMP/unified-archive-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-archive-second.txt"
+            # Refuse overwrite of existing legacy preferences when restoring a
+            # user-selected, strictly validated historical JSON backup.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-restore-native dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-restore-native.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-restore-native' "$RUNNER_TEMP/unified-restore-native.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-restore-native.txt"
             # Exercise the versioned party-combat core and UI through the
             # installed WebView, including process-stop journal recovery.
             adb shell pm clear dev.bearframe.ridge

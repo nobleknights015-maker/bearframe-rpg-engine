@@ -42,7 +42,15 @@ public final class UnifiedEngineActivity extends Activity {
     private int rendererRecoveries=0;
     private final LegacyArchiveExport exporter=new LegacyArchiveExport(this,result->{
         if(browser!=null){
-            String line="saved".equals(result)?
+            String line="restored".equals(result)?
+                "Original save restored without overwriting existing progress. Open the original launcher to continue.":
+                "restore-refused".equals(result)?
+                "Restore refused: invalid backup or an original save already exists.":
+                "restore-failed".equals(result)?
+                "Restore failed; any existing save remains preserved.":
+                "restore-cancelled".equals(result)?
+                "Restore cancelled; no original save was changed.":
+                "saved".equals(result)?
                 "Backup JSON saved to the selected document.":
                 "cancelled".equals(result)?
                 "Export cancelled; backup remains in app storage.":
