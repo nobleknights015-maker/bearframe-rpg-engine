@@ -171,3 +171,22 @@ test('critical trim and rehydration require a new decode and preserve prior valu
  assert.equal(cache.snapshot().memoryBytes,before);
  assert.deepEqual(cache.snapshot().loaded,['terrain','actor']);
 });
+
+test('installed-app memory stage verifies native callback, reload telemetry and durable journal',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const runner=fs.readFileSync(path.join(__dirname,'../android/test/RouteRunner.java'),'utf8');
+ const ci=fs.readFileSync(path.join(__dirname,'../.github/workflows/engine-ci.yml'),'utf8');
+ const host=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
+ assert.match(runner,/checkUnifiedMemoryRecovery\(\)/);
+ assert.match(runner,/screen\.onTrimMemory\(android\.content\.ComponentCallbacks2\.TRIM_MEMORY_COMPLETE\)/);
+ assert.match(runner,/getInt\("trimCount"\)>0/);
+ assert.match(runner,/getInt\("recoveryCount"\)>0/);
+ assert.match(runner,/getInt\("savedRevision"\)!=saved/);
+ assert.match(runner,/Restored canvas did not draw packaged pixels/);
+ assert.match(ci,/stage unified-memory/);
+ assert.match(ci,/route=PASS unified-memory/);
+ assert.match(host,/trimCount\+\+/);
+ assert.match(host,/recoveryCount\+\+/);
+ assert.match(host,/recoveryFailures\+\+/);
+ assert.match(host,/restoring:!!restoring/);
+});
