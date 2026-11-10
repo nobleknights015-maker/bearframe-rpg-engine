@@ -134,3 +134,23 @@ test('combat rules are isolated from caller catalog mutations after construction
  assert.deepEqual(combat.restore(combat.serialize(expected)),expected);
  assert.equal(combat.round(baseline,[{actor:'pilot',skill:'injected',target:'crawler'}]),baseline);
 });
+
+test('rejects duplicate status records before restore or combat replay',()=>{
+ const combat=make(skills),initial=combat.begin([pilot()],[crawler()],31);
+ const malformed=clone(initial);
+ malformed.party[0].statuses=[
+  {type:'poison',turns:2,potency:3},
+  {type:'poison',turns:1,potency:999}
+ ];
+ assert.equal(combat.validateState(malformed),false);
+ assert.equal(combat.restore(JSON.stringify(malformed)),null);
+ assert.throws(()=>combat.serialize(malformed),/Invalid combat state/);
+ assert.equal(combat.round(malformed,[{actor:'pilot',skill:'strike',target:'crawler'}]),malformed);
+ const valid=clone(initial);
+ valid.party[0].statuses=[{type:'poison',turns:2,potency:3}];
+ assert.equal(combat.validateState(valid),true);
+ assert.deepEqual(combat.restore(combat.serialize(valid)),valid);
+ const advanced=combat.round(valid,[{actor:'pilot',skill:'guard'}]);
+ assert.equal(advanced.party[0].statuses.length,1);
+ assert.equal(advanced.party[0].statuses[0].turns,1);
+});
