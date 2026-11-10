@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import android.webkit.WebView;
+import android.net.Uri;
 
 /** Runs in the installed app and activates its actual Android controls. */
 public final class RouteRunner extends Instrumentation {
