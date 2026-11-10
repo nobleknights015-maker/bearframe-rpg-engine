@@ -11,3 +11,12 @@ fieldset button{min-height:44px;padding:8px 12px;margin:3px;border:1px solid #76
 fieldset button:disabled{opacity:.45}
 #legacy-compat-board{white-space:pre-wrap;overflow-x:auto;font-size:13px;background:#0f1822;padding:12px;line-height:1.35}
 #legacy-compat-actions{display:flex;flex-wrap:wrap;gap:5px}
+
+#runtime-event-controls,#runtime-inventory-controls{display:grid;gap:7px;margin:8px 0}
+#runtime-event-controls p,#runtime-inventory-controls p{margin:3px 0;font-size:14px}
+#runtime-event-controls button,.inventory-line button,#runtime-inventory-controls>button{
+  min-height:44px;text-align:left;padding:8px 12px;border-radius:6px;
+  border:1px solid #768da4;background:#253346;color:#fff
+}
+#runtime-event-controls button:disabled,.inventory-line button:disabled{opacity:.5}
+.inventory-line{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px;border-bottom:1px solid #454c5d}

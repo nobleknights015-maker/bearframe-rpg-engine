@@ -242,6 +242,7 @@ function createBearframeEngine(project) {
     var result={project:project.id,sequence:s.sequence,map:p.map,mapName:map.name,
       rows:map.rows.slice(),x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,
       charge:p.charge,maxCharge:p.maxCharge,xp:p.xp,weapon:s.equipment.weapon,
+      inventory:clone(s.inventory),equipment:clone(s.equipment),quests:clone(s.quests),
       battle:s.battle?clone(s.battle):null,prompt:s.prompt?clone(s.prompt):null,
       message:s.message,allies:s.allies.slice()};
     if(party)result.partyBattle=s.partyBattle?clone(s.partyBattle):null;

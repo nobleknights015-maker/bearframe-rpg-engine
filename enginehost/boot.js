@@ -186,6 +186,14 @@
     var load=engine.resume();
     if(!load.ok&&load.reason==='no-save')load=engine.start('Engine host',8735);
     if(!load.ok)throw new Error('Safe engine startup blocked: '+load.reason);
+    var runtimePanels=createBearframeRuntimePanels(
+      document.getElementById('runtime-event-controls'),
+      document.getElementById('runtime-inventory-controls'),
+      document.getElementById('runtime-action-status'),
+      FRAMEWORK_FIXTURE,
+      function(){return engine.snapshot().view;},
+      function(command){return act(command);}
+    );
     function show(){
       var snap=engine.snapshot(),v=snap.view;
       if(!v)throw new Error('Engine state unavailable');
@@ -196,6 +204,7 @@
       status.textContent='Unified runtime ready · '+(window.BearframeNative?'Android WebView':'Browser');
       metrics.textContent='Map '+v.mapName+' · Pos '+v.x+','+v.y+
         ' · Revision '+v.sequence+' · '+snap.journal.validSlots+' validated save slot(s)';
+      runtimePanels.render();
       return snap;
     }
     // A native trim callback may evict decoded atlases. Never draw an incomplete
@@ -238,6 +247,8 @@
         engineVersion:snap.engineVersion,sequence:v?v.sequence:null,
         map:v?v.map:null,x:v?v.x:null,y:v?v.y:null,
         savedRevision:snap.journal.latestSequence,
+        inventory:v?v.inventory:null,weapon:v?v.weapon:null,quests:v?v.quests:null,
+        prompt:v?v.prompt:null,
         validSlots:snap.journal.validSlots,conflict:snap.journal.conflict,
         assetsLoaded:assets.snapshot().loaded.length,
         trimCount:trimCount,recoveryCount:recoveryCount,
