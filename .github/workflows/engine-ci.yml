@@ -117,6 +117,16 @@ jobs:
             adb shell am instrument -w -e stage controller dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/gamepad-controller.txt"
             grep -F 'route=PASS controller' "$RUNNER_TEMP/gamepad-controller.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/gamepad-controller.txt"
+            # The new engine runs in a separate offline WebView Activity,
+            # using the portable simulation and synchronous native save bridge.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-first' "$RUNNER_TEMP/unified-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-second' "$RUNNER_TEMP/unified-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-second.txt"
       - name: Publish non-release test APKs
         uses: actions/upload-artifact@v4
         with:
