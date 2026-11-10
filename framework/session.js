@@ -22,7 +22,7 @@ function createBearframeSession(project, storage, theme, opts) {
     if(health.conflict){lastError='save-conflict';return result(false,lastError);}
     var recovered=journal.load();
     if(!recovered) {
-      current=null;lastError=health.validSlots===0?'no-save':'unreadable-save';
+      current=null;lastError=health.occupiedSlots===0?'no-save':'unreadable-save';
       return result(false,lastError);
     }
     current=recovered;lastError=null;
@@ -30,8 +30,8 @@ function createBearframeSession(project, storage, theme, opts) {
   }
   function start(name,seed) {
     var health=journal.health();
-    if(health.conflict||health.validSlots>0)
-      return result(false,'existing-save');
+    if(health.conflict||health.occupiedSlots>0)
+      return result(false,health.validSlots>0?'existing-save':'unreadable-save');
     var first=engine.fresh(name,seed);
     var committed=journal.save(first);
     if(!committed.ok){lastError=committed.reason;return result(false,lastError);}
