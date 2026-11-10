@@ -762,7 +762,10 @@ public final class RouteRunner extends Instrumentation {
         java.lang.reflect.Method latest=exporter.getClass().getDeclaredMethod("currentCompat");
         latest.setAccessible(true);
         String raw=(String)latest.invoke(exporter);
-        if(raw==null||!LegacyV1Validator.accepts(raw))
+        Class<?> validator=screen.getClass().getClassLoader()
+            .loadClass("dev.bearframe.ridge.LegacyV1Validator");
+        java.lang.reflect.Method accepts=validator.getMethod("accepts",String.class);
+        if(raw==null||!(Boolean)accepts.invoke(null,raw))
             throw new AssertionError("Latest historical state cannot be exported");
         JSONObject state=new JSONObject(raw);
         if(state.getJSONObject("battle").getInt("hp")!=3 ||
