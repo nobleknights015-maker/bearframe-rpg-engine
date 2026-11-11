@@ -564,6 +564,68 @@ public final class RouteRunner extends Instrumentation {
      * follows the canonical saved position, and resumes its scene on restart. */
     /** Native renderer-memory eviction must preserve BOTH v2 world progress
      * and visible decoded pixels. After rehydration, real touch works again. */
+    /** Synthetic complete route: event/inventory -> battle -> field exit ->
+     * recruited second actor -> per-actor gear -> durable Android restart. */
+    private void checkUnifiedPartyWorldRecruitment(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String result=evalHost("(function(){try{" +
+            "var h=BearframeHost.partyWorld;" +
+            "function tap(sel){var b=document.querySelector(sel);" +
+            "if(!b||b.disabled)throw new Error('Missing or blocked '+sel);b.click();}" +
+            "if(!"+(restart?"true":"false")+"){" +
+            "tap('[data-party-world-dir=right]');" +
+            "tap('#party-world-events [data-event-choice=collect]');" +
+            "tap('[data-party-world-dir=right]');" +
+            "tap('[data-party-world-dir=right]');" +
+            "var rounds=0;while(h.battle()&&rounds++<10)tap('#party-world-battle #party-commit');" +
+            "if(h.battle())throw new Error('Party encounter not resolved');" +
+            "tap('[data-party-world-dir=right]');" +
+            "tap('[data-party-world-dir=right]');" +
+            "tap('[data-party-world-dir=right]');" +
+            "tap('[data-party-world-dir=right]');" +
+            "tap('#party-world-events [data-event-choice=recruit]');" +
+            "var buttons=document.querySelectorAll('#party-world-inventory [data-inventory-equip=blade]');" +
+            "var found=null;for(var i=0;i<buttons.length;i++){" +
+            "if(buttons[i].textContent.indexOf('Test scout')>=0)found=buttons[i];}" +
+            "if(!found||found.disabled)throw new Error('Scout gear selector unavailable');" +
+            "found.click();" +
+            "}else{" +
+            "tap('#party-world-inventory [data-inventory-unequip=\"scout:weapon\"]');" +
+            "var buttons=document.querySelectorAll('#party-world-inventory [data-inventory-equip=blade]');" +
+            "var found=null;for(var i=0;i<buttons.length;i++){" +
+            "if(buttons[i].textContent.indexOf('World integration test')>=0)found=buttons[i];}" +
+            "if(!found||found.disabled)throw new Error('Lead gear selector unavailable');" +
+            "found.click();" +
+            "}" +
+            "var v=h.view();" +
+            "return JSON.stringify({map:v.map,x:v.x,y:v.y,party:v.partyActors.length," +
+            "leadLevel:v.partyProgression.pilot.level,scoutLevel:v.partyProgression.scout.level," +
+            "quest:v.quests.survey,gear:v.partyGear,items:v.inventory," +
+            "scoutAttack:v.partyActors[1].attack,verified:h.verifySave(),seq:v.sequence});" +
+            "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(result).nextValue());
+        if(proof.has("error"))
+            throw new AssertionError("Installed v2 recruitment route failed: "+result);
+        JSONObject gear=proof.getJSONObject("gear");
+        JSONObject pilot=gear.getJSONObject("pilot"),scout=gear.getJSONObject("scout");
+        if(!"field".equals(proof.getString("map"))||proof.getInt("x")!=1||
+           proof.getInt("y")!=1||proof.getInt("party")!=2||
+           proof.getInt("leadLevel")!=2||proof.getInt("scoutLevel")!=1||
+           proof.getInt("quest")!=2||
+           !proof.getJSONObject("verified").getBoolean("ok")||
+           proof.getJSONObject("items").getInt("blade")!=1||
+           !(restart?"blade".equals(pilot.getString("weapon")):
+             "blade".equals(scout.getString("weapon")))||
+           !(restart?scout.isNull("weapon"):pilot.isNull("weapon"))||
+           proof.getInt("scoutAttack")!=(restart?6:10))
+            throw new AssertionError("Recruited party or shared gear lost: "+result);
+        resultMeta.putString("partyRecruitment",
+            "PASS synthetic recruitment, party XP, real gear UI and native restart");
+    }
     private void checkUnifiedPartyWorldMemory() throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1745,6 +1807,14 @@ public final class RouteRunner extends Instrumentation {
             if(stage.equals("unified-level-first") ||
                stage.equals("unified-level-second")){
                 checkUnifiedProgression(stage.equals("unified-level-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-party-world-recruit-first") ||
+               stage.equals("unified-party-world-recruit-second")){
+                checkUnifiedPartyWorldRecruitment(stage.equals("unified-party-world-recruit-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);

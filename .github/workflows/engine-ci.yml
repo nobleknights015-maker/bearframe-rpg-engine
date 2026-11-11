@@ -290,6 +290,16 @@ jobs:
             adb shell am instrument -w -e stage unified-party-world-memory dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-world-memory.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-world-memory' "$RUNNER_TEMP/party-world-memory.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-world-memory.txt"
+            # Real installed WebView synthetic party route with recruitment,
+            # shared inventory transfers, ally XP and process-death recovery.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-world-recruit-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-world-recruit-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-world-recruit-first' "$RUNNER_TEMP/party-world-recruit-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-world-recruit-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-world-recruit-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-world-recruit-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-world-recruit-second' "$RUNNER_TEMP/party-world-recruit-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-world-recruit-second.txt"
             # Real WebView party inventory UI: item pickup, actor-specific
             # weapon/armor/accessory buttons, healing, physical copy counts,
             # then two-process recovery through native synchronous journal.
