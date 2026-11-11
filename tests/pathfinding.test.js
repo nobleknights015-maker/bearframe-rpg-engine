@@ -52,6 +52,21 @@ test('planning fails safely on unreachable targets and bounded search',()=>{
  assert.throws(()=>planner.find({map:'hub',x:1,y:1},{x:1,y:2},{maxNodes:0}),/node budget/);
  assert.throws(()=>planner.find({map:'hub',x:1,y:1},{x:1,y:2},{allowTriggers:'yes'}),/allowTriggers/);
 });
+test('planner traverses maximum-size 256x256 engine map without recursion or runaway search',()=>{
+ const project=clone(original);
+ project.maps.giant={name:'Large navigation stress map',
+   rows:Array.from({length:256},()=>'.'.repeat(256)),
+   exits:{},events:{},encounters:{}};
+ const p=create(project);
+ const route=p.find({map:'giant',x:0,y:0},{x:255,y:255});
+ assert.equal(route.ok,true);
+ assert.equal(route.cost,510);
+ assert.deepEqual(route.positions[0],{x:1,y:0});
+ assert.deepEqual(route.positions.at(-1),{x:255,y:255});
+ assert.ok(route.visited<=65536);
+ assert.equal(p.find({map:'giant',x:0,y:0},{x:255,y:255},
+   {maxNodes:100}).reason,'node-limit');
+});
 test('canonical session path plans never dispatch or write and preserve restart compatibility',()=>{
  const store=disk();
  const s=session(original,store,null,{slotPrefix:'bf:planner-test'});
