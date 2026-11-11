@@ -84,3 +84,18 @@ test('an explicit NPC display binding cannot silently point at missing art',()=>
  delete theme.eventSprites.unknown;
  assert.ok(actors(source,theme)('hub',{}).some(x=>x.id==='event:mechanic:2,2'));
 });
+
+test('Android landscape acceptance measures actual NPC pixels rather than event text',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+ const host=read('enginehost/boot.js'),java=read('android/test/RouteRunner.java');
+ const ci=read('.github/workflows/engine-ci.yml');
+ assert.match(host,/sceneVisibilityAudit:function|sceneVisibilityAudit:sceneVisibilityAudit/);
+ assert.match(host,/differentPixels\+\+/);
+ assert.match(host,/actors\.length>0&&differentPixels>0/);
+ assert.match(host,/actors:\[\]/);
+ assert.match(java,/BearframeHost\.sceneVisibilityAudit\(\)/);
+ assert.match(java,/getInt\("differentPixels"\)<20/);
+ assert.match(java,/getInt\("revisionBefore"\)!=npcAudit\.getInt\("revisionAfter"\)/);
+ assert.match(ci,/stage unified-landscape/);
+});
