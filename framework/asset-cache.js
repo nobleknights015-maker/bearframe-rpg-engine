@@ -79,7 +79,7 @@ function createBearframeAssetCache(manifest,loader,options){
       return source[id].preload===true;
     }):ids;
     if(!Array.isArray(list)||list.length>4096)throw new TypeError('Invalid preload group');
-    var unique=[],seen={};
+    var unique=[],seen=Object.create(null);
     list.forEach(function(id){
       descriptor(id);
       if(!Object.prototype.hasOwnProperty.call(seen,id)){
