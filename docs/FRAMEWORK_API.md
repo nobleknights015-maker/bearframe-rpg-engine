@@ -101,6 +101,27 @@ invisible. The included APK test fixture uses diagnostic sprites only.
 
 This intentionally supports original multi-frame sprite art and scalable maps instead of locking game content to the prototype's hand-coded shapes.
 
+### Read-only navigation plans
+
+`framework/pathfinding.js` supplies deterministic shortest cardinal routes on
+validated maps. The same planner is available through
+`session.planPath({x,y}, {maxNodes,allowTriggers})` and the v2 Android
+`partyWorld.planPath` diagnostic bridge. Planning uses the **persisted**
+world flags, never dispatches moves, changes saved state or consumes RNG.
+
+An ordinary route avoids walls and unresolved events, battles and map exits.
+Cleared one-time events and defeated encounters become usable again; repeatable
+dialogue is intentionally excluded. During an active dialogue or encounter,
+`session.planPath` returns `{ok:false,reason:'busy'}`. A caller may explicitly
+set `allowTriggers:true` to inspect a route through interrupts, but must
+process each movement through the normal durable `dispatch` contract;
+it is **not** an autonomous walking or quest navigation API.
+
+Node/Rhino regression tests and installed Android landscape instrumentation
+validate path determinism, map obstacles, bounded work, host wiring and
+unchanged journal revisions. Production actor-follow/path-click UI remains
+separate engine development work.
+
 ## Commands and tests
 
 ```bash
