@@ -64,6 +64,8 @@ test('canonical session path plans never dispatch or write and preserve restart 
  assert.equal(store.writes(),writes);
  assert.equal(s.dispatch({type:'move',dir:'right'}).ok,true);
  assert.equal(s.snapshot().view.prompt.event,'supply');
+ assert.equal(s.planPath({x:4,y:3}).reason,'busy',
+   'dialogue must block suggested movement like the runtime');
  assert.equal(s.dispatch({type:'choose',id:'collect'}).ok,true);
  assert.deepEqual(s.planPath({x:2,y:1}).directions,['right']);
  const still=s.serialize(),before=store.writes();
@@ -86,4 +88,20 @@ test('planner loads before session in Android WebView and real Rhino check',()=>
  assert.match(source('.github/workflows/engine-ci.yml'),/framework\/pathfinding\.js/);
  assert.match(source('tests/framework-rhino.js'),/unified\.planPath/);
  assert.match(source('android/build.sh'),/framework\/\*\.js/);
+});
+
+test('installed world bridge exposes read-only plans from the same journal',()=>{
+ const host=require('../enginehost/party-world-host');
+ const fixture=require('../fixtures/party-world-project');
+ const store=disk(),world=host(store,clone(fixture));
+ const before=world.view().sequence,writes=store.writes();
+ const route=world.planPath({x:4,y:3});
+ assert.equal(route.ok,true);
+ assert.equal(route.cost,5);
+ assert.deepEqual(route.directions,['down','down','right','right','right']);
+ assert.equal(world.view().sequence,before);
+ assert.equal(store.writes(),writes);
+ assert.equal(world.navigate('right').ok,true);
+ assert.equal(world.planPath({x:4,y:3}).reason,'busy');
+ assert.equal(world.verifySave().ok,true);
 });
