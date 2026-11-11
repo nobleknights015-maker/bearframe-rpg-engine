@@ -28,6 +28,12 @@ test('world path is deterministic, shortest, and refuses scripted event/encounte
   assert.equal(planner.find(view,{map:'field',x:4,y:3}).reason,'different-map');
   assert.deepEqual(planner.find(view,{x:2,y:1},{allowTriggers:true}).directions,
     ['right']);
+  assert.deepEqual(planner.find(view,{x:2,y:1},{
+    allowDestinationTrigger:true}).directions,['right'],
+    'NPC destination may be interacted with while other triggers stay blocked');
+  assert.equal(planner.find(view,{x:3,y:1},{
+    allowDestinationTrigger:true}).ok,true,
+    'one target encounter may be approached without crossing other trigger tiles');
 });
 test('completion flags permit resolved one-time events and defeated encounters',()=>{
  const planner=create(original);
@@ -52,6 +58,8 @@ test('planning fails safely on unreachable targets and bounded search',()=>{
  assert.throws(()=>planner.find({map:'hub',x:0,y:0},{x:1,y:2}),/starting cell/);
  assert.throws(()=>planner.find({map:'hub',x:1,y:1},{x:1,y:2},{maxNodes:0}),/node budget/);
  assert.throws(()=>planner.find({map:'hub',x:1,y:1},{x:1,y:2},{allowTriggers:'yes'}),/allowTriggers/);
+ assert.throws(()=>planner.find({map:'hub',x:1,y:1},{x:1,y:2},
+   {allowDestinationTrigger:'yes'}),/allowDestinationTrigger/);
 });
 test('planner traverses maximum-size 256x256 engine map without recursion or runaway search',()=>{
  const project=clone(original);
