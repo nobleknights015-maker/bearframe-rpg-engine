@@ -21,6 +21,9 @@ function createBearframeAssetCache(manifest,loader,options){
   var cache=new Map(),inflight=new Map(),generation=0;
   var memory=0;
   function descriptor(id) {
+    // Never coerce caller-controlled objects into asset keys. Coercion can
+    // invoke arbitrary toString hooks before a missing ID is rejected.
+    if(typeof id!=='string')throw new TypeError('Asset id must be a string');
     if(!Object.prototype.hasOwnProperty.call(source,id))
       throw new TypeError('Unknown asset '+String(id));
     return JSON.parse(JSON.stringify(source[id]));
