@@ -247,3 +247,14 @@ canonical journal. Automated tests cover schema rejection, battle
 stat propagation, prevention of duplicated reservations, scripted
 item loss, and durable recovery. Separate progression, finalized UI,
 production item art and target-device acceptance remain outstanding.
+
+
+## Installed mobile inventory/gear route
+
+Android 35 instrumentation `unified-gear-ui-first/second` validates
+real WebView inventory panel buttons for recruited ally gear selection,
+physical-copy reservation, default/actor-specific gear swapping,
+targeted consumable healing, three equipped item categories, quest
+state and the same native save journal across `am force-stop` restart.
+This is synthetic neutral project data running in the installed app,
+**not** player content or physical phone acceptance.

@@ -485,6 +485,90 @@ public final class RouteRunner extends Instrumentation {
      * encounter and durable party resources share ONE native v2 journal. */
     /** Installed Android WebView content-version isolation and two-process
      * persistence. A changed project may never read or overwrite old saves. */
+    /** A real installed WebView drives v2 party inventory DOM controls into
+     * native durable storage, verifies physical gear reservations, then
+     * restarts and continues without changing the original Rhino save. */
+    private void checkUnifiedPartyInventoryUi(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String result=evalHost("(function(){" +
+            "var p=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_FIXTURE));" +
+            "p.items.vest={kind:'armor',name:'Test vest',defense:8,maxStack:2};" +
+            "p.items.charm={kind:'accessory',name:'Test charm',attack:2,speed:3,maxStack:2};" +
+            "p.partyCombat.allies.scout.hp=10;" +
+            "p.events.supply.choices[0].effects.push({type:'recruit',ally:'scout'});" +
+            "p.events.supply.choices[0].effects.push({type:'give',item:'vest',qty:2});" +
+            "p.events.supply.choices[0].effects.push({type:'give',item:'charm',qty:2});" +
+            "var store={read:function(k){return BearframeNative.read(k)}," +
+            "write:function(k,v){return BearframeNative.write(k,v)}};" +
+            "var s=createBearframeSession(p,store,null," +
+            "{slotPrefix:'bf:framework-party-test:v2:gearui'});" +
+            "var started="+(restart?"s.resume()":"s.start('Gear',37)")+";" +
+            "if(!started.ok)return JSON.stringify({error:started.reason});" +
+            "var ev=document.createElement('div'),gear=document.createElement('div');" +
+            "var status=document.createElement('p');" +
+            "document.body.appendChild(ev);document.body.appendChild(gear);" +
+            "var panels=createBearframeRuntimePanels(ev,gear,status,p," +
+            "function(){return s.snapshot().view},function(c){return s.dispatch(c)});" +
+            "function find(attr,value,name){" +
+            "var all=gear.querySelectorAll('['+attr+'='+value+']');" +
+            "for(var i=0;i<all.length;i++)if(all[i].textContent.indexOf(name)>=0)return all[i];" +
+            "return null;}" +
+            "function push(btn,tag){if(!btn||btn.disabled)return tag;btn.click();panels.render();return null;}" +
+            "var failed=null;" +
+            "if(!"+(restart?"true":"false")+"){" +
+            "if(!s.dispatch({type:'move',dir:'right'}).ok)return JSON.stringify({error:'event'});" +
+            "if(!s.dispatch({type:'choose',id:'collect'}).ok)return JSON.stringify({error:'collect'});" +
+            "panels.render();" +
+            "failed=push(find('data-inventory-equip','blade','Test scout'),'scout blade');" +
+            "if(failed)return JSON.stringify({error:failed});" +
+            "var leadBlade=find('data-inventory-equip','blade','Gear');" +
+            "if(!leadBlade||!leadBlade.disabled)return JSON.stringify({error:'duplicate weapon available'});" +
+            "failed=push(find('data-inventory-equip','vest','Gear'),'lead armor');" +
+            "if(failed)return JSON.stringify({error:failed});" +
+            "failed=push(find('data-inventory-equip','charm','Test scout'),'scout charm');" +
+            "if(failed)return JSON.stringify({error:failed});" +
+            "failed=push(find('data-inventory-use','patch','Test scout'),'scout patch');" +
+            "if(failed)return JSON.stringify({error:failed});" +
+            "failed=push(find('data-inventory-unequip','scout:weapon','Test scout'),'release blade');" +
+            "if(failed)return JSON.stringify({error:failed});" +
+            "failed=push(find('data-inventory-equip','blade','Gear'),'lead blade');" +
+            "if(failed)return JSON.stringify({error:failed});" +
+            "}else{" +
+            "panels.render();" +
+            "failed=push(find('data-inventory-unequip','pilot:armor','Gear'),'resume unequip armor');" +
+            "if(failed)return JSON.stringify({error:failed});" +
+            "}" +
+            "var view=s.snapshot().view;" +
+            "return JSON.stringify({seq:view.sequence,gear:view.partyGear," +
+            "hp:view.partyActors[1].hp,charge:view.partyActors[1].mp," +
+            "inventory:view.inventory,quests:view.quests," +
+            "pilotAttack:view.partyActors[0].attack," +
+            "scoutAttack:view.partyActors[1].attack," +
+            "saved:s.verifySave()});})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(result).nextValue());
+        if(proof.has("error"))
+            throw new AssertionError("Party inventory browser action refused: "+result);
+        JSONObject gear=proof.getJSONObject("gear");
+        JSONObject lead=gear.getJSONObject("pilot"),scout=gear.getJSONObject("scout");
+        JSONObject inv=proof.getJSONObject("inventory");
+        if(proof.getInt("seq")!=(restart?9:8)||
+           !"blade".equals(lead.getString("weapon"))||
+           !(restart?lead.isNull("armor"):"vest".equals(lead.getString("armor")))||
+           !"charm".equals(scout.getString("accessory"))||
+           !scout.isNull("weapon")||
+           proof.getInt("hp")!=22||
+           proof.getInt("scoutAttack")!=8||
+           inv.getInt("blade")!=1||inv.getInt("patch")!=1||
+           proof.getJSONObject("quests").getInt("survey")!=0||
+           !proof.getJSONObject("saved").getBoolean("ok"))
+            throw new AssertionError("Party inventory failed Android save/readback: "+result);
+        resultMeta.putString("inventoryUi",
+            "PASS party equipment/consumable DOM, no duplicated gear, Android native restart");
+    }
     private void checkUnifiedContentBinding(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1418,6 +1502,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedRecreate();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-recreate");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-gear-ui-first") ||
+               stage.equals("unified-gear-ui-second")){
+                checkUnifiedPartyInventoryUi(stage.equals("unified-gear-ui-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
