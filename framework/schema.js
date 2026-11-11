@@ -40,9 +40,19 @@ function validateEngineProject(project) {
   Object.keys(items).forEach(function(k){
     id(k,'item '+k);var item=record(items[k],'item '+k);
     text(item.name,'item '+k+'.name');
-    if(['weapon','consumable','key'].indexOf(item.kind)===-1)fail('item '+k+' invalid kind');
+    if(['weapon','armor','accessory','consumable','key'].indexOf(item.kind)===-1)
+      fail('item '+k+' invalid kind');
     integer(item.maxStack,1,9999,'item '+k+'.maxStack');
     if(item.kind==='weapon')integer(item.power,0,999,'item '+k+'.power');
+    if(item.kind==='armor')integer(item.defense,0,999,'item '+k+'.defense');
+    if(item.kind==='accessory'){
+      var fields=['attack','defense','speed'];
+      fields.forEach(function(field){
+        if(own.call(item,field))integer(item[field],0,999,'item '+k+'.'+field);
+      });
+      if(!fields.some(function(field){return own.call(item,field);}))
+        fail('item '+k+' accessory requires stat modifiers');
+    }
     if(item.kind==='consumable')integer(item.heal,1,999,'item '+k+'.heal');
   });
   Object.keys(foes).forEach(function(k){

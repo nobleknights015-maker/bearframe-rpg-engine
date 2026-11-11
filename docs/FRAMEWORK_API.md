@@ -209,3 +209,24 @@ gear store. V1 runtime saves and commands remain unchanged.
 This completes the core **shared item/weapon inventory transaction**
 contract; a full multi-slot armor/accessory system, per-member skill
 progression, and final production menus are separate release features.
+
+
+## Inventory wearable slots beyond weapons
+
+The same portable `equip`/`unequip` commands support **weapon, armor,
+and accessory** item categories. Armor adds `defense`; an accessory
+adds optional nonnegative `attack`, `defense`, and `speed`
+modifiers. Combat stats cap at 9999. Item stacking, quantity limits,
+physical-copy reservation, and scripted removals apply equally to
+all wearable categories. The `unequip` command accepts
+`slot:'armor'` or `slot:'accessory'`, defaulting to `weapon`.
+
+For v2 projects, `view.partyGear` contains a read-only per-actor record
+of three gear slots, while `view.partyEquipment` continues to report
+the historical weapon-only mapping for compatibility. Generic inventory
+buttons expose all wearable slots per party member. Existing v1/v2
+save files with only the `equipment.weapon` slot remain valid and
+retain their byte shape unless the player equips one of the newly
+supported categories. A content-bound project should update its
+`contentRevision` and explicitly migrate across item definition
+changes, not treat an old ruleset as interchangeable.

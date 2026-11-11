@@ -44,19 +44,23 @@ function createBearframePartyRuntime(spec, project, rules) {
        typeof state.allyStats!=='object'||Array.isArray(state.allyStats)||
        state.allies.length>5||count(state.allyStats)!==state.allies.length ||
        state.battle!==null)return false;
-    var allocated={};
-    if(state.equipment.weapon!==null)allocated[state.equipment.weapon]=1;
+    var allocated={},slots=['weapon','armor','accessory'];
+    function reserve(owner){
+      for(var n=0;n<slots.length;n++){
+        var slot=slots[n],id=owner[slot];
+        if(id===undefined||id===null)continue;
+        if(typeof id!=='string'||!has(project.items,id)||
+           project.items[id].kind!==slot)return false;
+        allocated[id]=(allocated[id]||0)+1;
+      }
+      return true;
+    }
+    if(!reserve(state.equipment))return false;
     for(var i=0;i<state.allies.length;i++){
       var id=state.allies[i],member=state.allyStats[id],template=spec.allies[id];
       if(!template||!member||!Number.isInteger(member.hp)||member.hp<0||
          member.hp>template.maxHp||!Number.isInteger(member.mp)||
-         member.mp<0||member.mp>template.maxMp)return false;
-      var weapon=member.weapon;
-      if(weapon!==undefined&&weapon!==null){
-        if(typeof weapon!=='string'||!has(project.items,weapon)||
-           project.items[weapon].kind!=='weapon')return false;
-        allocated[weapon]=(allocated[weapon]||0)+1;
-      }
+         member.mp<0||member.mp>template.maxMp||!reserve(member))return false;
     }
     var assigned=Object.keys(allocated);
     for(var n=0;n<assigned.length;n++)
@@ -75,34 +79,47 @@ function createBearframePartyRuntime(spec, project, rules) {
       if(b.encounter.party[j+1].id!==state.allies[j])return false;
     return true;
   }
+  function applyEquipment(actor,equipment){
+    var weapon=equipment.weapon,armor=equipment.armor,accessory=equipment.accessory;
+    if(weapon)actor.attack=Math.min(9999,actor.attack+project.items[weapon].power);
+    if(armor)actor.defense=Math.min(9999,actor.defense+project.items[armor].defense);
+    if(accessory){
+      var item=project.items[accessory];
+      actor.attack=Math.min(9999,actor.attack+(item.attack||0));
+      actor.defense=Math.min(9999,actor.defense+(item.defense||0));
+      actor.speed=Math.min(9999,actor.speed+(item.speed||0));
+    }
+  }
   function worldRoster(state){
     var lead=copy(player);
     lead.name=state.player.name;
     lead.hp=state.player.hp;lead.maxHp=state.player.maxHp;
     lead.mp=state.player.charge;lead.maxMp=state.player.maxCharge;
-    // Derive combat attack from canonical saved equipment, not from UI state.
-    // The actor schema caps attack at 9999; templates remain immutable.
-    var weapon=state.equipment.weapon;
-    if(weapon!==null)
-      lead.attack=Math.min(9999,lead.attack+project.items[weapon].power);
+    applyEquipment(lead,state.equipment);
     var roster=[lead];
     for(var i=0;i<state.allies.length;i++){
       var id=state.allies[i],actor=copy(spec.allies[id]),stats=state.allyStats[id];
       actor.hp=stats.hp;actor.mp=stats.mp;
-      if(stats.weapon!==undefined&&stats.weapon!==null)
-        actor.attack=Math.min(9999,actor.attack+project.items[stats.weapon].power);
+      applyEquipment(actor,stats);
       roster.push(actor);
     }
     return roster;
   }
-  function equipmentView(state){
-    var gear={};
-    gear[player.id]=state.equipment.weapon;
-    for(var i=0;i<state.allies.length;i++){
-      var id=state.allies[i];
-      gear[id]=state.allyStats[id].weapon||null;
+  function gearView(state){
+    var gear={},ids=[player.id].concat(state.allies);
+    var owners=[state.equipment];
+    for(var i=0;i<state.allies.length;i++)owners.push(state.allyStats[state.allies[i]]);
+    for(var j=0;j<ids.length;j++){
+      var owner=owners[j];
+      gear[ids[j]]={weapon:owner.weapon||null,armor:owner.armor||null,
+        accessory:owner.accessory||null};
     }
     return gear;
+  }
+  function equipmentView(state){
+    var worn=gearView(state),view={};
+    Object.keys(worn).forEach(function(id){view[id]=worn[id].weapon;});
+    return view;
   }
   function rosterView(state){
     // While fighting, the encounter owns live HP/MP/status values.
@@ -167,7 +184,8 @@ function createBearframePartyRuntime(spec, project, rules) {
   }
   return Object.freeze({initialize:initialize,addAlly:addAlly,valid:valid,
     begin:begin,round:round,rosterView:rosterView,
-    equipmentView:equipmentView,healTarget:healTarget,playerId:player.id});
+    equipmentView:equipmentView,gearView:gearView,
+    healTarget:healTarget,playerId:player.id});
 }
 if(typeof module!=='undefined'&&module.exports)
   module.exports=createBearframePartyRuntime;

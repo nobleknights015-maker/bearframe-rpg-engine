@@ -234,3 +234,16 @@ removal, save write failure, persistence, serialization, and combat.
 progression, production-quality screen UX, signed upgrade and physical
 Android acceptance. Do not claim the full inventory/equipment release
 gate complete solely from a successful single-weapon schema integration.
+
+
+## Wearable gear categories (weapon / armor / accessory)
+
+The portable project and v2 party runtime now support all three
+gear slots, item-derived damage/defense/speed bonuses, per-actor
+equip/unequip, one-physical-copy-per-assignment, and deterministic
+event removal of equipment. Legacy weapon-only APIs/saves are
+preserved. The UI now exposes all slot controls through the same
+canonical journal. Automated tests cover schema rejection, battle
+stat propagation, prevention of duplicated reservations, scripted
+item loss, and durable recovery. Separate progression, finalized UI,
+production item art and target-device acceptance remain outstanding.
