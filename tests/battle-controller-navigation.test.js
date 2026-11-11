@@ -17,7 +17,10 @@ function mockBattle(){
  const skill=control('SELECT','s',['strike','pulse','mend']);
  const target=control('SELECT','t',['crawler','guard']);
  const commit=control('BUTTON','party-commit',[]);
- sel.push(skill,target,commit);
+ const nextPage=control('BUTTON','next-page',[]);
+ nextPage.hasAttribute=key=>key==='data-engine-page';
+ nextPage.getAttribute=key=>key==='data-engine-page'?'battle:1':null;
+ sel.push(skill,target,commit,nextPage);
  const battleRoot={querySelectorAll:()=>sel,querySelector:selector=>
    selector==='#party-commit'?commit:null};
  const world={ownerDocument:doc,querySelector:selector=>
@@ -28,7 +31,7 @@ function mockBattle(){
  const screens={current:()=>tab,select:id=>{tab=id;}};
  const adapter=create(screens,()=>({partyBattle:{},battle:null,prompt:null}),
    ()=>{moves++;return {ok:true};},{world,party:empty,save:empty});
- return {adapter,skill,target,commit,events,moves:()=>moves,doc};
+ return {adapter,skill,target,commit,nextPage,events,moves:()=>moves,doc};
 }
 test('controller battle navigation cycles ability but never autocommits a round',()=>{
  const h=mockBattle();
@@ -70,4 +73,17 @@ test('Android original party choice and native v2 controller remain isolated',()
  assert.match(source,/if\(selected&&selected.id==='party-commit'\)/);
  assert.match(source,/select\.dispatchEvent\(new Event\('change'/);
  assert.match(source,/world\.partyBattle\?'#party-world-battle'/);
+});
+
+test('controller can advance a battle pager without prematurely committing orders',()=>{
+ const h=mockBattle();
+ h.nextPage.focus();
+ assert.equal(h.adapter.handle({type:'confirm'}),true);
+ assert.equal(h.nextPage.clicked,1);
+ assert.equal(h.commit.clicked,0);
+ assert.equal(h.moves(),0);
+ h.nextPage.disabled=true;
+ assert.equal(h.adapter.handle({type:'confirm'}),false);
+ assert.equal(h.nextPage.clicked,1);
+ assert.equal(h.commit.clicked,0);
 });
