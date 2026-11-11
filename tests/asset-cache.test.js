@@ -202,3 +202,20 @@ test('failed renderer asset recovery exposes explicit user retry without advanci
  assert.match(boot,/Asset loading failed:[\s\S]*?location\.reload\(\)/);
  assert.match(boot,/if\(restoring\|\|!assets\.get\('terrain'\)\|\|!assets\.get\('characters'\)\)/);
 });
+
+
+test('invalid cache capacity configuration fails closed instead of silently using larger defaults',async()=>{
+ const loader=async d=>fake(d);
+ for(const bad of [0,-1,1.5,NaN,Infinity,'2',null,4097])
+   assert.throws(()=>create(manifest,loader,{maxEntries:bad}),/Invalid asset cache maxEntries/);
+ for(const bad of [0,-1,16383,1.5,NaN,Infinity,'65536',null,268435457])
+   assert.throws(()=>create(manifest,loader,{maxMemoryBytes:bad}),/Invalid asset cache maxMemoryBytes/);
+ const defaults=create(manifest,loader);
+ assert.equal(defaults.snapshot().maxEntries,128);
+ assert.equal(defaults.snapshot().maxMemoryBytes,33554432);
+ const constrained=create(manifest,loader,{maxEntries:1,maxMemoryBytes:16384});
+ await constrained.load('terrain');
+ await constrained.load('actor');
+ assert.deepEqual(constrained.snapshot().loaded,['actor']);
+ assert.equal(constrained.snapshot().maxMemoryBytes,16384);
+});
