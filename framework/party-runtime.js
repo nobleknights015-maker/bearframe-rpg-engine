@@ -163,7 +163,12 @@ function createBearframePartyRuntime(spec, project, rules) {
     state.partyBattle=null;
     for(var i=0;i<state.allies.length;i++){
       var ally=next.party[i+1];
-      state.allyStats[ally.id]={hp:ally.hp,mp:ally.mp};
+      // Preserve the member's persistent equipment and future progression
+      // metadata. Replacing this record silently deleted geared inventory
+      // reservations after combat, invalidating the world/gear contract.
+      var resources=state.allyStats[ally.id];
+      resources.hp=ally.hp;
+      resources.mp=ally.mp;
     }
     if(next.phase==='victory'){
       state.player.hp=Math.max(1,lead.hp);
