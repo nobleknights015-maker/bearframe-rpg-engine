@@ -21,7 +21,7 @@ test('installed emulator stages cover D-pad, confirm, menu, shoulders, analog an
   'gamepadKey(KeyEvent.KEYCODE_BUTTON_X)',
   'gamepadKey(KeyEvent.KEYCODE_BUTTON_R1)',
   'gamepadKey(KeyEvent.KEYCODE_BUTTON_B)',
-  'gamepadAxis(0f,0.9f)','BearframeHost.partyWorld.verifySave()',
+  'gamepadAxis(0f,-0.9f)','BearframeHost.partyWorld.verifySave()',
   'unified-v2-controller-first','unified-v2-controller-second'])
   assert.ok(java.includes(token),'Missing installed input acceptance '+token);
  assert.match(ci,/stage unified-v2-controller-first/);

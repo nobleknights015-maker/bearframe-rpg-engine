@@ -719,8 +719,9 @@ public final class RouteRunner extends Instrumentation {
             gamepadKey(KeyEvent.KEYCODE_BUTTON_A);
             JSONObject chosen=new JSONObject((String)new JSONTokener(
                 evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
+            // Adjacent event interaction does not enter the event's tile.
             if(chosen.getInt("sequence")!=2||!chosen.isNull("prompt")||
-               chosen.getInt("x")!=2)
+               chosen.getInt("x")!=1||chosen.getInt("y")!=1)
                 throw new AssertionError("Controller confirm did not commit event: "+chosen);
             gamepadKey(KeyEvent.KEYCODE_BUTTON_X);
             if(!"\"party\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
@@ -736,18 +737,18 @@ public final class RouteRunner extends Instrumentation {
             if(!"\"save\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
                 throw new AssertionError("Left shoulder did not wrap to Save");
             gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
-            gamepadKey(KeyEvent.KEYCODE_DPAD_LEFT);
+            gamepadKey(KeyEvent.KEYCODE_DPAD_DOWN);
             JSONObject walked=new JSONObject((String)new JSONTokener(
                 evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
             if(walked.getInt("sequence")!=3||walked.getInt("x")!=1||
-               walked.getInt("y")!=1)
+               walked.getInt("y")!=2)
                 throw new AssertionError("Controller could not move after restart: "+walked);
-            gamepadAxis(0f,0.9f);
+            gamepadAxis(0f,-0.9f);
             gamepadAxis(0f,0f);
             JSONObject analog=new JSONObject((String)new JSONTokener(
                 evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
             if(analog.getInt("sequence")!=4||analog.getInt("x")!=1||
-               analog.getInt("y")!=2)
+               analog.getInt("y")!=1)
                 throw new AssertionError("Native analog movement did not commit: "+analog);
         }
         JSONObject now=new JSONObject((String)new JSONTokener(
