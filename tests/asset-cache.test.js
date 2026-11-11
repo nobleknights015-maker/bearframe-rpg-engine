@@ -391,3 +391,24 @@ test('preload retains valid asset IDs matching inherited object property names',
  assert.strictEqual(result.constructor,cache.get('constructor'));
  assert.equal(cache.snapshot().memoryBytes,8*8*4+64*32*4+8*8*4);
 });
+
+
+test('preload preserves special JavaScript identifiers without inherited properties or prototype mutation',async()=>{
+ const special=replace(m=>{
+   m.assets.constructor={type:'image',path:'assets/special-constructor.png',width:16,height:16};
+   m.assets.toString={type:'image',path:'assets/special-string.png',width:16,height:16};
+   m.assets.__proto__={type:'image',path:'assets/special-proto.png',width:16,height:16};
+   Object.defineProperty(m.assets,'__proto__',{value:{type:'image',path:'assets/special-proto.png',width:16,height:16},enumerable:true,writable:true,configurable:true});
+ });
+ const cache=create(special,async d=>fake(d));
+ const ids=['constructor','toString','__proto__'];
+ const result=await cache.preload(ids);
+ assert.deepEqual(Object.keys(result),ids);
+ assert.equal(Object.getPrototypeOf(result),null);
+ for(const id of ids){
+   assert.equal(Object.hasOwn(result,id),true);
+   assert.strictEqual(result[id],cache.get(id));
+ }
+ assert.equal(({}).polluted,undefined);
+ assert.equal(cache.snapshot().loaded.length,3);
+});
