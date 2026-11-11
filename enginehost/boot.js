@@ -315,6 +315,43 @@
       partyWorldScreens.sync(v.prompt?'event':
         v.partyBattle||v.battle?'battle':'explore',partyWorldSceneReady);
     }
+    // Renderer-only health check for Android instrumentation and the
+    // diagnostic screen. Proves that *visible event actors* produce real
+    // pixels, rather than merely existing as map/event metadata.
+    // Uses the same Engine v1-derived scene command path as gameplay.
+    function sceneVisibilityAudit(){
+      if(!partyWorldInteractive())return {ok:false,reason:'scene-not-ready'};
+      var before=partyWorld.view(),width=partyWorldSurface.width,
+        height=partyWorldSurface.height,tick=before.sequence%100;
+      var options={width:width,height:height,tick:tick};
+      var scene=partyWorld.compose(options);
+      var actors=scene.commands.filter(function(c){
+        return typeof c.actor==='string'&&c.actor.indexOf('event:')===0;
+      });
+      var without=partyWorld.compose({
+        width:width,height:height,tick:tick,actors:[]
+      });
+      var full=document.createElement('canvas'),base=document.createElement('canvas');
+      full.width=base.width=width;full.height=base.height=height;
+      var sheets={terrain:assets.get('terrain'),characters:assets.get('characters')};
+      drawBearframeSceneCanvas(full,scene,sheets);
+      drawBearframeSceneCanvas(base,without,sheets);
+      var painted=full.getContext('2d').getImageData(0,0,width,height).data;
+      var empty=base.getContext('2d').getImageData(0,0,width,height).data;
+      var differentPixels=0;
+      for(var p=0;p<painted.length;p+=4){
+        if(painted[p]!==empty[p]||painted[p+1]!==empty[p+1]||
+           painted[p+2]!==empty[p+2]||painted[p+3]!==empty[p+3])
+          differentPixels++;
+      }
+      var after=partyWorld.view();
+      return {ok:actors.length>0&&differentPixels>0&&
+        before.sequence===after.sequence,
+        eventActors:actors.length,differentPixels:differentPixels,
+        revisionBefore:before.sequence,revisionAfter:after.sequence,
+        actorIds:actors.map(function(c){return c.actor;}),
+        canvasWidth:width,canvasHeight:height};
+    }
     partyWorldButtons.forEach(function(button){
       button.addEventListener('click',function(){
         var direction=button.getAttribute('data-party-world-dir');
@@ -478,6 +515,7 @@
       verifySave:verifySaved,
       party:partyProbe,
       partyWorld:partyWorld,
+      sceneVisibilityAudit:sceneVisibilityAudit,
       partyWorldScreens:partyWorldScreens,
       input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
