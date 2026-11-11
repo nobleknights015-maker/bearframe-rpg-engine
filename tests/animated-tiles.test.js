@@ -99,4 +99,7 @@ test('animation remains loaded by native Rhino and Android build contracts',()=>
  assert.match(read('tests/framework-rhino.js'),/PASS animated tile frame selection under Rhino/);
  assert.match(read('android/build.sh'),/framework\/\*\.js/);
  assert.match(read('.github/workflows/engine-ci.yml'),/framework\/scene\.js/);
+ assert.match(read('enginehost/boot.js'),/animatedTileAudit:animatedTileAudit/);
+ assert.match(read('android/test/RouteRunner.java'),/BearframeHost\.animatedTileAudit\(\)/);
+ assert.match(read('android/test/RouteRunner.java'),/getInt\("changedPixels"\)<=20/);
 });
