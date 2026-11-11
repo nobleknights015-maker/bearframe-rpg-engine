@@ -41,11 +41,36 @@ function createBearframeSceneComposer(project,theme){
   }
   if(!theme.tiles||!theme.tiles.floor||!theme.tiles.wall)
     throw new TypeError('floor and wall tile frames required');
-  verifyFrame(theme.tiles.floor,'floor');
-  verifyFrame(theme.tiles.wall,'wall');
-  if(theme.tiles.floor.w!==theme.tileSize||theme.tiles.floor.h!==theme.tileSize||
-    theme.tiles.wall.w!==theme.tileSize||theme.tiles.wall.h!==theme.tileSize)
-    throw new TypeError('tile frames must match tileSize');
+  // Every tile referenced by visual scenery layers is an atlas-backed tile.
+  // Collision still comes exclusively from project.maps[*].rows.
+  Object.keys(theme.tiles).forEach(function(id){
+    var tile=theme.tiles[id];
+    verifyFrame(tile,'tile '+id);
+    if(tile.w!==theme.tileSize||tile.h!==theme.tileSize)
+      throw new TypeError('tile frames must match tileSize');
+  });
+  var scenery={};
+  Object.keys(project.maps).forEach(function(mapId){
+    var layers=project.maps[mapId].visualLayers||[];
+    var prepared={ground:{},canopy:{}};
+    layers.forEach(function(layer){
+      var rows=prepared[layer.depth];
+      Object.keys(layer.cells).forEach(function(at){
+        var tileId=layer.cells[at];
+        if(!has(theme.tiles,tileId))
+          throw new TypeError('Unknown visual tile '+tileId+' on '+mapId);
+        var xy=at.split(','),x=+xy[0],y=+xy[1];
+        if(!rows[y])rows[y]=[];
+        rows[y].push({x:x,frame:theme.tiles[tileId]});
+      });
+    });
+    ['ground','canopy'].forEach(function(depth){
+      Object.keys(prepared[depth]).forEach(function(y){
+        prepared[depth][y].sort(function(a,b){return a.x-b.x;});
+      });
+    });
+    scenery[mapId]=prepared;
+  });
   if(!theme.sprites||!theme.sprites.player)
     throw new TypeError('player animation required');
   // Engine v1 CharacterSpriteRenderer handles proper 3x4 facing/walk frames.
@@ -114,6 +139,24 @@ function createBearframeSceneComposer(project,theme){
         dest:{x:x*ts-cx,y:y*ts-cy,w:ts,h:ts},
         layer:0,world:{x:x,y:y}});
     }
+    function addScenery(depth,layer){
+      var rows=scenery[view.map][depth];
+      for(var y=minY;y<maxY;y++){
+        var entries=rows[y]||[];
+        for(var i=0;i<entries.length;i++){
+          var tile=entries[i];
+          if(tile.x<minX||tile.x>=maxX)continue;
+          var f=tile.frame;
+          commands.push({type:'sprite',imageId:f.atlas,
+            source:{x:f.x,y:f.y,w:f.w,h:f.h},
+            dest:{x:tile.x*ts-cx,y:y*ts-cy,w:ts,h:ts},
+            layer:layer,world:{x:tile.x,y:y}});
+        }
+      }
+    }
+    // Draw in painter order, not just layer metadata order: both browser
+    // Canvas and native Android Canvas process commands sequentially.
+    addScenery('ground',0.5);
     var actors=[{id:'player',x:view.x,y:view.y,sprite:'player',
       direction:options.playerDirection,moving:!!options.playerMoving,
       pattern:options.playerPattern}];
@@ -139,6 +182,7 @@ function createBearframeSceneComposer(project,theme){
         dest:{x:px,y:py,w:frame.w,h:frame.h},
         layer:1,actor:a.id,world:{x:a.x,y:a.y}});
     });
+    addScenery('canopy',2);
     return {width:width,height:height,tick:tick,camera:{x:cx,y:cy},
       map:view.map,visibleTiles:(maxX-minX)*(maxY-minY),commands:commands};
   }
