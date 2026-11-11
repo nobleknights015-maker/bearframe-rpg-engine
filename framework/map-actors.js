@@ -13,6 +13,20 @@ function createBearframeMapActors(project,theme){
     throw new TypeError('Map actors require project maps, events and a sprite theme');
   var own=Object.prototype.hasOwnProperty;
   function has(o,k){return !!o&&own.call(o,k);}
+  // Explicit NPC art bindings are a content contract, not an optional hint.
+  // Failing closed here prevents the invisible-NPC regression in production
+  // projects while still permitting intentionally invisible event triggers.
+  if(theme.eventSprites!==undefined){
+    if(!theme.eventSprites||typeof theme.eventSprites!=='object'||
+       Array.isArray(theme.eventSprites))
+      throw new TypeError('Event sprite binding map required');
+    Object.keys(theme.eventSprites).forEach(function(eventId){
+      var sprite=theme.eventSprites[eventId];
+      if(!has(project.events,eventId)||typeof sprite!=='string'||!sprite||
+         !has(theme.sprites,sprite))
+        throw new TypeError('Invalid NPC sprite binding '+eventId);
+    });
+  }
   return function visibleActors(mapId,flags){
     if(!has(project.maps,mapId))throw new TypeError('Unknown map for actor presentation');
     var map=project.maps[mapId],actors=[],mapEvents=map.events||{};
