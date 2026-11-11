@@ -644,7 +644,9 @@ public final class RouteRunner extends Instrumentation {
             "n=Math.imul(n^data[i],16777619)>>>0;"+
             "n=Math.imul(n^data[i+1],16777619)>>>0;"+
             "n=Math.imul(n^data[i+2],16777619)>>>0;}return n;})()";
-        long original=Long.parseLong(evalHost(hashScript));
+        // WebView returns JS unsigned 32-bit hashes as JSON numbers, sometimes
+        // with a trailing .0; parse as finite numeric values, not long literals.
+        long original=(long)Double.parseDouble(evalHost(hashScript));
         AtomicReference<Throwable> failure=new AtomicReference<>();
         runOnMainSync(()->{
             try{screen.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE);}
@@ -669,7 +671,7 @@ public final class RouteRunner extends Instrumentation {
             Thread.sleep(200);
         }
         if(!restored)throw new AssertionError("V2 atlases did not rehydrate");
-        long rehydrated=Long.parseLong(evalHost(hashScript));
+        long rehydrated=(long)Double.parseDouble(evalHost(hashScript));
         if(rehydrated!=original)
             throw new AssertionError("Rehydrated v2 canvas pixels differ");
         if(!"false".equals(evalHost(
@@ -682,7 +684,7 @@ public final class RouteRunner extends Instrumentation {
         JSONObject verified=new JSONObject((String)new JSONTokener(valid).nextValue());
         if(next.getInt("sequence")!=1||next.getInt("y")!=2||
            !verified.getBoolean("ok")||verified.getInt("revision")!=1||
-           Long.parseLong(evalHost(hashScript))==rehydrated)
+           (long)Double.parseDouble(evalHost(hashScript))==rehydrated)
             throw new AssertionError("Restored v2 scene did not advance/save");
         JSONObject mainAfter=unifiedSnapshot();
         if(mainAfter.getInt("sequence")!=baseline.getInt("sequence")||

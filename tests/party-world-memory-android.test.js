@@ -9,6 +9,7 @@ test('Android memory trim reloads v2 scene without mutating main or party journa
   'party-world-surface',
   'BearframeHost.partyWorld.view()',
   'rehydrated!=original',
+  '(long)Double.parseDouble(evalHost(hashScript))',
   'V2 movement remained disabled after atlas recovery',
   'BearframeHost.partyWorld.verifySave()'
  ])assert.ok(java.includes(token),'Missing v2 trim evidence: '+token);
