@@ -39,6 +39,8 @@ function createBearframeLandscapeLayout(stage,win){
     debug=!!value;
     doc.body.classList.toggle('landscape-gameplay',!debug);
     doc.body.classList.toggle('landscape-debug',debug);
+    doc.documentElement.classList.toggle('landscape-gameplay',!debug);
+    doc.documentElement.classList.toggle('landscape-debug',debug);
     if(!debug)resize();
     return debug;
   }

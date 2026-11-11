@@ -246,6 +246,12 @@
         if(outcome.ok)renderPartyWorld();
         else partyWorldStatus.textContent='Party order refused: '+outcome.reason;
       });
+    var landscapePages=createBearframeLandscapePager({
+      events:document.getElementById('party-world-events'),
+      inventory:document.getElementById('party-world-inventory'),
+      battle:document.getElementById('party-world-battle')
+    });
+    var previousPartyPhase=null;
     function renderPartyWorld(){
       var snap=partyWorld.snapshot(),v=snap.view;
       if(!v){
@@ -282,6 +288,9 @@
         v.partyBattle?'Party combat':'Explore')+' · '+v.message;
       partyWorldButtons.forEach(function(button){button.disabled=locked;});
       partyWorldPanels.render();partyWorldBattlePanel.render();
+      var phase=v.prompt?'event':v.partyBattle||v.battle?'battle':'explore';
+      landscapePages.all(previousPartyPhase!==phase);
+      previousPartyPhase=phase;
       if(!partyWorldSceneReady){
         // Do not allow a stale scene or evicted atlas to accept touch actions.
         Array.from(document.querySelectorAll(
