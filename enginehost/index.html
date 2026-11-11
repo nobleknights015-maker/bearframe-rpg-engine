@@ -40,20 +40,40 @@
   </section>
   <section class="party-world-section" aria-label="Integrated v2 party world engine diagnostics">
     <h2>Integrated party world · engine test</h2>
-    <p id="party-world-status" role="status" aria-live="polite">Loading v2 world journal…</p>
-    <canvas id="party-world-surface" width="224" height="160"
-      aria-label="Rendered v2 party world scene"></canvas>
-    <div class="pad" aria-label="Party world directional movement">
-      <button data-party-world-dir="up" aria-label="Party world move up">↑</button>
-      <button data-party-world-dir="left" aria-label="Party world move left">←</button>
-      <button data-party-world-dir="down" aria-label="Party world move down">↓</button>
-      <button data-party-world-dir="right" aria-label="Party world move right">→</button>
+    <nav id="party-world-navigation" class="party-screen-tabs"
+      role="tablist" aria-label="Party world engine screens">
+      <button id="pw-tab-world" type="button" role="tab" data-party-world-tab="world"
+        aria-selected="true" aria-controls="pw-screen-world" tabindex="0">World</button>
+      <button id="pw-tab-party" type="button" role="tab" data-party-world-tab="party"
+        aria-selected="false" aria-controls="pw-screen-party" tabindex="-1">Party &amp; inventory</button>
+      <button id="pw-tab-save" type="button" role="tab" data-party-world-tab="save"
+        aria-selected="false" aria-controls="pw-screen-save" tabindex="-1">Save</button>
+    </nav>
+    <div id="pw-screen-world" role="tabpanel" data-party-world-screen="world"
+      aria-labelledby="pw-tab-world">
+      <p id="party-world-status" role="status" aria-live="polite">Loading v2 world journal…</p>
+      <canvas id="party-world-surface" width="224" height="160"
+        aria-label="Rendered v2 party world scene"></canvas>
+      <div class="pad" aria-label="Party world directional movement">
+        <button data-party-world-dir="up" aria-label="Party world move up">↑</button>
+        <button data-party-world-dir="left" aria-label="Party world move left">←</button>
+        <button data-party-world-dir="down" aria-label="Party world move down">↓</button>
+        <button data-party-world-dir="right" aria-label="Party world move right">→</button>
+      </div>
+      <div id="party-world-events" aria-label="Party world scripted events"></div>
+      <div id="party-world-battle" aria-label="Party world battle commands"></div>
     </div>
-    <div id="party-world-events" aria-label="Party world scripted events"></div>
-    <div id="party-world-inventory" aria-label="Party world shared inventory, equipment and levels"></div>
-    <div id="party-world-battle" aria-label="Party world battle commands"></div>
-    <button id="party-world-verify" type="button">Verify party world save</button>
-    <p id="party-world-save-status" role="status" aria-live="polite"></p>
+    <div id="pw-screen-party" role="tabpanel" data-party-world-screen="party"
+      aria-labelledby="pw-tab-party" hidden>
+      <div id="party-world-inventory"
+        aria-label="Party world shared inventory, equipment and levels"></div>
+    </div>
+    <div id="pw-screen-save" role="tabpanel" data-party-world-screen="save"
+      aria-labelledby="pw-tab-save" hidden>
+      <p>All successful actions save automatically; this check verifies the existing saved checkpoint without changing it.</p>
+      <button id="party-world-verify" type="button">Verify party world save</button>
+      <p id="party-world-save-status" role="status" aria-live="polite"></p>
+    </div>
   </section>
   <section aria-label="Historical save recovery diagnostics">
     <p>Old saves are never changed. This copies validated save bytes to a separate recovery archive; it does not convert the old campaign into a playable new-engine save.</p>
@@ -108,6 +128,7 @@
 <script src="audio-probe.js"></script>
 <script src="party-probe.js"></script>
 <script src="party-world-host.js"></script>
+<script src="screen-navigation.js"></script>
 <script src="party-ui.js"></script>
 <script src="runtime-panels.js"></script>
 <script src="runtime-combat-panel.js"></script>

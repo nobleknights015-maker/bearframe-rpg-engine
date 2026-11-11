@@ -197,6 +197,12 @@
     }
     var partyWorldSaveStatus=document.getElementById('party-world-save-status');
     var partyWorldButtons=Array.from(document.querySelectorAll('[data-party-world-dir]'));
+    var partyWorldScreens=createBearframeScreenNavigator(
+      document.getElementById('party-world-navigation'),{
+        world:document.getElementById('pw-screen-world'),
+        party:document.getElementById('pw-screen-party'),
+        save:document.getElementById('pw-screen-save')
+      });
     function partyWorldAction(command){
       if(!partyWorldInteractive()){
         partyWorldStatus.textContent='Party scene unavailable; controls are paused.';
@@ -266,6 +272,8 @@
       partyWorldSaveStatus.textContent=snap.journal.latestSequence===v.sequence?
         'Party world auto-saved · revision '+v.sequence:
         'Party world has not verified durable storage.';
+      partyWorldScreens.sync(v.prompt?'event':
+        v.partyBattle||v.battle?'battle':'explore',partyWorldSceneReady);
     }
     partyWorldButtons.forEach(function(button){
       button.addEventListener('click',function(){
@@ -430,6 +438,7 @@
       verifySave:verifySaved,
       party:partyProbe,
       partyWorld:partyWorld,
+      partyWorldScreens:partyWorldScreens,
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});
