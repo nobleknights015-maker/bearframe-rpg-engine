@@ -109,7 +109,7 @@ function createBearframeAssetCache(manifest,loader,options){
         if(!cache.has(id)||cache.get(id).value!==values[index])
           throw new Error('Asset preload lost required resource '+id);
       });
-      var result={};unique.forEach(function(id,index){result[id]=values[index];});
+      var result=Object.create(null);unique.forEach(function(id,index){result[id]=values[index];});
       return result;
     });
   }
