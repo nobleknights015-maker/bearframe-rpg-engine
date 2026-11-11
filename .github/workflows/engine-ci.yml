@@ -311,6 +311,16 @@ jobs:
             adb shell am instrument -w -e stage unified-party-screens-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-screens-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-screens-second' "$RUNNER_TEMP/party-screens-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-screens-second.txt"
+            # Native physical input routing on installed Android 35 WebView.
+            # Covers real KeyEvent/joystick adapters and independent v2 saves.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-v2-controller-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/v2-controller-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-v2-controller-first' "$RUNNER_TEMP/v2-controller-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/v2-controller-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-v2-controller-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/v2-controller-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-v2-controller-second' "$RUNNER_TEMP/v2-controller-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/v2-controller-second.txt"
             # Real WebView party inventory UI: item pickup, actor-specific
             # weapon/armor/accessory buttons, healing, physical copy counts,
             # then two-process recovery through native synchronous journal.

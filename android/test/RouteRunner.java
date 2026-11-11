@@ -695,6 +695,73 @@ public final class RouteRunner extends Instrumentation {
     }
     /** Installed WebView: responsive v2 screen tabs are presentational only,
      * preserve journal bytes, and return to real event controls on phase change. */
+    /** Installed Android gamepad: native KeyEvent/Joystick -> semantic
+     * WebView input -> same canonical v2 journal. Never modifies legacy v1. */
+    private void checkUnifiedControllerWorld(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject legacy=unifiedSnapshot();
+        String baseline=evalHost("JSON.stringify({v:BearframeHost.partyWorld.view(),"+
+            "screen:BearframeHost.partyWorldScreens.current()})");
+        JSONObject before=new JSONObject((String)new JSONTokener(baseline).nextValue());
+        if(!"world".equals(before.getString("screen"))||
+           before.getJSONObject("v").getInt("sequence")!=(restart?2:0)||
+           legacy.getInt("sequence")!=0)
+            throw new AssertionError("Native controller world not isolated: "+baseline);
+        if(!restart){
+            gamepadKey(KeyEvent.KEYCODE_DPAD_RIGHT);
+            JSONObject event=new JSONObject((String)new JSONTokener(
+                evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
+            if(event.getInt("sequence")!=1||event.isNull("prompt"))
+                throw new AssertionError("Physical D-pad event did not open: "+event);
+            gamepadKey(KeyEvent.KEYCODE_BUTTON_A);
+            JSONObject chosen=new JSONObject((String)new JSONTokener(
+                evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
+            if(chosen.getInt("sequence")!=2||!chosen.isNull("prompt")||
+               chosen.getInt("x")!=2)
+                throw new AssertionError("Controller confirm did not commit event: "+chosen);
+            gamepadKey(KeyEvent.KEYCODE_BUTTON_X);
+            if(!"\"party\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
+                throw new AssertionError("Controller menu did not open Party");
+            gamepadKey(KeyEvent.KEYCODE_BUTTON_R1);
+            if(!"\"save\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
+                throw new AssertionError("Shoulder did not move to Save screen");
+            gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
+            if(!"\"world\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
+                throw new AssertionError("Controller cancel did not return to World");
+        }else{
+            gamepadKey(KeyEvent.KEYCODE_BUTTON_L1);
+            if(!"\"save\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
+                throw new AssertionError("Left shoulder did not wrap to Save");
+            gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
+            gamepadKey(KeyEvent.KEYCODE_DPAD_LEFT);
+            JSONObject walked=new JSONObject((String)new JSONTokener(
+                evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
+            if(walked.getInt("sequence")!=3||walked.getInt("x")!=1||
+               walked.getInt("y")!=1)
+                throw new AssertionError("Controller could not move after restart: "+walked);
+            gamepadAxis(0f,0.9f);
+            gamepadAxis(0f,0f);
+            JSONObject analog=new JSONObject((String)new JSONTokener(
+                evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
+            if(analog.getInt("sequence")!=4||analog.getInt("x")!=1||
+               analog.getInt("y")!=2)
+                throw new AssertionError("Native analog movement did not commit: "+analog);
+        }
+        JSONObject now=new JSONObject((String)new JSONTokener(
+            evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
+        JSONObject saved=new JSONObject((String)new JSONTokener(
+            evalHost("JSON.stringify(BearframeHost.partyWorld.verifySave())")).nextValue());
+        JSONObject original=unifiedSnapshot();
+        if(now.getInt("sequence")!=(restart?4:2)||
+           !saved.getBoolean("ok")||saved.getInt("revision")!=(restart?4:2)||
+           original.getInt("sequence")!=0||original.getInt("savedRevision")!=0)
+            throw new AssertionError("Native gamepad corrupted engine journals: "+now);
+        resultMeta.putString("v2Controller",
+            "PASS native D-pad, A/B, menus, shoulders, analog and two-process journal");
+    }
     private void checkUnifiedPartyWorldScreens(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1893,6 +1960,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedPartyWorldMemory();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-party-world-memory");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-v2-controller-first") ||
+               stage.equals("unified-v2-controller-second")){
+                checkUnifiedControllerWorld(stage.equals("unified-v2-controller-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }

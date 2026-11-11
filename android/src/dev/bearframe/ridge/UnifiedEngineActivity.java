@@ -14,6 +14,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.RenderProcessGoneDetail;
 import android.view.ViewGroup;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.widget.TextView;
 import android.webkit.WebChromeClient;
 import android.net.Uri;
@@ -39,7 +41,27 @@ public final class UnifiedEngineActivity extends Activity {
     private static final String DIAGNOSTICS = ORIGIN + "/enginehost/index.html";
     private static final String PREFERENCES = "bearframe_unified_v1";
     private WebView browser;
+    private ControllerInputRouter controller;
     private int rendererRecoveries=0;
+    /** Forward only mapped semantic gamepad actions to the independent v2
+     * engine host. The legacy Rhino Activity keeps its own controller code. */
+    private boolean routeController(String type,String direction) {
+        if(browser==null)return false;
+        String packet="{type:"+org.json.JSONObject.quote(type)+
+            (direction==null?"":",direction:"+org.json.JSONObject.quote(direction))+"}";
+        browser.evaluateJavascript(
+            "window.BearframeHost&&window.BearframeHost.input&&"+
+            "window.BearframeHost.input("+packet+")",null);
+        return true;
+    }
+    @Override public boolean dispatchKeyEvent(KeyEvent event) {
+        if(controller!=null&&controller.onKeyEvent(event))return true;
+        return super.dispatchKeyEvent(event);
+    }
+    @Override public boolean onGenericMotionEvent(MotionEvent event) {
+        if(controller!=null&&controller.onMotionEvent(event))return true;
+        return super.onGenericMotionEvent(event);
+    }
     private final LegacyArchiveExport exporter=new LegacyArchiveExport(this,result->{
         if(browser!=null){
             if("compat-restore-ready".equals(result)){
@@ -167,6 +189,19 @@ public final class UnifiedEngineActivity extends Activity {
         super.onCreate(saved);
         getWindow().setStatusBarColor(Color.rgb(17,20,28));
         getWindow().setNavigationBarColor(Color.rgb(17,20,28));
+        controller=new ControllerInputRouter(new ControllerInputRouter.Listener() {
+            @Override public boolean navigate(String direction){
+                return routeController("navigate",direction);
+            }
+            @Override public boolean confirm(){return routeController("confirm",null);}
+            @Override public boolean cancel(){return routeController("cancel",null);}
+            @Override public boolean menu(){return routeController("menu",null);}
+            @Override public boolean map(){return routeController("map",null);}
+            @Override public boolean pause(){return routeController("pause",null);}
+            @Override public boolean tab(int delta){
+                return routeController(delta<0?"previous-tab":"next-tab",null);
+            }
+        });
         createOfflineBrowser();
     }
 
@@ -191,6 +226,7 @@ public final class UnifiedEngineActivity extends Activity {
                 // Renderer process is dead: discard WebView without touching
                 // Android durable journal, then rehydrate from packaged code.
                 browser=null;
+                if(controller!=null)controller.clear();
                 audioFocus.abandon();
                 if(view.getParent() instanceof ViewGroup)
                     ((ViewGroup)view.getParent()).removeView(view);
@@ -242,6 +278,7 @@ public final class UnifiedEngineActivity extends Activity {
     }
 
     @Override protected void onPause() {
+        if(controller!=null)controller.clear();
         audioFocus.abandon();
         if(browser!=null){
             browser.evaluateJavascript(
@@ -263,6 +300,7 @@ public final class UnifiedEngineActivity extends Activity {
         exporter.onResult(requestCode,resultCode,data);
     }
     @Override protected void onDestroy() {
+        if(controller!=null)controller.clear();
         exporter.cancel();
         audioFocus.abandon();
         if(browser!=null){
