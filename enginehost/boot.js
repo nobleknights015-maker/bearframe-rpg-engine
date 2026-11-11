@@ -50,10 +50,19 @@
         floor:{atlas:'terrain',x:0,y:0,w:32,h:32},
         wall:{atlas:'terrain',x:32,y:0,w:32,h:32}
       },
-      sprites:{player:{ticksPerFrame:5,frames:[
-        {atlas:'characters',x:0,y:0,w:32,h:48},
-        {atlas:'characters',x:32,y:0,w:32,h:48}
-      ]}}
+      // The diagnostic sheet currently has only two tiny original test
+      // frames. Event markers deliberately reuse a known valid frame until
+      // real NPC atlases are supplied by the game's asset manifest.
+      sprites:{
+        player:{ticksPerFrame:5,frames:[
+          {atlas:'characters',x:0,y:0,w:32,h:48},
+          {atlas:'characters',x:32,y:0,w:32,h:48}
+        ]},
+        eventMarker:{ticksPerFrame:1,frames:[
+          {atlas:'characters',x:32,y:0,w:32,h:48}
+        ]}
+      },
+      eventSprites:{supply:'eventMarker',mechanic:'eventMarker',scout:'eventMarker'}
     };
     var assets=createBearframeAssetCache(BEARFRAME_HOST_ASSETS,function(descriptor,id){
       return new Promise(function(resolve,reject){
