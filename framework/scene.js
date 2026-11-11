@@ -48,16 +48,40 @@ function createBearframeSceneComposer(project,theme){
     throw new TypeError('tile frames must match tileSize');
   if(!theme.sprites||!theme.sprites.player)
     throw new TypeError('player animation required');
+  // Engine v1 CharacterSpriteRenderer handles proper 3x4 facing/walk frames.
+  // Legacy flat frame arrays remain supported without any save migration.
+  var charFactory=(typeof module!=='undefined'&&module.exports)?
+    require('./character-sprites.js'):createBearframeCharacterSpriteRenderer;
+  var sheetRenderers={};
   Object.keys(theme.sprites).forEach(function(id){
     var a=theme.sprites[id];
+    if(a&&a.sheet){
+      if(a.frames!==undefined)throw new TypeError('Choose frames or sheet '+id);
+      var render=charFactory(a.sheet);
+      if(!has(theme.atlases,render.atlas))throw new TypeError('Missing sheet atlas '+id);
+      var atlas=theme.atlases[render.atlas];
+      if(render.offsetX+render.frameWidth*render.columns>atlas.width||
+         render.offsetY+render.frameHeight*render.rows>atlas.height)
+        throw new TypeError('Directional sheet outside atlas '+id);
+      sheetRenderers[id]=render;
+      return;
+    }
     if(!a||!Array.isArray(a.frames)||!a.frames.length||a.frames.length>128||
       !integer(a.ticksPerFrame,1,1000))
       throw new TypeError('invalid animation '+id);
     a.frames.forEach(function(frame,i){verifyFrame(frame,id+'['+i+']');});
   });
-  function frameFor(name,tick){
+  function frameFor(name,tick,direction,moving,pattern){
     var spec=theme.sprites[name];
     if(!spec)throw new TypeError('Unknown sprite '+name);
+    if(sheetRenderers[name]){
+      // Scene ticks are deterministic; a host may supply a presentation
+      // clock, but renderer state is never written to the save journal.
+      var frame=sheetRenderers[name].frameFor({direction:direction,
+        moving:!!moving,elapsedMs:tick*50,pattern:pattern});
+      return {atlas:sheetRenderers[name].atlas,
+        x:frame.sx,y:frame.sy,w:frame.sw,h:frame.sh};
+    }
     return spec.frames[Math.floor(tick/spec.ticksPerFrame)%spec.frames.length];
   }
   function compose(view,options){
@@ -90,7 +114,9 @@ function createBearframeSceneComposer(project,theme){
         dest:{x:x*ts-cx,y:y*ts-cy,w:ts,h:ts},
         layer:0,world:{x:x,y:y}});
     }
-    var actors=[{id:'player',x:view.x,y:view.y,sprite:'player'}];
+    var actors=[{id:'player',x:view.x,y:view.y,sprite:'player',
+      direction:options.playerDirection,moving:!!options.playerMoving,
+      pattern:options.playerPattern}];
     if(options.actors!==undefined){
       if(!Array.isArray(options.actors)||options.actors.length>200)
         throw new TypeError('Invalid scene actors');
@@ -98,12 +124,13 @@ function createBearframeSceneComposer(project,theme){
         if(!a||typeof a.id!=='string'||!a.id||a.id==='player'||!integer(a.x,0,map.rows[0].length-1)||
           !integer(a.y,0,map.rows.length-1)||map.rows[a.y][a.x]==='#'||typeof a.sprite!=='string')
           throw new TypeError('Invalid scene actor '+i);
-        actors.push({id:a.id,x:a.x,y:a.y,sprite:a.sprite});
+        actors.push({id:a.id,x:a.x,y:a.y,sprite:a.sprite,
+          direction:a.direction,moving:!!a.moving,pattern:a.pattern});
       });
     }
     actors.sort(function(a,b){return a.y-b.y||(a.id<b.id?-1:a.id>b.id?1:0);});
     actors.forEach(function(a){
-      var frame=frameFor(a.sprite,tick);
+      var frame=frameFor(a.sprite,tick,a.direction,a.moving,a.pattern);
       var px=Math.floor((a.x+0.5)*ts-frame.w/2-cx);
       var py=Math.floor((a.y+1)*ts-frame.h-cy);
       if(px+frame.w<=0||py+frame.h<=0||px>=width||py>=height)return;
