@@ -59,7 +59,8 @@ function createBearframeAssetCache(manifest,loader,options){
     if(inflight.has(id))return inflight.get(id).promise;
     var epoch=generation,token={promise:null};
     var pending=Promise.resolve().then(function(){
-      return loader(d,id);
+      // Loader implementations may annotate descriptors; keep validation metadata private.
+      return loader(JSON.parse(JSON.stringify(d)),id);
     }).then(function(value){
       validateLoaded(d,value,id);
       if(generation===epoch&&inflight.get(id)===token){
