@@ -51,9 +51,16 @@ function fakeRoot(){
    setAttribute(k,v){this.attrs[k]=v;},
    removeAttribute(k){delete this.attrs[k];},
    hasAttribute(k){return Object.prototype.hasOwnProperty.call(this.attrs,k);},
-   querySelector(sel){return this.children.find(x=>
-    sel==='.engine-page-nav'&&x.className==='engine-page-nav')||null;},
-   addEventListener(k,fn){this.listeners[k]=fn;}};
+   querySelector(sel){
+    if(sel==='.engine-page-nav')
+      return this.children.find(x=>x.className==='engine-page-nav')||null;
+    if(sel==='button:not([disabled]),select:not([disabled])')
+      return this.children.find(x=>!x.disabled&&
+        (x.tagName==='BUTTON'||x.tagName==='SELECT'))||null;
+    return null;
+   },
+   addEventListener(k,fn){this.listeners[k]=fn;},
+   focus(){doc.activeElement=this;}};
   n.classList={contains:k=>n.className.split(' ').includes(k)};
   n.click=()=>{if(!n.disabled&&n.listeners.click)n.listeners.click();};
   return n;
@@ -87,6 +94,12 @@ test('inventory paging exposes every item without scrolling or altering commands
   !x.hasAttribute('data-engine-page-hidden')).length,2);
  p.refresh('events',true);assert.equal(events.children.filter(x=>
   x.hasAttribute('data-event-choice')&&!x.hasAttribute('data-engine-page-hidden')).length,4);
+ const eventNext=events.querySelector('.engine-page-nav').children[2];
+ eventNext.focus();eventNext.click();
+ assert.equal(p.current('events'),1);
+ assert.equal(events.ownerDocument.activeElement,events.children[4],
+  'gamepad paging must transfer focus to the next visible dialogue choice');
+ assert.equal(events.children[4].hasAttribute('data-engine-page-hidden'),false);
  p.refresh('battle',true);assert.equal(battle.children.filter(x=>
   x.className==='party-command'&&!x.hasAttribute('data-engine-page-hidden')).length,1);
  assert.equal(commit.hasAttribute('data-engine-page-hidden'),false);
