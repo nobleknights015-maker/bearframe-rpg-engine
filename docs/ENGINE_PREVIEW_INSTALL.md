@@ -62,3 +62,28 @@ v2 test save.
 The app may still need to be uninstalled **only from its separate preview
 package** before installing a later CI APK signed with another disposable
 key. This is not the production upgrade path.
+
+## v2 engine screen navigation and optional controllers
+
+The integrated v2 engine diagnostic is now organized into **World**,
+**Party & inventory**, and **Save** tabs. Switching tabs does not change
+gameplay state or increment the durable journal revision. Returning to
+dialogue or an active encounter highlights the required action. The Save
+screen checks already committed progress, without creating a new save.
+
+Touch works without a gamepad. The unified WebView Activity additionally
+forwards Android standard gamepad/joystick keys through the existing
+`ControllerInputRouter` into the canonical v2 engine view:
+
+- D-pad/left stick: walk when exploring; navigate focused controls when
+  dialogue/combat is active, and move among controls/tabs in menus.
+- South/A/Cross: confirm a focused dialogue, combat, equipment or save action.
+- East/B/Circle: close a cancellable event or return from Party/Save to World.
+- West/X/Square: Party & inventory; shoulders L1/R1: previous/next screen.
+- North/Select: World; Start: Save screen (a *navigation shortcut*, not a
+  system-level Android pause operation).
+
+The native adapter still has a hardware-device acceptance requirement.
+Synthetic Android 35 emulator gamepad events are not proof of correct
+button labels, Bluetooth pairing, latency or accessibility on a real Moto G.
+The default old Rhino launcher and its controller route are unchanged.

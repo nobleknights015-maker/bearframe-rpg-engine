@@ -34,3 +34,29 @@ This is **basic controller compatibility**, not final controller UX. Device-spec
 ## Platform reliability
 
 Controller I/O must never mutate simulation state directly. It dispatches the same semantic game actions as touch input, and the existing storage/validation boundary remains authoritative. Unsupported menu actions are intentionally unbound in the prototype rather than implemented as misleading nonfunctional UI.
+
+## Unified engine v2 input bridge — development checkpoint
+
+The separate `UnifiedEngineActivity` now passes Android
+`SOURCE_GAMEPAD` and `SOURCE_JOYSTICK` events into the same
+`ControllerInputRouter` used for native semantic mapping. The
+WebView `input-host.js` then chooses a visible UI action or dispatches
+the same canonical world movement command used by touch. World state and
+saves are *never* directly mutated by the native adapter.
+
+The new v2 screen tabs support arrow-key navigation and Android shoulder
+button changes. Controller A confirms a focused valid dialogue choice or
+party action; X opens the party screen, B cancels/backtracks and Start opens
+the Save screen. Normal gameplay mode still determines whether directions
+walk or navigate visible choices. The host intentionally does not add a
+separate controller-owned simulation state.
+
+Android 35 installed emulation includes dedicated
+`unified-v2-controller-first/second` stages for D-pad, A/B, X, L1/R1,
+native analog axis and journal recovery across force-stop. A staged run
+is evidence only once GitHub Actions reports **success** with the emulator
+step actually executed; any skipped step is not acceptance.
+
+Unresolved: verified named Bluetooth/USB controller models, per-device
+button remapping, haptic feedback, focus ergonomics in all complex party
+menus, actual latency and physical Moto G acceptance.
