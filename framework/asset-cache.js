@@ -102,6 +102,13 @@ function createBearframeAssetCache(manifest,loader,options){
     if(unique.length>maxEntries||groupBytes>maxMemoryBytes)
       throw new RangeError('Asset preload group exceeds cache budget');
     return Promise.all(unique.map(load)).then(function(values){
+      // Concurrent standalone loads or memory-pressure callbacks may evict a
+      // group member while this preload is resolving. Never report a scene
+      // as ready when its required textures are no longer resident.
+      unique.forEach(function(id,index){
+        if(!cache.has(id)||cache.get(id).value!==values[index])
+          throw new Error('Asset preload lost required resource '+id);
+      });
       var result={};unique.forEach(function(id,index){result[id]=values[index];});
       return result;
     });
