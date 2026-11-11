@@ -96,9 +96,14 @@ function createBearframeAssetCache(manifest,loader,options){
     var value=cache.get(id);cache.delete(id);cache.set(id,value);
     return value.value;
   }
+  // Releasing a scene dependency also cancels retention of an in-flight
+  // decode. The original caller may receive its value, but cannot repopulate
+  // the cache after the scene has relinquished that resource.
   function release(id){
     descriptor(id);
-    if(!cache.has(id))return false;
+    var pending=inflight.get(id);
+    if(pending)inflight.delete(id);
+    if(!cache.has(id))return !!pending;
     memory-=cache.get(id).bytes;cache.delete(id);return true;
   }
   // Host-triggered memory pressure: drop least-recently-used decoded assets
