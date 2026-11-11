@@ -13,12 +13,20 @@ function createBearframeWorldInput(screens,view,navigate,roots){
     return !!node&&!node.disabled&&
       (typeof node.getClientRects!=='function'||node.getClientRects().length>0);
   }
-  function actions(screen){
+  function actions(screen,world){
     var root=roots[screen];
+    // While world movement is locked, navigation stays inside the visible
+    // dialogue or party battle controls. Disabled directional buttons and
+    // unrelated actions may never intercept gamepad focus.
+    if(screen==='world'&&world){
+      var selector=world.prompt?'#party-world-events':
+        world.partyBattle?'#party-world-battle':null;
+      if(selector)root=root.querySelector(selector)||root;
+    }
     return Array.from(root.querySelectorAll('button,select')).filter(isAvailable);
   }
-  function focusStep(screen,delta){
-    var list=actions(screen);
+  function focusStep(screen,delta,world){
+    var list=actions(screen,world);
     if(!list.length)return false;
     var focused=list.indexOf(rootActive());
     var next=focused<0?(delta<0?list.length-1:0):
@@ -30,6 +38,27 @@ function createBearframeWorldInput(screens,view,navigate,roots){
   }
   function rootActive(){
     return roots.world.ownerDocument.activeElement;
+  }
+  function battleControl(node){
+    return !!node&&(
+      node.id==='party-commit'||
+      typeof node.hasAttribute==='function'&&
+      (node.hasAttribute('data-party-skill')||
+       node.hasAttribute('data-party-target')));
+  }
+  function changeBattleOption(select,delta){
+    if(!select||!battleControl(select)||select.disabled||
+       select.tagName!=='SELECT'||!select.options||select.options.length<2)
+      return false;
+    var index=select.selectedIndex;
+    if(!Number.isInteger(index)||index<0)return false;
+    var next=Math.max(0,Math.min(select.options.length-1,index+delta));
+    if(next===index)return false;
+    select.selectedIndex=next;
+    // The party panel updates valid targets whenever its selected skill
+    // changes. Dispatching the real change event preserves that rule.
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+    return true;
   }
   function click(node){
     if(!isAvailable(node)||typeof node.click!=='function')return false;
@@ -56,8 +85,14 @@ function createBearframeWorldInput(screens,view,navigate,roots){
         if(direction==='right')return turnTab(1);
         return focusStep(mode,direction==='up'?-1:1);
       }
-      if(blocked)return focusStep('world',
-        direction==='up'||direction==='left'?-1:1);
+      if(blocked){
+        var delta=direction==='up'||direction==='left'?-1:1;
+        if(v.partyBattle&&(direction==='left'||direction==='right')){
+          var focused=rootActive();
+          if(changeBattleOption(focused,delta))return true;
+        }
+        return focusStep('world',delta,v);
+      }
       return navigate(direction).ok===true;
     }
     if(event.type==='confirm'){
@@ -68,8 +103,14 @@ function createBearframeWorldInput(screens,view,navigate,roots){
           focused.hasAttribute('data-event-choice')?focused:
           byQuery('world','[data-event-choice]'));
       }
-      if(mode==='world'&&v.partyBattle)
-        return click(byQuery('world','#party-commit'));
+      if(mode==='world'&&v.partyBattle){
+        // A/Cross must not commit a default round before the player has
+        // been able to select each actor's ability and target.
+        var selected=rootActive();
+        if(selected&&selected.id==='party-commit')
+          return click(selected);
+        return focusStep('world',1,v);
+      }
       if(mode==='party'){
         var active=rootActive();
         return roots.party.contains(active)?click(active):focusStep('party',1);

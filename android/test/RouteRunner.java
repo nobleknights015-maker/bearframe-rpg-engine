@@ -720,6 +720,56 @@ public final class RouteRunner extends Instrumentation {
      * preserve journal bytes, and return to real event controls on phase change. */
     /** Installed Android gamepad: native KeyEvent/Joystick -> semantic
      * WebView input -> same canonical v2 journal. Never modifies legacy v1. */
+    /** Native gamepad ability/target control: no implicit default combat
+     * round may execute from A until commit is explicitly focused. */
+    private void checkUnifiedV2BattleController() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        gamepadKey(KeyEvent.KEYCODE_DPAD_RIGHT);
+        gamepadKey(KeyEvent.KEYCODE_BUTTON_A);
+        gamepadKey(KeyEvent.KEYCODE_DPAD_RIGHT);
+        gamepadKey(KeyEvent.KEYCODE_DPAD_RIGHT);
+        String start=evalHost("JSON.stringify(BearframeHost.partyWorld.view())");
+        JSONObject before=new JSONObject((String)new JSONTokener(start).nextValue());
+        if(before.getInt("sequence")!=4||before.isNull("partyBattle"))
+            throw new AssertionError("Native battle controller failed to start party encounter: "+start);
+        String initial=evalHost("(function(){var n=document.activeElement;"+
+            "return JSON.stringify({attribute:n&&n.getAttribute('data-party-skill'),"+
+            "value:n&&n.value,commit:document.getElementById('party-commit')!==null})})()");
+        JSONObject init=new JSONObject((String)new JSONTokener(initial).nextValue());
+        if(!"pilot".equals(init.getString("attribute"))||
+           !"strike".equals(init.getString("value"))||
+           !init.getBoolean("commit"))
+            throw new AssertionError("Party skill not focusable by native gamepad: "+initial);
+        gamepadKey(KeyEvent.KEYCODE_DPAD_RIGHT);
+        if(!"\"pulse\"".equals(evalHost(
+           "document.querySelector('#party-world-battle [data-party-skill]').value")))
+            throw new AssertionError("Native right press did not select alternate skill");
+        gamepadKey(KeyEvent.KEYCODE_DPAD_DOWN);
+        String target=evalHost("document.activeElement.getAttribute('data-party-target')");
+        if(!"\"pilot\"".equals(target))
+            throw new AssertionError("Native down press did not focus target: "+target);
+        gamepadKey(KeyEvent.KEYCODE_BUTTON_A);
+        String focused=evalHost("document.activeElement&&document.activeElement.id");
+        if(!"\"party-commit\"".equals(focused))
+            throw new AssertionError("A must focus commit, not submit hidden round: "+focused);
+        if(!"4".equals(evalHost("BearframeHost.partyWorld.view().sequence")))
+            throw new AssertionError("Selecting ability/target committed combat early");
+        gamepadKey(KeyEvent.KEYCODE_BUTTON_A);
+        String result=evalHost("JSON.stringify(BearframeHost.partyWorld.view())");
+        JSONObject after=new JSONObject((String)new JSONTokener(result).nextValue());
+        JSONObject saved=new JSONObject((String)new JSONTokener(evalHost(
+            "JSON.stringify(BearframeHost.partyWorld.verifySave())")).nextValue());
+        if(after.getInt("sequence")!=5||
+           after.getInt("charge")!=2||
+           !saved.getBoolean("ok")||saved.getInt("revision")!=5)
+            throw new AssertionError("Native controller combat order not saved: "+result);
+        resultMeta.putString("v2BattleController",
+            "PASS native battle ability, target, explicit commit and durable round");
+    }
     private void checkUnifiedControllerWorld(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1984,6 +2034,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedPartyWorldMemory();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-party-world-memory");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-v2-battle-controller")){
+                checkUnifiedV2BattleController();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-v2-battle-controller");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

@@ -321,6 +321,12 @@ jobs:
             adb shell am instrument -w -e stage unified-v2-controller-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/v2-controller-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-v2-controller-second' "$RUNNER_TEMP/v2-controller-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/v2-controller-second.txt"
+            # Real installed WebView gamepad ability/target selection; A must
+            # focus the explicit commit before any saved party round executes.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-v2-battle-controller dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/v2-battle-controller.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-v2-battle-controller' "$RUNNER_TEMP/v2-battle-controller.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/v2-battle-controller.txt"
             # Real WebView party inventory UI: item pickup, actor-specific
             # weapon/armor/accessory buttons, healing, physical copy counts,
             # then two-process recovery through native synchronous journal.
