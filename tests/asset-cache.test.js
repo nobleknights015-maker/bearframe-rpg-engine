@@ -429,3 +429,17 @@ test('asset APIs reject non-string IDs without invoking user-defined coercion',a
  const valid=await cache.load('terrain');
  assert.strictEqual(cache.get('terrain'),valid);
 });
+
+test('audio descriptors require positive byte budgets to prevent unaccounted cache residency',async()=>{
+ const absent=replace(m=>{delete m.assets.theme.bytes;});
+ assert.throws(()=>validate(absent),/Audio asset requires byte budget theme/);
+ assert.throws(()=>create(absent,async()=>({})),/Audio asset requires byte budget theme/);
+ const zero=replace(m=>{m.assets.confirm.bytes=0;});
+ assert.throws(()=>validate(zero),/Invalid file byte budget confirm/);
+ const cache=create(manifest,async()=>({decoded:true}),{maxMemoryBytes:16384});
+ await cache.load('theme');
+ await cache.load('confirm');
+ assert.equal(cache.snapshot().memoryBytes,3000);
+ assert.equal(cache.release('theme'),true);
+ assert.equal(cache.snapshot().memoryBytes,1000);
+});
