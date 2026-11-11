@@ -101,6 +101,18 @@ invisible. The included APK test fixture uses diagnostic sprites only.
 
 This intentionally supports original multi-frame sprite art and scalable maps instead of locking game content to the prototype's hand-coded shapes.
 
+### Read-only camera targets for cutscenes
+
+`scene.compose(view,{width,height,tick,cameraTarget:{x,y}})` can focus the
+camera on an arbitrary **fractional map-tile coordinate** (for cutscenes,
+panoramas, actor-follow effects and host-driven interpolation). Without
+`cameraTarget`, the camera continues to follow the canonical player.
+Targets must be finite coordinates inside the current map; invalid values
+fail before the scene paints. Camera position is pixel-snapped and clamped
+to world bounds, while small maps remain centered. It changes neither
+the character's position nor the deterministic gameplay state or save
+journal. The Android WebView and Rhino tests verify that separation.
+
 ### Deterministic animated tiles
 
 A `theme.tiles` entry can be a static atlas rectangle (original format)
