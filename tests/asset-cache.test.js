@@ -219,3 +219,28 @@ test('invalid cache capacity configuration fails closed instead of silently usin
  assert.deepEqual(constrained.snapshot().loaded,['actor']);
  assert.equal(constrained.snapshot().maxMemoryBytes,16384);
 });
+
+test('noncritical memory trim cannot retain pending pre-trim decode or lose a newer request',async()=>{
+ let resolveOld,resolveNew,calls=0;
+ const cache=create(manifest,()=>new Promise(resolve=>{
+   calls++;
+   if(calls===1)resolveOld=resolve;
+   else resolveNew=resolve;
+ }),{maxMemoryBytes:65536});
+ const old=cache.load('terrain');
+ await Promise.resolve();
+ assert.deepEqual(cache.snapshot().inflight,['terrain']);
+ assert.deepEqual(cache.trimTo(32768),{evicted:0,memoryBytes:0});
+ assert.deepEqual(cache.snapshot().inflight,[]);
+ const newer=cache.load('terrain');
+ await Promise.resolve();
+ assert.equal(calls,2);
+ resolveOld(fake(manifest.assets.terrain));
+ await old;
+ assert.deepEqual(cache.snapshot().loaded,[]);
+ assert.deepEqual(cache.snapshot().inflight,['terrain']);
+ resolveNew(fake(manifest.assets.terrain));
+ await newer;
+ assert.deepEqual(cache.snapshot().loaded,['terrain']);
+ assert.equal(cache.snapshot().memoryBytes,64*32*4);
+});
