@@ -32,6 +32,8 @@ function createBearframePathfinder(project){
       throw new TypeError('Invalid pathfinder starting cell');
     if(!validPoint(destination,width,height))
       throw new TypeError('Invalid pathfinder destination');
+    if(to.map!==undefined&&to.map!==view.map)
+      return result(false,'different-map',view.map,from,destination,[],[],0);
     if(options.allowTriggers!==undefined&&typeof options.allowTriggers!=='boolean')
       throw new TypeError('allowTriggers must be boolean');
     var limit=options.maxNodes===undefined?width*height:options.maxNodes;
