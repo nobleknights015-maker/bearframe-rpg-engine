@@ -123,5 +123,8 @@ test('Android emulator must validate painter order in the installed offline WebV
  assert.match(route,/createBearframeSceneComposer\(layerProject,layerTheme\)/);
  assert.match(route,/layerOrder=under>0&&actor>under&&over>actor/);
  assert.match(route,/getBoolean\("layerOrder"\)/);
+ assert.match(route,/BearframeHost\.sceneryLayerAudit\(\)/);
+ assert.match(route,/getInt\("alteredPixels"\)<=20/);
+ assert.match(read('enginehost/boot.js'),/sceneryLayerAudit:sceneryLayerAudit/);
  assert.match(ci,/stage unified-landscape/);
 });
