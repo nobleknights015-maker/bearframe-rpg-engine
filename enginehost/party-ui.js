@@ -63,8 +63,12 @@ function createBearframePartyCommandPanel(root, probe, skillBook, notify) {
         return {actor:row.actor,skill:row.skill.value,target:row.target.value};
       });
       var result=probe.submit(orders);
-      if(typeof notify==='function')notify(result);
-      render();
+      // The integrated host may synchronously rebuild this panel AND apply
+      // its landscape pagination during notify. Never render a second time
+      // afterward: it would erase the newly installed page navigation.
+      // Returning true from notify means the host owns the UI refresh.
+      var handled=typeof notify==='function'&&notify(result)===true;
+      if(!handled)render();
     });
     root.appendChild(commit);
   }
