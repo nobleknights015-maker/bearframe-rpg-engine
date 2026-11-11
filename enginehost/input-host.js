@@ -112,7 +112,14 @@ function createBearframeWorldInput(screens,view,navigate,roots){
       return navigate(direction).ok===true;
     }
     if(event.type==='confirm'){
-      if(mode==='save')return click(byQuery('save','#party-world-verify'));
+      if(mode==='save'){
+        var saveFocus=rootActive();
+        // Respect the highlighted button (including diagnostics) instead
+        // of always invoking Verify when a controller selects another action.
+        if(saveFocus&&actions('save',v).indexOf(saveFocus)>=0)
+          return click(saveFocus);
+        return click(byQuery('save','#party-world-verify'));
+      }
       if(mode==='world'&&v.prompt){
         var focused=rootActive();
         if(focused&&focused.hasAttribute&&focused.hasAttribute('data-engine-page'))
