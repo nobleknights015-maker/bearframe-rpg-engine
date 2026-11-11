@@ -6,7 +6,8 @@
 <title>Bearframe engine host diagnostics</title>
 <link rel="stylesheet" href="host.css">
 </head><body>
-<main>
+<main id="engine-diagnostics">
+  <button id="landscape-close-diagnostics" type="button">Return to landscape game</button>
   <p class="eyebrow">Bearframe Engine Kit · unified host</p>
   <h1>Runtime diagnostics</h1>
   <p id="status" role="status">Starting the unified engine…</p>
@@ -38,7 +39,7 @@
     <p id="party-status" role="status" aria-live="polite">Party combat not started.</p>
     <div id="party-controls" aria-label="Choose party skills and targets"></div>
   </section>
-  <section class="party-world-section" aria-label="Integrated v2 party world engine diagnostics">
+  <section class="party-world-section" id="engine-landscape-stage" data-phase="explore" aria-label="Integrated v2 party world engine diagnostics">
     <h2>Integrated party world · engine test</h2>
     <nav id="party-world-navigation" class="party-screen-tabs"
       role="tablist" aria-label="Party world engine screens">
@@ -73,6 +74,7 @@
       <p>All successful actions save automatically; this check verifies the existing saved checkpoint without changing it.</p>
       <button id="party-world-verify" type="button">Verify party world save</button>
       <p id="party-world-save-status" role="status" aria-live="polite"></p>
+      <button id="landscape-open-diagnostics" type="button">Developer diagnostics</button>
     </div>
   </section>
   <section aria-label="Historical save recovery diagnostics">
@@ -128,6 +130,8 @@
 <script src="audio-probe.js"></script>
 <script src="party-probe.js"></script>
 <script src="party-world-host.js"></script>
+<script src="../framework/viewport.js"></script>
+<script src="landscape-layout.js"></script>
 <script src="screen-navigation.js"></script>
 <script src="input-host.js"></script>
 <script src="party-ui.js"></script>

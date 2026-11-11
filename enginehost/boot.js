@@ -8,6 +8,9 @@
   var status=document.getElementById('status');
   var metrics=document.getElementById('metrics');
   var surface=document.getElementById('surface');
+  // Engine v1-derived viewport now owns the actual full-screen landscape shell.
+  var landscape=createBearframeLandscapeLayout(document.getElementById('engine-landscape-stage'));
+  window.BearframeLandscape=landscape;
   var retryAssets=document.getElementById('runtime-assets-retry');
   function text(id,value){document.getElementById(id).textContent=String(value);}
   // Audio is a host-only diagnostic. Never touch the simulation journal.
@@ -270,6 +273,8 @@
         sceneError=error.message;
       }
       var locked=!!v.prompt||!!v.partyBattle||!!v.battle||!partyWorldSceneReady;
+      document.getElementById('engine-landscape-stage').setAttribute('data-phase',
+        v.prompt?'event':v.partyBattle||v.battle?'battle':'explore');
       partyWorldStatus.textContent=sceneError?
         'Party scene paused: '+sceneError+' · saved revision '+v.sequence:
         'v2 '+v.mapName+' ('+v.x+','+v.y+
