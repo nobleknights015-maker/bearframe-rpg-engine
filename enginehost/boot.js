@@ -187,11 +187,21 @@
     // End-to-end opt-in v2 world: visible navigation, scripted choices,
     // shared gear, party turns and XP all use a single separate native journal.
     // The old launcher, v1 diagnostics and historical saves remain untouched.
-    var partyWorld=createBearframePartyWorldHost(storage,FRAMEWORK_PARTY_WORLD_FIXTURE);
+    var partyWorld=createBearframePartyWorldHost(storage,FRAMEWORK_PARTY_WORLD_FIXTURE,theme);
     var partyWorldStatus=document.getElementById('party-world-status');
+    var partyWorldSurface=document.getElementById('party-world-surface');
+    var partyWorldSceneReady=false;
+    function partyWorldInteractive(){
+      return partyWorldSceneReady&&!restoring&&
+        !!assets.get('terrain')&&!!assets.get('characters');
+    }
     var partyWorldSaveStatus=document.getElementById('party-world-save-status');
     var partyWorldButtons=Array.from(document.querySelectorAll('[data-party-world-dir]'));
     function partyWorldAction(command){
+      if(!partyWorldInteractive()){
+        partyWorldStatus.textContent='Party scene unavailable; controls are paused.';
+        return {ok:false,reason:'assets-restoring'};
+      }
       var result=partyWorld.dispatch(command);
       if(result.ok)renderPartyWorld();
       else partyWorldStatus.textContent='Party action refused: '+result.reason;
@@ -203,24 +213,56 @@
       partyWorldStatus,FRAMEWORK_PARTY_WORLD_FIXTURE,
       function(){return partyWorld.view();},partyWorldAction);
     var partyWorldBattlePanel=createBearframePartyCommandPanel(
-      document.getElementById('party-world-battle'),partyWorld,
-      FRAMEWORK_PARTY_WORLD_FIXTURE.partyCombat.skills,function(outcome){
+      document.getElementById('party-world-battle'),{
+        battle:function(){return partyWorld.battle();},
+        submit:function(orders){
+          return partyWorldInteractive()?partyWorld.submit(orders):
+            {ok:false,reason:'assets-restoring'};
+        }
+      },FRAMEWORK_PARTY_WORLD_FIXTURE.partyCombat.skills,function(outcome){
         if(outcome.ok)renderPartyWorld();
         else partyWorldStatus.textContent='Party order refused: '+outcome.reason;
       });
     function renderPartyWorld(){
       var snap=partyWorld.snapshot(),v=snap.view;
       if(!v){
+        partyWorldSceneReady=false;
         partyWorldStatus.textContent='Party world unavailable: '+snap.error;
         partyWorldButtons.forEach(function(b){b.disabled=true;});
         return;
       }
-      var locked=!!v.prompt||!!v.partyBattle||!!v.battle;
-      partyWorldStatus.textContent='v2 '+v.mapName+' ('+v.x+','+v.y+
+      var terrain=assets.get('terrain'),characters=assets.get('characters');
+      var sceneError=null;
+      try {
+        if(!terrain||!characters||restoring)
+          throw new Error('Scene atlas loading or recovery in progress');
+        // Compose directly from the same canonical v2 state that controls
+        // movement, inventory and party combat. Rendering never commits data.
+        var frame=partyWorld.compose({
+          width:partyWorldSurface.width,height:partyWorldSurface.height,
+          tick:v.sequence%100
+        });
+        drawBearframeSceneCanvas(partyWorldSurface,frame,
+          {terrain:terrain,characters:characters});
+        partyWorldSceneReady=true;
+      }catch(error){
+        partyWorldSceneReady=false;
+        sceneError=error.message;
+      }
+      var locked=!!v.prompt||!!v.partyBattle||!!v.battle||!partyWorldSceneReady;
+      partyWorldStatus.textContent=sceneError?
+        'Party scene paused: '+sceneError+' · saved revision '+v.sequence:
+        'v2 '+v.mapName+' ('+v.x+','+v.y+
         ') · revision '+v.sequence+' · '+(v.prompt?'Event choice':
         v.partyBattle?'Party combat':'Explore')+' · '+v.message;
       partyWorldButtons.forEach(function(button){button.disabled=locked;});
       partyWorldPanels.render();partyWorldBattlePanel.render();
+      if(!partyWorldSceneReady){
+        // Do not allow a stale scene or evicted atlas to accept touch actions.
+        Array.from(document.querySelectorAll(
+          '#party-world-events button,#party-world-inventory button,#party-world-battle button'
+        )).forEach(function(button){button.disabled=true;});
+      }
       partyWorldSaveStatus.textContent=snap.journal.latestSequence===v.sequence?
         'Party world auto-saved · revision '+v.sequence:
         'Party world has not verified durable storage.';
@@ -228,7 +270,8 @@
     partyWorldButtons.forEach(function(button){
       button.addEventListener('click',function(){
         var direction=button.getAttribute('data-party-world-dir');
-        var result=partyWorld.navigate(direction);
+        var result=partyWorldInteractive()?partyWorld.navigate(direction):
+          {ok:false,reason:'assets-restoring'};
         if(result.ok)renderPartyWorld();
         else partyWorldStatus.textContent='Party movement refused: '+result.reason;
       });
@@ -310,16 +353,18 @@
           status.textContent='Restoring offline scene assets';
           retryAssets.disabled=true;retryAssets.hidden=true;
           restoring=assets.preload(['terrain','characters']).then(function(){
-            restoring=null;recoveryCount++;show();return true;
+            restoring=null;recoveryCount++;show();renderPartyWorld();return true;
           },function(error){
             restoring=null;recoveryFailures++;
             status.textContent='Scene restoration failed: '+error.message;
             retryAssets.disabled=false;retryAssets.hidden=false;
             metrics.textContent='Saved state preserved; retry after resources recover.';
+            renderPartyWorld();
             return false;
           });
         }
       }
+      renderPartyWorld();
       return {ok:true,evicted:trimmed.evicted,restoring:!!restoring};
     }
     retryAssets.addEventListener('click',function(){
@@ -375,7 +420,8 @@
       resume:function(){
         audioProbe.resume();
         if(restoring)return snapshot();
-        return show()&&snapshot();
+        show();renderPartyWorld();
+        return snapshot();
       }
     });
     Array.from(document.querySelectorAll('[data-dir]')).forEach(function(button){
@@ -383,7 +429,7 @@
         window.BearframeHost.navigate(button.getAttribute('data-dir'));
       });
     });
-    show();
+    show();renderPartyWorld();
     }).catch(function(error){
       status.textContent='Asset loading failed: '+error.message;
       retryAssets.disabled=false;retryAssets.hidden=false;

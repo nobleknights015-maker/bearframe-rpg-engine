@@ -2,12 +2,12 @@
  * events, inventory, equipment, party turns, XP and restarts.
  * Never uses the v1, historical Rhino or independent party-probe namespace.
  */
-function createBearframePartyWorldHost(storage,project){
+function createBearframePartyWorldHost(storage,project,theme){
   var node=(typeof module!=='undefined'&&module.exports);
   var factory=node?require('../framework/session.js'):createBearframeSession;
   if(!project||!project.partyCombat||!project.partyCombat.progression)
     throw new TypeError('Opt-in v2 world progression project required');
-  var session=factory(project,storage,null,
+  var session=factory(project,storage,theme||null,
     {slotPrefix:'bf:framework-party-world-test:v2:diagnostics'});
   var startup=session.resume();
   if(!startup.ok&&startup.reason==='no-save')
@@ -35,6 +35,9 @@ function createBearframePartyWorldHost(storage,project){
   }
   return Object.freeze({snapshot:snapshot,view:view,battle:battle,
     submit:submit,dispatch:dispatch,navigate:navigate,
+    // Scene composition is read-only. The canonical session remains the
+    // single source of geometry and journal state across Android restarts.
+    compose:function(options){return session.compose(options);},
     verifySave:function(){
       if(startupError)return {ok:false,reason:startupError};
       return session.verifySave();

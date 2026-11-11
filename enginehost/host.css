@@ -37,3 +37,20 @@ fieldset button:disabled{opacity:.45}
 .save-panel{padding:10px 12px;border:1px solid #566e88;border-radius:10px}
 .save-panel h2{margin:0;font-size:18px}
 #runtime-save-status{font-size:14px;line-height:1.5;color:#cce5d5}
+
+/* Isolated v2 integration screen. Keep the existing v1/legacy controls intact. */
+.party-world-section{margin:18px 0;padding:12px;border:1px solid #566e88;border-radius:10px}
+.party-world-section h2{margin:0 0 10px;font-size:18px}
+#party-world-status,#party-world-save-status{font-size:14px;line-height:1.5;color:#cce5d5}
+.party-world-section .pad{grid-template-columns:repeat(3,minmax(62px,70px));gap:10px;padding:12px 0}
+.party-world-section .pad button{min-height:62px;min-width:62px;font-size:24px}
+#party-world-events,#party-world-inventory,#party-world-battle{display:grid;gap:8px;margin:10px 0}
+#party-world-events button,#party-world-inventory button,#party-world-battle button,#party-world-verify{
+  min-height:48px;text-align:left;padding:9px 12px;border-radius:8px;
+  border:1px solid #768da4;background:#253346;color:#fff
+}
+#party-world-events button:disabled,#party-world-inventory button:disabled,
+#party-world-battle button:disabled{opacity:.45}
+#party-world-battle select{min-height:48px;padding:8px;border-radius:6px;
+  border:1px solid #768da4;background:#253346;color:#fff}
+@media (max-width:360px){main{padding:12px}.party-world-section{padding:10px}}
