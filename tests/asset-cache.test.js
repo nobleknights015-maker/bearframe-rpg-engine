@@ -190,3 +190,15 @@ test('installed-app memory stage verifies native callback, reload telemetry and 
  assert.match(host,/recoveryFailures\+\+/);
  assert.match(host,/restoring:!!restoring/);
 });
+
+
+test('failed renderer asset recovery exposes explicit user retry without advancing saves',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const boot=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
+ const html=fs.readFileSync(path.join(__dirname,'../enginehost/index.html'),'utf8');
+ assert.match(html,/<button id="runtime-assets-retry" type="button" disabled hidden>/);
+ assert.match(boot,/retryAssets\.addEventListener\('click',function\(\)\{[\s\S]*?memoryPressure\(80\)/);
+ assert.match(boot,/Scene restoration failed:[\s\S]*?retryAssets\.disabled=false;retryAssets\.hidden=false/);
+ assert.match(boot,/Asset loading failed:[\s\S]*?location\.reload\(\)/);
+ assert.match(boot,/if\(restoring\|\|!assets\.get\('terrain'\)\|\|!assets\.get\('characters'\)\)/);
+});
