@@ -73,3 +73,14 @@ test('bundled Android WebView loads port before session and includes event marke
  assert.match(read('android/build.sh'),/framework\/\*\.js/);
  assert.match(read('.github/workflows/engine-ci.yml'),/framework\/map-actors\.js/);
 });
+
+test('an explicit NPC display binding cannot silently point at missing art',()=>{
+ const source=clone(project),theme=clone(art);
+ theme.eventSprites.mechanic='missing-atlas-sprite';
+ assert.throws(()=>actors(source,theme),/Invalid NPC sprite binding mechanic/);
+ theme.eventSprites.mechanic='eventMarker';
+ theme.eventSprites.unknown='eventMarker';
+ assert.throws(()=>actors(source,theme),/Invalid NPC sprite binding unknown/);
+ delete theme.eventSprites.unknown;
+ assert.ok(actors(source,theme)('hub',{}).some(x=>x.id==='event:mechanic:2,2'));
+});
