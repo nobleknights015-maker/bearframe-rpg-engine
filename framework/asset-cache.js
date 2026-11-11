@@ -9,11 +9,14 @@ function createBearframeAssetCache(manifest,loader,options){
   validate(manifest);
   if(typeof loader!=='function')throw new TypeError('Asset loader required');
   options=options||{};
-  function bounded(value,min,max,fallback){
-    return Number.isInteger(value)&&value>=min&&value<=max?value:fallback;
+  function bounded(value,min,max,fallback,name){
+    if(value===undefined)return fallback;
+    if(!Number.isInteger(value)||value<min||value>max)
+      throw new RangeError('Invalid asset cache '+name);
+    return value;
   }
-  var maxEntries=bounded(options.maxEntries,1,4096,128);
-  var maxMemoryBytes=bounded(options.maxMemoryBytes,16384,268435456,33554432);
+  var maxEntries=bounded(options.maxEntries,1,4096,128,'maxEntries');
+  var maxMemoryBytes=bounded(options.maxMemoryBytes,16384,268435456,33554432,'maxMemoryBytes');
   var source=JSON.parse(JSON.stringify(manifest.assets));
   var cache=new Map(),inflight=new Map(),generation=0;
   var memory=0;
