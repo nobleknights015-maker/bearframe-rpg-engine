@@ -1094,6 +1094,9 @@ public final class RouteRunner extends Instrumentation {
             "if(!l||!stage)throw Error('Missing landscape host');" +
             "var rect=stage.getBoundingClientRect();" +
             "var npcAudit=BearframeHost.sceneVisibilityAudit();" +
+            "var navHost=BearframeHost.partyWorld,navRevision=navHost.view().sequence;" +
+            "var pathPlan=navHost.planPath({x:4,y:3});" +
+            "var pathUnchanged=navHost.view().sequence===navRevision;" +
             "var walker=createBearframeCharacterSpriteRenderer({" +
             "atlas:'characters',frameWidth:16,frameHeight:12,columns:3,rows:4});" +
             "var directional=walker.frameFor({direction:'left',moving:true,elapsedMs:300});" +
@@ -1120,7 +1123,8 @@ public final class RouteRunner extends Instrumentation {
             "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
-            "npcAudit:npcAudit,directional:directional,idle:idle," +
+            "npcAudit:npcAudit,pathPlan:pathPlan,pathUnchanged:pathUnchanged," +
+            "directional:directional,idle:idle," +
             "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
             "game:document.body.classList.contains('landscape-gameplay')," +
@@ -1135,6 +1139,12 @@ public final class RouteRunner extends Instrumentation {
            npcAudit.getInt("revisionBefore")!=npcAudit.getInt("revisionAfter")||
            !npcAudit.getJSONArray("actorIds").toString().contains("event:mechanic:2,2"))
             throw new AssertionError("Installed WebView hides a configured NPC: "+npcAudit);
+        JSONObject pathPlan=result.getJSONObject("pathPlan");
+        if(!pathPlan.getBoolean("ok")||pathPlan.getInt("cost")!=5||
+           !result.getBoolean("pathUnchanged")||
+           !"[\"down\",\"down\",\"right\",\"right\",\"right\"]".equals(
+             pathPlan.getJSONArray("directions").toString()))
+            throw new AssertionError("Installed pathfinder changed save or found unsafe route: "+result);
         JSONObject walk=result.getJSONObject("directional"),idle=result.getJSONObject("idle");
         if(walk.getInt("sx")!=32||walk.getInt("sy")!=12||
            walk.getInt("column")!=2||walk.getInt("row")!=1||
