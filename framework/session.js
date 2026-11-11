@@ -8,6 +8,8 @@ function createBearframeSession(project, storage, theme, opts) {
   var engineFactory=node?require('./runtime.js'):createBearframeEngine;
   var journalFactory=node?require('./save-slots.js'):createBearframeSaveSlots;
   var sceneFactory=node?require('./scene.js'):createBearframeSceneComposer;
+  var pathFactory=node?require('./pathfinding.js'):createBearframePathfinder;
+  var pathfinder=pathFactory(project);
   var engine=engineFactory(project);
   var journal=journalFactory(engine,storage,opts.slotPrefix);
   var scene=theme?sceneFactory(project,theme):null;
@@ -86,8 +88,22 @@ function createBearframeSession(project, storage, theme, opts) {
       renderOptions.actors=mapActors(current.player.map,current.flags);
     return scene.compose(engine.view(current),renderOptions);
   }
+  // Planning never dispatches movement. Event/exit/encounter tiles are
+  // treated as interruptions by default, matching the live runtime rules.
+  // Callers must confirm each movement through dispatch() and replan when
+  // the durable world state changes.
+  function planPath(destination,options){
+    if(!current)return {ok:false,reason:'not-started',
+      directions:[],positions:[],cost:0,visited:0};
+    var opts={},source=options||{};
+    for(var k in source)if(Object.prototype.hasOwnProperty.call(source,k)&&k!=='flags')
+      opts[k]=source[k];
+    opts.flags=current.flags;
+    return pathfinder.find(engine.view(current),destination,opts);
+  }
   function serialize() {return current?engine.serialize(current):null;}
   return Object.freeze({resume:resume,start:start,dispatch:dispatch,
-    verifySave:verifySave,snapshot:snapshot,compose:compose,serialize:serialize});
+    verifySave:verifySave,snapshot:snapshot,compose:compose,
+    planPath:planPath,serialize:serialize});
 }
 if(typeof module!=='undefined'&&module.exports)module.exports=createBearframeSession;
