@@ -1094,6 +1094,7 @@ public final class RouteRunner extends Instrumentation {
             "if(!l||!stage)throw Error('Missing landscape host');" +
             "var rect=stage.getBoundingClientRect();" +
             "var npcAudit=BearframeHost.sceneVisibilityAudit();" +
+            "var sceneryAudit=BearframeHost.sceneryLayerAudit();" +
             "var navHost=BearframeHost.partyWorld,navRevision=navHost.view().sequence;" +
             "var pathPlan=navHost.planPath({x:4,y:3});" +
             "var interaction=navHost.planPath({x:2,y:1},{allowDestinationTrigger:true});" +
@@ -1144,7 +1145,8 @@ public final class RouteRunner extends Instrumentation {
             "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
-            "npcAudit:npcAudit,pathPlan:pathPlan,interaction:interaction," +
+            "npcAudit:npcAudit,sceneryAudit:sceneryAudit," +
+            "pathPlan:pathPlan,interaction:interaction," +
             "pathUnchanged:pathUnchanged,layerOrder:layerOrder," +
             "directional:directional,idle:idle," +
             "coverage:(rect.width*rect.height)/(w*h)," +
@@ -1154,6 +1156,11 @@ public final class RouteRunner extends Instrumentation {
             "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
         JSONObject result=new JSONObject((String)new JSONTokener(reply).nextValue());
         if(result.has("error"))throw new AssertionError("Landscape JS failed: "+result);
+        JSONObject sceneryAudit=result.getJSONObject("sceneryAudit");
+        if(!sceneryAudit.getBoolean("ok")||
+           sceneryAudit.getInt("alteredPixels")<=20||
+           sceneryAudit.getInt("beforeRevision")!=sceneryAudit.getInt("afterRevision"))
+            throw new AssertionError("Installed WebView scenery overlay pixels missing: "+sceneryAudit);
         JSONObject npcAudit=result.getJSONObject("npcAudit");
         if(!npcAudit.getBoolean("ok")||
            npcAudit.getInt("eventActors")<2||
