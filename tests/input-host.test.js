@@ -48,6 +48,11 @@ test('controller tabs and save verification are presentation-only',()=>{
  assert.equal(h.screen(),'save');
  assert.equal(h.input.handle({type:'confirm'}),true);
  assert.equal(verify.clicked,1);
+ const diagnostics=h.button('save','#landscape-open-diagnostics');
+ diagnostics.focus();
+ assert.equal(h.input.handle({type:'confirm'}),true);
+ assert.equal(diagnostics.clicked,1,'highlighted save-screen action should activate');
+ assert.equal(verify.clicked,1,'save verification must not fire for another action');
  assert.equal(h.moves(),0);
  assert.equal(h.input.handle({type:'cancel'}),true);
  assert.equal(h.screen(),'world');
