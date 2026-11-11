@@ -558,6 +558,54 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("leveling",
             "PASS opt-in XP, ally skills, level growth, save and force-stop recovery");
     }
+    /** Exercise the visible integrated v2 world: real DOM buttons, one
+     * native journal, battle UI, progression, and two-process restart. */
+    private void checkUnifiedPartyWorldUi(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String response=evalHost("(function(){try{" +
+            "var h=window.BearframeHost&&BearframeHost.partyWorld;" +
+            "if(!h)return JSON.stringify({error:'world host missing'});" +
+            "function tap(sel){var b=document.querySelector(sel);" +
+            "if(!b||b.disabled)throw new Error('Missing or disabled '+sel);b.click();}" +
+            "if(!"+(restart?"true":"false")+"){" +
+            "tap('[data-party-world-dir=\\\"right\\\"]');" +
+            "tap('#party-world-events [data-event-choice=\\\"collect\\\"]');" +
+            "tap('#party-world-inventory [data-inventory-equip=\\\"blade\\\"]');" +
+            "tap('#party-world-inventory [data-inventory-equip=\\\"vest\\\"]');" +
+            "tap('#party-world-inventory [data-inventory-equip=\\\"charm\\\"]');" +
+            "tap('[data-party-world-dir=\\\"right\\\"]');" +
+            "tap('[data-party-world-dir=\\\"right\\\"]');" +
+            "var turns=0;while(h.battle()&&turns++<10)tap('#party-world-battle #party-commit');" +
+            "if(h.battle())throw new Error('Battle not completed');" +
+            "}else{tap('[data-party-world-dir=\\\"down\\\"]');}" +
+            "var v=h.view();" +
+            "return JSON.stringify({level:v.partyProgression.pilot.level," +
+            "xp:v.partyProgression.pilot.xp,skills:v.partyActors[0].skills," +
+            "gear:v.partyGear.pilot,valid:h.verifySave()," +
+            "display:document.getElementById('party-world-inventory').textContent," +
+            "revision:v.sequence,partySize:v.partyActors.length});" +
+            "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(response).nextValue());
+        if(proof.has("error"))
+            throw new AssertionError("Integrated party world WebView UI failed "+response);
+        JSONObject gear=proof.getJSONObject("gear");
+        if(proof.getInt("level")!=2||proof.getInt("xp")!=10||
+           proof.getInt("partySize")!=1||
+           !"blade".equals(gear.getString("weapon"))||
+           !"vest".equals(gear.getString("armor"))||
+           !"charm".equals(gear.getString("accessory"))||
+           !proof.getJSONArray("skills").toString().contains("focus")||
+           !proof.getString("display").contains("Level 2")||
+           !proof.getJSONObject("valid").getBoolean("ok")||
+           proof.getInt("revision")<(restart?9:8))
+            throw new AssertionError("Integrated party world UI/state did not persist "+response);
+        resultMeta.putString("partyWorldUI",
+            "PASS visible party world buttons, gear, combat, levels and native restart");
+    }
     private void checkUnifiedPartyInventoryUi(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1579,6 +1627,14 @@ public final class RouteRunner extends Instrumentation {
             if(stage.equals("unified-level-first") ||
                stage.equals("unified-level-second")){
                 checkUnifiedProgression(stage.equals("unified-level-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-party-world-ui-first") ||
+               stage.equals("unified-party-world-ui-second")){
+                checkUnifiedPartyWorldUi(stage.equals("unified-party-world-ui-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);

@@ -264,6 +264,16 @@ jobs:
             adb shell am instrument -w -e stage unified-level-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/level-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-level-second' "$RUNNER_TEMP/level-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/level-second.txt"
+            # Installed Android WebView: visible v2 world navigation, inventory,
+            # combat/XP progression, durable journal and process restart.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-world-ui-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-world-ui-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-world-ui-first' "$RUNNER_TEMP/party-world-ui-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-world-ui-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-world-ui-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-world-ui-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-world-ui-second' "$RUNNER_TEMP/party-world-ui-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-world-ui-second.txt"
             # Real WebView party inventory UI: item pickup, actor-specific
             # weapon/armor/accessory buttons, healing, physical copy counts,
             # then two-process recovery through native synchronous journal.
