@@ -494,7 +494,7 @@ public final class RouteRunner extends Instrumentation {
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         screen=startActivitySync(launch);
         unifiedSnapshot();
-        String result=evalHost("(function(){" +
+        String result=evalHost("(function(){try{" +
             "var p=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_FIXTURE));" +
             "p.items.vest={kind:'armor',name:'Test vest',defense:8,maxStack:2};" +
             "p.items.charm={kind:'accessory',name:'Test charm',attack:2,speed:3,maxStack:2};" +
@@ -514,7 +514,7 @@ public final class RouteRunner extends Instrumentation {
             "var panels=createBearframeRuntimePanels(ev,gear,status,p," +
             "function(){return s.snapshot().view},function(c){return s.dispatch(c)});" +
             "function find(attr,value,name){" +
-            "var all=gear.querySelectorAll('['+attr+'='+value+']');" +
+            "var all=gear.querySelectorAll('['+attr+'=\"'+value+'\"]');" +
             "for(var i=0;i<all.length;i++)if(all[i].textContent.indexOf(name)>=0)return all[i];" +
             "return null;}" +
             "function push(btn,tag){if(!btn||btn.disabled)return tag;btn.click();panels.render();return null;}" +
@@ -548,7 +548,8 @@ public final class RouteRunner extends Instrumentation {
             "inventory:view.inventory,quests:view.quests," +
             "pilotAttack:view.partyActors[0].attack," +
             "scoutAttack:view.partyActors[1].attack," +
-            "saved:s.verifySave()});})()");
+            "saved:s.verifySave()});}catch(error){" +
+            "return JSON.stringify({error:String(error),stack:String(error.stack||'')})}})()");
         JSONObject proof=new JSONObject((String)new JSONTokener(result).nextValue());
         if(proof.has("error"))
             throw new AssertionError("Party inventory browser action refused: "+result);
