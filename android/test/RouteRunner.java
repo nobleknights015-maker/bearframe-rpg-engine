@@ -693,6 +693,72 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("partyWorldMemory",
             "PASS native trim, v2 atlas pixel rehydration, input and isolated journal");
     }
+    /** Installed WebView: responsive v2 screen tabs are presentational only,
+     * preserve journal bytes, and return to real event controls on phase change. */
+    private void checkUnifiedPartyWorldScreens(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String result=evalHost("(function(){try{" +
+            "var h=BearframeHost.partyWorld,nav=BearframeHost.partyWorldScreens;" +
+            "if(!nav||!h)throw Error('Missing canonical screen bridge');" +
+            "var start=h.view().sequence;" +
+            "if(nav.current()!=='world')throw Error('Restart should open world screen');" +
+            "var tabs=document.querySelectorAll('#party-world-navigation [role=tab]');" +
+            "if(tabs.length!==3)throw Error('Incomplete screen navigation');" +
+            "function press(screen){var t=document.querySelector('[data-party-world-tab='+screen+']');" +
+            "if(!t)throw Error('Missing tab '+screen);t.click();return t;}" +
+            "var party=press('party');" +
+            "if(document.getElementById('pw-screen-party').hidden||" +
+            "!document.getElementById('pw-screen-world').hidden||" +
+            "party.getAttribute('aria-selected')!=='true')throw Error('Party screen not visible');" +
+            "var key=new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true});" +
+            "party.dispatchEvent(key);" +
+            "if(nav.current()!=='save')throw Error('Keyboard screen navigation failed');" +
+            "var save=document.getElementById('pw-screen-save');" +
+            "if(save.hidden)throw Error('Save panel hidden');" +
+            "document.getElementById('party-world-verify').click();" +
+            "if(!document.getElementById('party-world-save-status').textContent.includes('Verified'))" +
+            "throw Error('Save verification not visible');" +
+            "var afterTabs=h.view().sequence;" +
+            "if(!"+(restart?"true":"false")+"){" +
+            "press('world');" +
+            "document.querySelector('[data-party-world-dir=right]').click();" +
+            "if(nav.current()!=='world'||" +
+            "!document.activeElement.hasAttribute('data-event-choice'))" +
+            "throw Error('Event action not surfaced automatically');" +
+            "document.querySelector('#party-world-events [data-event-choice=collect]').click();" +
+            "press('party');" +
+            "var equip=document.querySelector('#party-world-inventory [data-inventory-equip=blade]');" +
+            "if(!equip||equip.disabled||!equip.getClientRects().length)" +
+            "throw Error('Inventory equip control not visible to touch');" +
+            "equip.click();" +
+            "}else{" +
+            "press('party');" +
+            "if(!document.getElementById('pw-screen-party').hidden===false)" +
+            "throw Error('Party screen visibility lost after restart');" +
+            "}" +
+            "var v=h.view();" +
+            "return JSON.stringify({initial:start,afterTabs:afterTabs,sequence:v.sequence," +
+            "weapon:v.partyGear.pilot.weapon,selected:nav.current()," +
+            "verified:h.verifySave(),tabs:tabs.length});" +
+            "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(result).nextValue());
+        if(proof.has("error"))
+            throw new AssertionError("Installed party screen navigation failed: "+result);
+        if(proof.getInt("initial")!=(restart?3:0)||
+           proof.getInt("afterTabs")!=proof.getInt("initial")||
+           proof.getInt("sequence")!=3||
+           proof.getInt("tabs")!=3||
+           !"blade".equals(proof.getString("weapon"))||
+           !"party".equals(proof.getString("selected"))||
+           !proof.getJSONObject("verified").getBoolean("ok"))
+            throw new AssertionError("Screen navigation altered durable state: "+result);
+        resultMeta.putString("partyScreens",
+            "PASS touch/keyboard screen navigation, event focus, journal and restart");
+    }
     private void checkUnifiedPartyWorldCanvas(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1827,6 +1893,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedPartyWorldMemory();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-party-world-memory");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-party-screens-first") ||
+               stage.equals("unified-party-screens-second")){
+                checkUnifiedPartyWorldScreens(stage.equals("unified-party-screens-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
