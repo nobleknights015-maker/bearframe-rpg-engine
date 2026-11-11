@@ -43,6 +43,25 @@ var playerDraw=null;
 for(var i=0;i<frame.commands.length;i++)if(frame.commands[i].actor==='player')playerDraw=frame.commands[i];
 ensure(playerDraw&&playerDraw.source.x===32,'animated sprite frame selected');
 print('PASS portable scene camera and sprite commands under Rhino');
+var animatedArt=JSON.parse(JSON.stringify(art));
+animatedArt.tiles.floor={ticksPerFrame:2,frames:[
+  {atlas:'tiles',x:0,y:0,w:32,h:32},
+  {atlas:'tiles',x:64,y:0,w:32,h:32}]};
+var animation=createBearframeSceneComposer(FRAMEWORK_FIXTURE,animatedArt);
+var frameA=animation.compose(engine.view(state),{width:96,height:96,tick:0});
+var frameB=animation.compose(engine.view(state),{width:96,height:96,tick:2});
+function baseTileAt(packet,x,y){
+ for(var j=0;j<packet.commands.length;j++){
+  var command=packet.commands[j];
+  if(command.layer===0&&command.world.x===x&&command.world.y===y)
+    return command.source.x;
+ }
+ return null;
+}
+ensure(baseTileAt(frameA,1,1)===0&&baseTileAt(frameB,1,1)===64,
+  'animated tiles select frames under Rhino');
+ensure(state.sequence===0,'tile animation must not advance gameplay');
+print('PASS animated tile frame selection under Rhino');
 
 var audio=createBearframeAudioDirector({
  theme:{type:'music',path:'audio/music/theme.ogg',loop:true},
