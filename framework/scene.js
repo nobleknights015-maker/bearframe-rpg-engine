@@ -53,7 +53,7 @@ function createBearframeSceneComposer(project,theme){
   Object.keys(project.maps).forEach(function(mapId){
     var layers=project.maps[mapId].visualLayers||[];
     var prepared={ground:{},canopy:{}};
-    layers.forEach(function(layer){
+    layers.forEach(function(layer,layerIndex){
       var rows=prepared[layer.depth];
       Object.keys(layer.cells).forEach(function(at){
         var tileId=layer.cells[at];
@@ -61,12 +61,14 @@ function createBearframeSceneComposer(project,theme){
           throw new TypeError('Unknown visual tile '+tileId+' on '+mapId);
         var xy=at.split(','),x=+xy[0],y=+xy[1];
         if(!rows[y])rows[y]=[];
-        rows[y].push({x:x,frame:theme.tiles[tileId]});
+        rows[y].push({x:x,frame:theme.tiles[tileId],order:layerIndex});
       });
     });
     ['ground','canopy'].forEach(function(depth){
       Object.keys(prepared[depth]).forEach(function(y){
-        prepared[depth][y].sort(function(a,b){return a.x-b.x;});
+        // Rhino and Chromium need identical painter order when two
+        // layers place different art at the same coordinate.
+        prepared[depth][y].sort(function(a,b){return a.x-b.x||a.order-b.order;});
       });
     });
     scenery[mapId]=prepared;
