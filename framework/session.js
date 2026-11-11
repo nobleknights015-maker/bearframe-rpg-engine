@@ -79,7 +79,9 @@ function createBearframeSession(project, storage, theme, opts) {
     // Engine v1-style map event sprites are rendered from the same saved
     // snapshot, never from UI-owned state. Explicit caller actors remain
     // supported and take precedence (e.g. cutscenes and diagnostic tests).
-    var renderOptions=Object.assign({},options||{});
+    var renderOptions={},opts=options||{};
+    for(var key in opts)if(Object.prototype.hasOwnProperty.call(opts,key))
+      renderOptions[key]=opts[key];
     if(!Object.prototype.hasOwnProperty.call(renderOptions,'actors')&&mapActors)
       renderOptions.actors=mapActors(current.player.map,current.flags);
     return scene.compose(engine.view(current),renderOptions);
