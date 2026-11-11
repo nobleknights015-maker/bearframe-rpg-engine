@@ -21,6 +21,28 @@ function createBearframeLandscapePager(roots){
     if(id==='battle')return all.filter(function(n){return n.classList.contains('party-command');});
     return all.filter(function(n){return n.hasAttribute('data-event-choice');});
   }
+  // A controller-activated Next/Previous button is removed when the pager
+  // rerenders. Transfer focus into the newly visible page so the next A/Cross
+  // press never lands on a stale button or selects an invisible old choice.
+  function focusVisible(id){
+    var items=candidates(id),target=null;
+    for(var i=0;i<items.length;i++){
+      var item=items[i];
+      if(item.hasAttribute('data-engine-page-hidden'))continue;
+      if((item.tagName==='BUTTON'||item.tagName==='SELECT')&&!item.disabled)
+        target=item;
+      else if(typeof item.querySelector==='function')
+        target=item.querySelector('button:not([disabled]),select:not([disabled])');
+      if(target&&typeof target.focus==='function')break;
+      target=null;
+    }
+    if(!target){
+      var nav=specs[id].root.querySelector('.engine-page-nav');
+      if(nav)target=nav.querySelector('button:not([disabled])');
+    }
+    if(target&&typeof target.focus==='function'){target.focus();return true;}
+    return false;
+  }
   function refresh(id,reset){
     if(!Object.prototype.hasOwnProperty.call(specs,id))
       throw new TypeError('Unknown engine pager');
@@ -44,7 +66,12 @@ function createBearframeLandscapePager(roots){
       el.type='button';el.textContent=text;
       el.setAttribute('data-engine-page',id+':'+step);
       el.disabled=state[id]+step<0||state[id]+step>=count;
-      el.addEventListener('click',function(){state[id]+=step;refresh(id,false);});
+      el.addEventListener('click',function(){
+        var focused=cfg.root.ownerDocument.activeElement===el;
+        state[id]+=step;
+        refresh(id,false);
+        if(focused)focusVisible(id);
+      });
       return el;
     }
     nav.appendChild(button('Previous',-1));
