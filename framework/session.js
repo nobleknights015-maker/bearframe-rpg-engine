@@ -95,6 +95,9 @@ function createBearframeSession(project, storage, theme, opts) {
   function planPath(destination,options){
     if(!current)return {ok:false,reason:'not-started',
       directions:[],positions:[],cost:0,visited:0};
+    if(current.prompt||current.battle||current.partyBattle)
+      return {ok:false,reason:'busy',directions:[],positions:[],
+        cost:0,visited:0};
     var opts={},source=options||{};
     for(var k in source)if(Object.prototype.hasOwnProperty.call(source,k)&&k!=='flags')
       opts[k]=source[k];
