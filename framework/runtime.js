@@ -96,9 +96,53 @@ function createBearframeEngine(project) {
   function take(s,item,qty) {
     if((s.inventory[item]||0)<qty)return false;
     s.inventory[item]-=qty;
-    if(!s.inventory[item]) {
-      delete s.inventory[item];
-      if(s.equipment.weapon===item)s.equipment.weapon=null;
+    if(!s.inventory[item])delete s.inventory[item];
+    // Inventory owns physical copies; equipped weapons are reservations,
+    // not duplicated objects. A scripted "take" may revoke an equipped copy.
+    if(s.equipment.weapon===item&&(s.inventory[item]||0)===0)
+      s.equipment.weapon=null;
+    if(party){
+      var used=s.equipment.weapon===item?1:0;
+      for(var i=0;i<s.allies.length;i++){
+        var stats=s.allyStats[s.allies[i]];
+        if(stats.weapon===item){
+          if(used<(s.inventory[item]||0))used++;
+          else delete stats.weapon;
+        }
+      }
+    }
+    return true;
+  }
+  function gearOwner(s,actorId) {
+    if(!party||actorId===undefined||actorId===party.playerId)return null;
+    if(typeof actorId!=='string'||s.allies.indexOf(actorId)===-1)return false;
+    return s.allyStats[actorId];
+  }
+  function equippedCount(s,item){
+    var count=s.equipment.weapon===item?1:0;
+    if(party)for(var i=0;i<s.allies.length;i++)
+      if(s.allyStats[s.allies[i]].weapon===item)count++;
+    return count;
+  }
+  function equipTo(s,actorId,item){
+    var owner=gearOwner(s,actorId);
+    if(owner===false||!has(project.items,item)||
+       project.items[item].kind!=='weapon'||!s.inventory[item])return false;
+    var previous=owner===null?s.equipment.weapon:(owner.weapon||null);
+    if(previous===item||equippedCount(s,item)>=s.inventory[item])return false;
+    if(owner===null)s.equipment.weapon=item;
+    else owner.weapon=item;
+    return true;
+  }
+  function unequipFrom(s,actorId){
+    var owner=gearOwner(s,actorId);
+    if(owner===false)return false;
+    if(owner===null){
+      if(s.equipment.weapon===null)return false;
+      s.equipment.weapon=null;
+    }else{
+      if(!owner.weapon)return false;
+      delete owner.weapon;
     }
     return true;
   }
@@ -223,12 +267,10 @@ function createBearframeEngine(project) {
       switch(command.type) {
         case 'move':changed=move(s,command.dir);break;
         case 'equip':
-          if(has(project.items,command.item)&&project.items[command.item].kind==='weapon'&&s.inventory[command.item]){
-            if(s.equipment.weapon!==command.item){s.equipment.weapon=command.item;changed=true;}
-          }
+          changed=equipTo(s,command.actor,command.item);
           break;
         case 'unequip':
-          if(s.equipment.weapon!==null){s.equipment.weapon=null;changed=true;}
+          changed=unequipFrom(s,command.actor);
           break;
         case 'use':
           if(has(project.items,command.item)&&project.items[command.item].kind==='consumable'&&s.inventory[command.item]){
@@ -263,6 +305,7 @@ function createBearframeEngine(project) {
     if(party){
       result.partyBattle=s.partyBattle?clone(s.partyBattle):null;
       result.partyActors=party.rosterView(s);
+      result.partyEquipment=party.equipmentView(s);
       if(s.partyBattle){
         // HUD resources show live encounter state, not pre-battle checkpoint.
         result.hp=result.partyActors[0].hp;

@@ -44,12 +44,23 @@ function createBearframePartyRuntime(spec, project, rules) {
        typeof state.allyStats!=='object'||Array.isArray(state.allyStats)||
        state.allies.length>5||count(state.allyStats)!==state.allies.length ||
        state.battle!==null)return false;
+    var allocated={};
+    if(state.equipment.weapon!==null)allocated[state.equipment.weapon]=1;
     for(var i=0;i<state.allies.length;i++){
       var id=state.allies[i],member=state.allyStats[id],template=spec.allies[id];
       if(!template||!member||!Number.isInteger(member.hp)||member.hp<0||
          member.hp>template.maxHp||!Number.isInteger(member.mp)||
          member.mp<0||member.mp>template.maxMp)return false;
+      var weapon=member.weapon;
+      if(weapon!==undefined&&weapon!==null){
+        if(typeof weapon!=='string'||!has(project.items,weapon)||
+           project.items[weapon].kind!=='weapon')return false;
+        allocated[weapon]=(allocated[weapon]||0)+1;
+      }
     }
+    var assigned=Object.keys(allocated);
+    for(var n=0;n<assigned.length;n++)
+      if((state.inventory[assigned[n]]||0)<allocated[assigned[n]])return false;
     if(state.partyBattle===null)return true;
     var b=state.partyBattle;
     if(!b||!has(spec.enemies,b.foe)||typeof b.origin!=='string'||
@@ -77,9 +88,21 @@ function createBearframePartyRuntime(spec, project, rules) {
     var roster=[lead];
     for(var i=0;i<state.allies.length;i++){
       var id=state.allies[i],actor=copy(spec.allies[id]),stats=state.allyStats[id];
-      actor.hp=stats.hp;actor.mp=stats.mp;roster.push(actor);
+      actor.hp=stats.hp;actor.mp=stats.mp;
+      if(stats.weapon!==undefined&&stats.weapon!==null)
+        actor.attack=Math.min(9999,actor.attack+project.items[stats.weapon].power);
+      roster.push(actor);
     }
     return roster;
+  }
+  function equipmentView(state){
+    var gear={};
+    gear[player.id]=state.equipment.weapon;
+    for(var i=0;i<state.allies.length;i++){
+      var id=state.allies[i];
+      gear[id]=state.allyStats[id].weapon||null;
+    }
+    return gear;
   }
   function rosterView(state){
     // While fighting, the encounter owns live HP/MP/status values.
@@ -144,7 +167,7 @@ function createBearframePartyRuntime(spec, project, rules) {
   }
   return Object.freeze({initialize:initialize,addAlly:addAlly,valid:valid,
     begin:begin,round:round,rosterView:rosterView,
-    healTarget:healTarget,playerId:player.id});
+    equipmentView:equipmentView,healTarget:healTarget,playerId:player.id});
 }
 if(typeof module!=='undefined'&&module.exports)
   module.exports=createBearframePartyRuntime;

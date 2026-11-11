@@ -54,9 +54,24 @@ function createBearframeRuntimePanels(eventRoot,gearRoot,status,project,view,dis
       line.className='inventory-line';
       line.appendChild(el('span',item.name+' ×'+v.inventory[id]));
       if(item.kind==='weapon'){
-        action(line,v.weapon===id?'Equipped: '+item.name:'Equip '+item.name,
-          'data-inventory-equip',id,{type:'equip',item:id},
-          locked||v.weapon===id);
+        if(v.partyActors&&v.partyEquipment){
+          var allocated=0;
+          Object.keys(v.partyEquipment).forEach(function(actorId){
+            if(v.partyEquipment[actorId]===id)allocated++;
+          });
+          v.partyActors.forEach(function(actor){
+            var worn=v.partyEquipment[actor.id]||null;
+            action(line,worn===id?'Equipped by '+actor.name:
+              'Equip '+item.name+' on '+actor.name,
+              'data-inventory-equip',id,
+              {type:'equip',item:id,actor:actor.id},
+              locked||worn===id||allocated>=v.inventory[id]);
+          });
+        }else{
+          action(line,v.weapon===id?'Equipped: '+item.name:'Equip '+item.name,
+            'data-inventory-equip',id,{type:'equip',item:id},
+            locked||v.weapon===id);
+        }
       }else if(item.kind==='consumable'){
         if(v.partyActors&&v.partyActors.length>1){
           v.partyActors.forEach(function(actor){
@@ -72,7 +87,14 @@ function createBearframeRuntimePanels(eventRoot,gearRoot,status,project,view,dis
       }
       gearRoot.appendChild(line);
     });
-    if(v.weapon!==null)
+    if(v.partyActors&&v.partyEquipment){
+      v.partyActors.forEach(function(actor){
+        if(v.partyEquipment[actor.id])
+          action(gearRoot,'Unequip '+actor.name+' weapon',
+            'data-inventory-unequip',actor.id,
+            {type:'unequip',actor:actor.id},locked);
+      });
+    }else if(v.weapon!==null)
       action(gearRoot,'Unequip weapon','data-inventory-unequip','true',
         {type:'unequip'},locked);
     var questIds=Object.keys(v.quests).sort();

@@ -181,3 +181,31 @@ This is an **opt-in safeguard** until project content versioning and the
 migration API are frozen for v1. Browser, Rhino, Node and installed Android
 regressions exercise the binding. The content fingerprint does not protect
 against deliberate checksum forgery and is not a security signature.
+
+
+## Shared physical weapon inventory and per-party equipment (v2)
+
+The canonical optional-party runtime supports `equip` and `unequip`
+with `actor:'scout'` to manage a recruited character's weapon, while
+omitting `actor` retains the lead-character behavior. Every weapon is
+still an item in the one shared inventory. **An equipped item reserves
+a physical copy**: two characters cannot both equip a single-copy
+weapon. A scripted `take` that reduces the quantity of an equipped
+item reconciles those reservations deterministically (the lead retains
+priority, then allies in party order). Failed actions never consume a
+turn or write a save.
+
+This is backward-compatible with already-created v2 party saves: only
+a character who equips a weapon gains the optional `weapon` field in
+`allyStats[id]`; older v2 saves without that field remain valid. The
+existing top-level `equipment.weapon` remains authoritative for the
+lead. The view adds `partyEquipment` (read-only actor IDs to equipped
+item IDs) and the v2 roster applies each actor's weapon attack bonus
+at encounter creation. The generic inventory panel renders per-actor
+equip and unequip buttons and accounts for reserved quantities.
+All operations go through the original two-slot journal, not a new
+gear store. V1 runtime saves and commands remain unchanged.
+
+This completes the core **shared item/weapon inventory transaction**
+contract; a full multi-slot armor/accessory system, per-member skill
+progression, and final production menus are separate release features.

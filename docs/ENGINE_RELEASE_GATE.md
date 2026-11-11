@@ -215,3 +215,22 @@ The Android host now includes a two-process content-bind regression. See
 **Remaining release gate:** migration/rollback for changed project content,
 production version naming/signing, real-device acceptance, full engine
 UI/progression and audio/asset/performance work. No release completion claim.
+
+
+## Shared v2 inventory and per-actor weapon equipment — November 10
+
+The canonical v2 party implementation now permits equipping and
+unequipping weapons for any recruited actor using the same shared
+inventory/journal. No item copy may be assigned more times than it is
+owned; event-driven item removals reconcile equipment deterministically;
+all saved state remains v2-compatible with old states lacking per-ally
+weapon fields. Party combat attack uses each member's equipment.
+The generic inventory controls render per-party-member buttons and
+disable assignments when no unreserved item remains. V1 behavior
+is preserved. Automated regressions cover duplication refusal, scripted
+removal, save write failure, persistence, serialization, and combat.
+
+**Not yet complete:** multi-slot accessories/armor, generalized party
+progression, production-quality screen UX, signed upgrade and physical
+Android acceptance. Do not claim the full inventory/equipment release
+gate complete solely from a successful single-weapon schema integration.
