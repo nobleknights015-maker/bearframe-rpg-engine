@@ -105,6 +105,29 @@ function createBearframeRuntimePanels(eventRoot,gearRoot,status,project,view,dis
             {type:'unequip',slot:slot},locked);
       });
     }
+    // Common world and encounter HUD: use the canonical cloned roster, so
+    // live encounter HP/MP/status is visible without a second battle state.
+    if(v.partyActors&&v.partyActors.length){
+      var partySummary=el('section');
+      partySummary.className='party-roster-summary';
+      partySummary.setAttribute('aria-label','Party status');
+      partySummary.appendChild(el('h3','Party status'));
+      v.partyActors.forEach(function(actor){
+        var line=el('p',actor.name+' · HP '+actor.hp+'/'+actor.maxHp+
+          ' · MP '+actor.mp+'/'+actor.maxMp+
+          ' · ATK '+actor.attack+' · DEF '+actor.defense+
+          ' · SPD '+actor.speed);
+        line.setAttribute('data-party-actor',actor.id);
+        partySummary.appendChild(line);
+        if(actor.statuses&&actor.statuses.length){
+          var ailments=actor.statuses.map(function(status){
+            return status.type+' ('+status.turns+' rounds)';
+          }).join(', ');
+          partySummary.appendChild(el('p','Effects: '+ailments));
+        }
+      });
+      gearRoot.appendChild(partySummary);
+    }
     if(v.partyProgression){
       Object.keys(v.partyProgression).forEach(function(actorId){
         var info=v.partyProgression[actorId];

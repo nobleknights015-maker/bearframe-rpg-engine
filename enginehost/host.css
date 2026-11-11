@@ -54,3 +54,9 @@ fieldset button:disabled{opacity:.45}
 #party-world-battle select{min-height:48px;padding:8px;border-radius:6px;
   border:1px solid #768da4;background:#253346;color:#fff}
 @media (max-width:360px){main{padding:12px}.party-world-section{padding:10px}}
+
+/* Shared world/battle party status; no duplicate simulation storage. */
+.party-roster-summary{padding:10px 12px;margin:8px 0;
+  border:1px solid #566e88;border-radius:8px;background:#172334}
+.party-roster-summary h3{font-size:16px;margin:0 0 8px}
+.party-roster-summary p{font-size:14px;line-height:1.45;margin:5px 0}
