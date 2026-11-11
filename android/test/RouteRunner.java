@@ -1094,6 +1094,10 @@ public final class RouteRunner extends Instrumentation {
             "if(!l||!stage)throw Error('Missing landscape host');" +
             "var rect=stage.getBoundingClientRect();" +
             "var npcAudit=BearframeHost.sceneVisibilityAudit();" +
+            "var walker=createBearframeCharacterSpriteRenderer({" +
+            "atlas:'characters',frameWidth:16,frameHeight:12,columns:3,rows:4});" +
+            "var directional=walker.frameFor({direction:'left',moving:true,elapsedMs:300});" +
+            "var idle=walker.frameFor({direction:'up',moving:false});" +
             "var w=window.visualViewport?window.visualViewport.width:innerWidth;" +
             "var h=window.visualViewport?window.visualViewport.height:innerHeight;" +
             "var insets={top:12,right:18,bottom:8,left:22};" +
@@ -1116,7 +1120,7 @@ public final class RouteRunner extends Instrumentation {
             "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
-            "npcAudit:npcAudit," +
+            "npcAudit:npcAudit,directional:directional,idle:idle," +
             "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
             "game:document.body.classList.contains('landscape-gameplay')," +
@@ -1131,6 +1135,11 @@ public final class RouteRunner extends Instrumentation {
            npcAudit.getInt("revisionBefore")!=npcAudit.getInt("revisionAfter")||
            !npcAudit.getJSONArray("actorIds").toString().contains("event:mechanic:2,2"))
             throw new AssertionError("Installed WebView hides a configured NPC: "+npcAudit);
+        JSONObject walk=result.getJSONObject("directional"),idle=result.getJSONObject("idle");
+        if(walk.getInt("sx")!=32||walk.getInt("sy")!=12||
+           walk.getInt("column")!=2||walk.getInt("row")!=1||
+           idle.getInt("sx")!=16||idle.getInt("sy")!=36)
+            throw new AssertionError("Installed Engine v1 directional sprite mapping failed: "+result);
         JSONArray fits=result.getJSONArray("fits");
         for(int i=0;i<fits.length();i++)
             if(!fits.getBoolean(i))
