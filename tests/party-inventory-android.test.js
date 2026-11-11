@@ -10,6 +10,11 @@ test('Android installed inventory buttons exercise party equipment and native sa
  assert.match(java,/data-inventory-unequip/);
  assert.match(java,/s\.verifySave\(\)/);
  assert.match(java,/duplicate weapon available/);
+ assert.match(java,/gear\\.querySelectorAll/);
+ assert.match(java,/return JSON\\.stringify\\(\\{error:String\\(error\\)/);
+ // Native UI test must quote slot IDs containing punctuation.
+ assert.ok(java.includes("'+value+'\\\\\"]"),'inventory CSS selector must quote values');
+
  assert.match(ci,/stage unified-gear-ui-first/);
  assert.match(ci,/stage unified-gear-ui-second/);
  assert.match(ci,/am force-stop dev\.bearframe\.ridge/);
