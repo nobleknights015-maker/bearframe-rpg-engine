@@ -67,6 +67,22 @@ function createBearframeWorldInput(screens,view,navigate,roots){
   function byQuery(screen,selector){
     return roots[screen].querySelector(selector);
   }
+  // Paged landscape menus place Next/Previous inside the visible action
+  // region. Controller Confirm must activate those buttons, never mistake
+  // them for a choice or prematurely submit the party's combat round.
+  function confirmPage(screen,world,node){
+    if(!node||typeof node.getAttribute!=='function')return false;
+    var page=node.getAttribute('data-engine-page');
+    var section=screen==='party'?'inventory':
+      screen==='world'&&world.prompt?'events':
+      screen==='world'&&world.partyBattle?'battle':null;
+    if(!section||(page!==section+':-1'&&page!==section+':1'))
+      return false;
+    // Reject stale/detached controls and choices hidden by the no-scroll
+    // pager. A page button must be in the current visible action list.
+    if(actions(screen,world).indexOf(node)<0)return false;
+    return click(node);
+  }
   function turnTab(delta){
     var index=tabs.indexOf(screens.current());
     screens.select(tabs[(index+delta+tabs.length)%tabs.length],true);
@@ -99,6 +115,12 @@ function createBearframeWorldInput(screens,view,navigate,roots){
       if(mode==='save')return click(byQuery('save','#party-world-verify'));
       if(mode==='world'&&v.prompt){
         var focused=rootActive();
+        if(focused&&focused.hasAttribute&&focused.hasAttribute('data-engine-page'))
+          return confirmPage('world',v,focused);
+        // The event close action is a legitimate focused action; selecting
+        // it must never silently choose the first dialogue answer instead.
+        if(focused&&focused.hasAttribute&&focused.hasAttribute('data-event-close'))
+          return actions('world',v).indexOf(focused)>=0&&click(focused);
         return click(focused&&focused.hasAttribute&&
           focused.hasAttribute('data-event-choice')?focused:
           byQuery('world','[data-event-choice]'));
@@ -107,6 +129,8 @@ function createBearframeWorldInput(screens,view,navigate,roots){
         // A/Cross must not commit a default round before the player has
         // been able to select each actor's ability and target.
         var selected=rootActive();
+        if(selected&&selected.hasAttribute&&selected.hasAttribute('data-engine-page'))
+          return confirmPage('world',v,selected);
         if(selected&&selected.id==='party-commit')
           return click(selected);
         return focusStep('world',1,v);
