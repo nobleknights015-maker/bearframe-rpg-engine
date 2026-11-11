@@ -87,6 +87,8 @@ test('planner loads before session in Android WebView and real Rhino check',()=>
  assert.ok(html.indexOf('pathfinding.js')<html.indexOf('session.js'));
  assert.match(source('.github/workflows/engine-ci.yml'),/framework\/pathfinding\.js/);
  assert.match(source('tests/framework-rhino.js'),/unified\.planPath/);
+ assert.match(source('android/test/RouteRunner.java'),/navHost\.planPath\(\{x:4,y:3\}\)/);
+ assert.match(source('android/test/RouteRunner.java'),/pathPlan\.getInt\("cost"\)!=5/);
  assert.match(source('android/build.sh'),/framework\/\*\.js/);
 });
 
