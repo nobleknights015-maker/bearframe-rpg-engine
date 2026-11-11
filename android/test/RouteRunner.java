@@ -1100,6 +1100,12 @@ public final class RouteRunner extends Instrumentation {
             "var pathPlan=navHost.planPath({x:4,y:3});" +
             "var interaction=navHost.planPath({x:2,y:1},{allowDestinationTrigger:true});" +
             "var pathUnchanged=navHost.view().sequence===navRevision;" +
+            "var cameraScene=navHost.compose({width:64,height:64,tick:0," +
+            "cameraTarget:{x:5,y:3}});" +
+            "var cameraSafe=cameraScene.camera.x===144&&" +
+            "cameraScene.camera.y===80&&" +
+            "navHost.view().sequence===navRevision&&" +
+            "navHost.view().x===1&&navHost.view().y===1;" +
             "var layerProject=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_FIXTURE));" +
             "layerProject.maps.hub.visualLayers=[" +
             "{depth:'ground',cells:{'1,1':'floor'}}," +
@@ -1149,7 +1155,7 @@ public final class RouteRunner extends Instrumentation {
             "npcAudit:npcAudit,sceneryAudit:sceneryAudit," +
             "animationAudit:animationAudit," +
             "pathPlan:pathPlan,interaction:interaction," +
-            "pathUnchanged:pathUnchanged,layerOrder:layerOrder," +
+            "pathUnchanged:pathUnchanged,layerOrder:layerOrder,cameraSafe:cameraSafe," +
             "directional:directional,idle:idle," +
             "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
@@ -1175,6 +1181,8 @@ public final class RouteRunner extends Instrumentation {
            npcAudit.getInt("revisionBefore")!=npcAudit.getInt("revisionAfter")||
            !npcAudit.getJSONArray("actorIds").toString().contains("event:mechanic:2,2"))
             throw new AssertionError("Installed WebView hides a configured NPC: "+npcAudit);
+        if(!result.getBoolean("cameraSafe"))
+            throw new AssertionError("Camera pan mutated or misplaced canonical world: "+result);
         if(!result.getBoolean("layerOrder"))
             throw new AssertionError("Installed scene painter order hides character layers: "+result);
         JSONObject pathPlan=result.getJSONObject("pathPlan");
