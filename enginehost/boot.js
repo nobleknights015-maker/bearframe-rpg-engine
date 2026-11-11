@@ -245,6 +245,9 @@
       },FRAMEWORK_PARTY_WORLD_FIXTURE.partyCombat.skills,function(outcome){
         if(outcome.ok)renderPartyWorld();
         else partyWorldStatus.textContent='Party order refused: '+outcome.reason;
+        // The host owns repaint/paging after a successful turn; on failure
+        // retain the existing controls and page rather than rebuilding.
+        return true;
       });
     var landscapePages=createBearframeLandscapePager({
       events:document.getElementById('party-world-events'),
