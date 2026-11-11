@@ -107,6 +107,11 @@ var unified=createBearframeSession(FRAMEWORK_FIXTURE,unifiedStorage,art,{slotPre
 ensure(unified.start('Shared core',79).ok,'unified Rhino session starts');
 ensure(unified.dispatch({type:'move',dir:'down'}).ok,'unified Rhino move');
 ensure(unified.snapshot().view.y===2,'unified Rhino moved to row 2');
+var planned=unified.planPath({x:1,y:3});
+ensure(planned.ok&&planned.directions.length===1&&planned.directions[0]==='down',
+  'Rhino deterministic shortest path');
+ensure(unified.snapshot().view.sequence===1,
+  'Rhino path planning cannot advance saved state');
 var unifiedReload=createBearframeSession(FRAMEWORK_FIXTURE,unifiedStorage,art,{slotPrefix:'bf:rhino:v1:unified'});
 ensure(unifiedReload.resume().ok,'unified Rhino session resumes');
 ensure(unifiedReload.snapshot().view.sequence===1,'unified Rhino retained committed revision');
