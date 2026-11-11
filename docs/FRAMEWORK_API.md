@@ -101,6 +101,33 @@ invisible. The included APK test fixture uses diagnostic sprites only.
 
 This intentionally supports original multi-frame sprite art and scalable maps instead of locking game content to the prototype's hand-coded shapes.
 
+### Optional tile scenery (below and above characters)
+
+The existing `map.rows` retain authoritative wall/floor collision geometry.
+Optional `map.visualLayers` add presentation-only scenery without rewriting
+older maps or the saved world state:
+
+```js
+visualLayers: [
+  {depth: 'ground', cells: {'3,2': 'grass'}},
+  {depth: 'canopy', cells: {'4,1': 'archway'}}
+]
+```
+
+Each named tile must exist as a tile-sized atlas rectangle in `theme.tiles`
+(the existing `floor` and `wall` definitions are still required).
+`ground` scenery draws after collision tiles but before characters;
+`canopy` scenery draws after characters. The composer camera-culls
+decorations by visible rows and refuses unknown tile IDs, wrong dimensions,
+invalid layer placements and out-of-bounds coordinates before drawing.
+Up to six visual layers per map are supported. A visual tile may cover a
+solid wall without changing its collision rule. Node tests exercise a
+256×256-tile map and preserve pre-existing save bytes; the installed Android
+WebView regression also checks actual painter ordering.
+
+This is an engine rendering feature, not a new tile editor, dynamic object
+system, or a claim that final Bearframe environments are complete.
+
 ### Read-only navigation plans
 
 `framework/pathfinding.js` supplies deterministic shortest cardinal routes on
