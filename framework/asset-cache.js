@@ -113,6 +113,10 @@ function createBearframeAssetCache(manifest,loader,options){
       clear();
       return {evicted:count,memoryBytes:0};
     }
+    // A noncritical trim is also a memory-pressure boundary: pending decodes
+    // started before it must not refill the cache after the host trims it.
+    // Callers still receive their decoded result, but it is not retained.
+    if(inflight.size){generation++;inflight.clear();}
     var evicted=0;
     while(memory>targetBytes&&cache.size){
       var oldest=cache.keys().next().value;
