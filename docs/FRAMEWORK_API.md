@@ -58,6 +58,47 @@ Persist the same `project.id` and schema version for compatible saves. Future st
 
 Create a scene composer with a pixel-art theme containing `tileSize`, `clearColor`, `atlases`, `tiles.floor`, `tiles.wall`, and `sprites.player`. Other sprites are optional and referenced by actors. Every atlas and sprite frame is bounds-checked. `compose(view,{width,height,tick,actors})` returns deterministic `clear` and `sprite` commands; it never accesses images, a Canvas or an Android renderer. The renderer supplies loaded atlases by `imageId`, draws source rectangles at destination rectangles without smoothing, and clips to the viewport.
 
+### Optional Engine v1 directional character-sheet adapter
+
+`framework/character-sprites.js` is adapted from the original Engine v1
+`CharacterSpriteRenderer`. Existing `sprites.player.frames` definitions
+remain valid. For a 3-column by 4-direction sheet, a theme may instead declare:
+
+```js
+sprites: {
+  player: {
+    sheet: {
+      atlas: 'characters',
+      frameWidth: 32,
+      frameHeight: 48,
+      columns: 3,
+      rows: 4,
+      stepFrames: [0, 1, 2, 1],
+      stepDurationMs: 150
+    }
+  }
+}
+```
+
+Direction rows are **down, left, right, up** (also numeric 2, 4, 6, 8).
+Idle actors select the center column; moving actors use the deterministic
+step sequence. The composing host can pass `playerDirection`,
+`playerMoving` and optional `playerPattern`; extra actors in `actors`
+can specify `direction`, `moving`, and `pattern`. The scene's `tick`
+maps to a presentation time of `tick * 50ms`. The host owns that clock;
+it is not saved in the game journal. Atlas dimensions, sheet extents,
+walking patterns and directions are validated before render, and pixel
+smoothing remains disabled.
+
+Map-event visuals use the Engine v1-derived `framework/map-actors.js`
+bridge, which derives placed event actors from the canonical map and
+saved completion flags without introducing a second world state. Set
+`theme.eventSprites={mechanic:'mechanicSprite',scout:'scoutSprite'}`
+for explicit bindings. Incorrect explicit IDs or missing sprite references
+are rejected at scene startup rather than silently hiding a configured
+NPC. Projects may also leave an event unbound to make it intentionally
+invisible. The included APK test fixture uses diagnostic sprites only.
+
 This intentionally supports original multi-frame sprite art and scalable maps instead of locking game content to the prototype's hand-coded shapes.
 
 ## Commands and tests
