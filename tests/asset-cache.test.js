@@ -347,3 +347,33 @@ test('preload rejects groups that cannot coexist without starting decodes or evi
  assert.strictEqual(fitting.get('actor'),group.actor);
  assert.equal(fitting.snapshot().memoryBytes,terrainBytes+actorBytes);
 });
+
+test('preload refuses false readiness when concurrent loads evict a required atlas',async()=>{
+ const loaded=[];
+ let cache;
+ cache=create(manifest,async(d,id)=>{
+   loaded.push(id);
+   if(id==='actor')await cache.load('icon');
+   return fake(d);
+ },{maxEntries:2,maxMemoryBytes:65536});
+ await assert.rejects(cache.preload(['terrain','actor']),
+   /Asset preload lost required resource terrain/);
+ assert.deepEqual(loaded,['terrain','actor','icon']);
+ assert.equal(cache.get('terrain'),null);
+ assert.ok(cache.get('actor'));
+ assert.ok(cache.get('icon'));
+ // A retry after competing loads settle may recover a complete resident group.
+ const result=await cache.preload(['terrain','actor']);
+ assert.strictEqual(cache.get('terrain'),result.terrain);
+ assert.strictEqual(cache.get('actor'),result.actor);
+});
+test('preload refuses false readiness after memory-pressure invalidates pending decode',async()=>{
+ let finish;
+ const cache=create(manifest,()=>new Promise(resolve=>{finish=resolve;}));
+ const pending=cache.preload(['terrain']);
+ await Promise.resolve();
+ cache.trimTo(0);
+ finish(fake(manifest.assets.terrain));
+ await assert.rejects(pending,/Asset preload lost required resource terrain/);
+ assert.deepEqual(cache.snapshot().loaded,[]);
+});
