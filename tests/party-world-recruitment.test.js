@@ -19,7 +19,9 @@ test('single v2 journal preserves recruited actor and physical weapon transfer a
   assert.equal(w.submit([{actor:'pilot',skill:'strike',target:'crawler'}]).ok,true);
  assert.equal(w.battle(),null);
  assert.equal(w.view().partyProgression.pilot.level,2);
- walk(w,['right','right','right','right']);
+ // The battle starts on hub tile 3,1. Three further rights reach the
+ // scout prompt; a fourth move would be correctly blocked by that prompt.
+ walk(w,['right','right','right']);
  assert.equal(w.view().map,'field');
  assert.equal(w.view().prompt.event,'scout');
  assert.equal(w.dispatch({type:'choose',id:'recruit'}).ok,true);

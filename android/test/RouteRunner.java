@@ -583,7 +583,8 @@ public final class RouteRunner extends Instrumentation {
             "tap('[data-party-world-dir=right]');" +
             "var rounds=0;while(h.battle()&&rounds++<10)tap('#party-world-battle #party-commit');" +
             "if(h.battle())throw new Error('Party encounter not resolved');" +
-            "tap('[data-party-world-dir=right]');" +
+            // The encounter begins on tile 3,1, so three additional right
+            // interactions reach the field scout event (the fourth is blocked).
             "tap('[data-party-world-dir=right]');" +
             "tap('[data-party-world-dir=right]');" +
             "tap('[data-party-world-dir=right]');" +
