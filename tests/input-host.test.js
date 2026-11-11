@@ -15,6 +15,8 @@ function harness(){
    focus(){this.focused++;doc.activeElement=this;},
    scrollIntoView(){}};
   item.hasAttribute=key=>selector.includes(key);
+  item.getAttribute=key=>key==='data-engine-page'?
+    (selector.match(/data-engine-page="([^"]+)"/)||[])[1]||null:null;
   p.nodes[selector]=item;
   return item;
  }
@@ -75,4 +77,29 @@ test('unknown semantic input cannot mutate gameplay and native host wires bridge
  assert.match(read('enginehost/index.html'),/input-host\.js/);
  assert.match(read('enginehost/boot.js'),/createBearframeWorldInput\(/);
  assert.match(read('enginehost/boot.js'),/input:function\(action\)/);
+});
+
+test('controller Confirm opens visible event pages and closes events without choosing a response',()=>{
+ const h=harness();
+ const answer=h.button('world','[data-event-choice]');
+ const next=h.button('world','[data-engine-page="events:1"]');
+ const previous=h.button('world','[data-engine-page="events:-1"]',true);
+ const foreign=h.button('world','[data-engine-page="battle:1"]');
+ const close=h.button('world','[data-event-close]');
+ h.view({prompt:{event:'example'},partyBattle:null,battle:null});
+ next.focus();
+ assert.equal(h.input.handle({type:'confirm'}),true);
+ assert.equal(next.clicked,1);
+ assert.equal(answer.clicked,0);
+ previous.focus();
+ assert.equal(h.input.handle({type:'confirm'}),false,'disabled page button is inert');
+ assert.equal(answer.clicked,0);
+ foreign.focus();
+ assert.equal(h.input.handle({type:'confirm'}),false,'wrong menu pager is inert');
+ assert.equal(answer.clicked,0);
+ close.focus();
+ assert.equal(h.input.handle({type:'confirm'}),true);
+ assert.equal(close.clicked,1);
+ assert.equal(answer.clicked,0,'Close cannot choose the first dialogue answer');
+ assert.equal(h.moves(),0);
 });
