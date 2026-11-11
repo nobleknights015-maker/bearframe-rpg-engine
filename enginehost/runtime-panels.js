@@ -105,6 +105,16 @@ function createBearframeRuntimePanels(eventRoot,gearRoot,status,project,view,dis
             {type:'unequip',slot:slot},locked);
       });
     }
+    if(v.partyProgression){
+      Object.keys(v.partyProgression).forEach(function(actorId){
+        var info=v.partyProgression[actorId];
+        var actor=v.partyActors.filter(function(a){return a.id===actorId;})[0];
+        var name=actor?actor.name:actorId;
+        gearRoot.appendChild(el('p',name+' · Level '+info.level+
+          ' · XP '+info.xp+(info.nextLevelXp===null?' (MAX)':
+          ' / '+info.nextLevelXp)));
+      });
+    }
     var questIds=Object.keys(v.quests).sort();
     questIds.forEach(function(id){
       var q=project.quests[id];

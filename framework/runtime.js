@@ -311,6 +311,8 @@ function createBearframeEngine(project) {
       result.partyActors=party.rosterView(s);
       result.partyEquipment=party.equipmentView(s);
       result.partyGear=party.gearView(s);
+      var progress=party.progressView(s);
+      if(progress)result.partyProgression=progress;
       if(s.partyBattle){
         // HUD resources show live encounter state, not pre-battle checkpoint.
         result.hp=result.partyActors[0].hp;

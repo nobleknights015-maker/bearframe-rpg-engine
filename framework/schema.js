@@ -135,6 +135,11 @@ function validateEngineProject(project) {
     var pcEnemies=record(spec.enemies,'project.partyCombat.enemies');
     record(spec.skills,'project.partyCombat.skills');
     record(spec.player,'project.partyCombat.player');
+    if(spec.progression!==undefined){
+      record(spec.progression,'project.partyCombat.progression');
+      if(!project.contentRevision)
+        fail('Opt-in party progression requires contentRevision to protect existing saves');
+    }
     Object.keys(foes).forEach(function(foe){
       if(!own.call(pcEnemies,foe))fail('Missing party combat enemy '+foe);
     });

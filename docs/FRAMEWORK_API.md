@@ -230,3 +230,27 @@ retain their byte shape unless the player equips one of the newly
 supported categories. A content-bound project should update its
 `contentRevision` and explicitly migrate across item definition
 changes, not treat an old ruleset as interchangeable.
+
+
+## Opt-in party progression checkpoint
+
+A project with `partyCombat.progression` must also provide an explicit
+`contentRevision` to prevent interpreting legacy v2 saves under new
+level rules. The progression contract specifies cumulative `thresholds`
+starting at zero, per-actor per-level growth in `hp`, `mp`, `attack`,
+`defense`, and `speed`, and optional level-keyed skill unlocks that
+must reference valid, previously unlearned skill IDs. All levels, skill
+choices, and stat derivations are deterministic from saved experience.
+
+The same canonical party encounter grants the configured `victoryXp`
+to the lead and enlisted allies, adjusts maximum HP/MP and their
+current resources when levels change, and exposes read-only
+`view.partyProgression` records containing XP, level and next-level
+threshold. Skill unlocks feed the real party combat roster, not a
+separate UI subsystem. Old v2 projects without progression continue
+using their original state format, actor templates and battle rules.
+
+This is the start of the progression release checkpoint—not final
+character creation or full skill/equipment upgrading. Production
+balance, new-game creation UX, progression reset rules and physical
+device acceptance remain pending.

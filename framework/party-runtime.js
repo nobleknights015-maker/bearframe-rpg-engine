@@ -16,6 +16,17 @@ function createBearframePartyRuntime(spec, project, rules) {
   var player=copy(spec.player);
   if(!player||typeof player.id!=='string'||!player.id)
     throw new TypeError('Party player template ID required');
+  var progression=null;
+  if(spec.progression){
+    var templates={};
+    templates[player.id]=player;
+    Object.keys(spec.allies).forEach(function(id){templates[id]=spec.allies[id];});
+    var progressFactory=(typeof module!=='undefined'&&module.exports)?
+      require('./progression.js'):createBearframeProgression;
+    progression=progressFactory(spec.progression,spec.skills,templates);
+    if(player.maxHp!==rules.playerHp||player.maxMp!==rules.playerCharge)
+      throw new TypeError('Progression lead resource maxima must match world rules');
+  }
   var enemyIds=Object.keys(project.foes);
   if(count(spec.enemies)!==enemyIds.length)throw new TypeError('Party enemy catalog mismatch');
   for(var i=0;i<enemyIds.length;i++){
@@ -38,6 +49,7 @@ function createBearframePartyRuntime(spec, project, rules) {
     if(has(state.allyStats,id))return;
     var actor=spec.allies[id];
     state.allyStats[id]={hp:actor.hp,mp:actor.mp};
+    if(progression)state.allyStats[id].xp=0;
   }
   function valid(state){
     if(!state||!has(state,'partyBattle')||!state.allyStats||
@@ -56,11 +68,23 @@ function createBearframePartyRuntime(spec, project, rules) {
       return true;
     }
     if(!reserve(state.equipment))return false;
+    if(progression){
+      var expected=progression.derive(player.id,player,state.player.xp,true);
+      if(state.player.maxHp!==expected.maxHp||
+         state.player.maxCharge!==expected.maxMp)return false;
+    }
     for(var i=0;i<state.allies.length;i++){
       var id=state.allies[i],member=state.allyStats[id],template=spec.allies[id];
-      if(!template||!member||!Number.isInteger(member.hp)||member.hp<0||
-         member.hp>template.maxHp||!Number.isInteger(member.mp)||
-         member.mp<0||member.mp>template.maxMp||!reserve(member))return false;
+      if(!template||!member)return false;
+      var maximum=template;
+      if(progression){
+        if(!Number.isInteger(member.xp)||member.xp<0||member.xp>2147483647)
+          return false;
+        maximum=progression.derive(id,template,member.xp,false);
+      }
+      if(!Number.isInteger(member.hp)||member.hp<0||
+         member.hp>maximum.maxHp||!Number.isInteger(member.mp)||
+         member.mp<0||member.mp>maximum.maxMp||!reserve(member))return false;
     }
     var assigned=Object.keys(allocated);
     for(var n=0;n<assigned.length;n++)
@@ -91,14 +115,17 @@ function createBearframePartyRuntime(spec, project, rules) {
     }
   }
   function worldRoster(state){
-    var lead=copy(player);
+    var lead=progression?
+      progression.derive(player.id,player,state.player.xp,true):copy(player);
     lead.name=state.player.name;
     lead.hp=state.player.hp;lead.maxHp=state.player.maxHp;
     lead.mp=state.player.charge;lead.maxMp=state.player.maxCharge;
     applyEquipment(lead,state.equipment);
     var roster=[lead];
     for(var i=0;i<state.allies.length;i++){
-      var id=state.allies[i],actor=copy(spec.allies[id]),stats=state.allyStats[id];
+      var id=state.allies[i],stats=state.allyStats[id];
+      var actor=progression?
+        progression.derive(id,spec.allies[id],stats.xp,false):copy(spec.allies[id]);
       actor.hp=stats.hp;actor.mp=stats.mp;
       applyEquipment(actor,stats);
       roster.push(actor);
@@ -121,6 +148,16 @@ function createBearframePartyRuntime(spec, project, rules) {
     Object.keys(worn).forEach(function(id){view[id]=worn[id].weapon;});
     return view;
   }
+  function progressView(state){
+    if(!progression)return null;
+    var view={};
+    view[player.id]=progression.info(state.player.xp);
+    for(var i=0;i<state.allies.length;i++){
+      var id=state.allies[i];
+      view[id]=progression.info(state.allyStats[id].xp);
+    }
+    return view;
+  }
   function rosterView(state){
     // While fighting, the encounter owns live HP/MP/status values.
     // Outside encounters resources come from persisted player/ally state.
@@ -136,8 +173,10 @@ function createBearframePartyRuntime(spec, project, rules) {
     if(typeof actorId!=='string'||state.allies.indexOf(actorId)===-1||
        !has(state.allyStats,actorId))return false;
     var stats=state.allyStats[actorId],template=spec.allies[actorId];
-    if(!template||stats.hp===template.maxHp)return false;
-    stats.hp=Math.min(template.maxHp,stats.hp+amount);
+    var limit=progression?
+      progression.derive(actorId,template,stats.xp,false).maxHp:template.maxHp;
+    if(!template||stats.hp===limit)return false;
+    stats.hp=Math.min(limit,stats.hp+amount);
     return true;
   }
   function begin(state,foe,origin){
@@ -171,9 +210,29 @@ function createBearframePartyRuntime(spec, project, rules) {
       resources.mp=ally.mp;
     }
     if(next.phase==='victory'){
-      state.player.hp=Math.max(1,lead.hp);
-      state.player.charge=lead.mp;
-      state.player.xp=Math.min(2147483647,state.player.xp+rules.victoryXp);
+      var beforeXp=state.player.xp;
+      state.player.xp=Math.min(2147483647,beforeXp+rules.victoryXp);
+      if(progression){
+        var beforeLead=progression.derive(player.id,player,beforeXp,true);
+        var afterLead=progression.derive(player.id,player,state.player.xp,true);
+        state.player.maxHp=afterLead.maxHp;
+        state.player.maxCharge=afterLead.maxMp;
+        state.player.hp=Math.min(afterLead.maxHp,Math.max(1,lead.hp)+
+          (afterLead.maxHp-beforeLead.maxHp));
+        state.player.charge=Math.min(afterLead.maxMp,lead.mp+
+          (afterLead.maxMp-beforeLead.maxMp));
+        for(var a=0;a<state.allies.length;a++){
+          var allyId=state.allies[a],member=state.allyStats[allyId],oldXp=member.xp;
+          var previous=progression.derive(allyId,spec.allies[allyId],oldXp,false);
+          member.xp=Math.min(2147483647,oldXp+rules.victoryXp);
+          var now=progression.derive(allyId,spec.allies[allyId],member.xp,false);
+          member.hp=Math.min(now.maxHp,member.hp+(now.maxHp-previous.maxHp));
+          member.mp=Math.min(now.maxMp,member.mp+(now.maxMp-previous.maxMp));
+        }
+      }else{
+        state.player.hp=Math.max(1,lead.hp);
+        state.player.charge=lead.mp;
+      }
       if(was.origin.indexOf('encounter:')===0)
         state.flags[was.origin]=true;
       state.message='Party victory. '+state.message;
@@ -190,7 +249,7 @@ function createBearframePartyRuntime(spec, project, rules) {
   return Object.freeze({initialize:initialize,addAlly:addAlly,valid:valid,
     begin:begin,round:round,rosterView:rosterView,
     equipmentView:equipmentView,gearView:gearView,
-    healTarget:healTarget,playerId:player.id});
+    progressView:progressView,healTarget:healTarget,playerId:player.id});
 }
 if(typeof module!=='undefined'&&module.exports)
   module.exports=createBearframePartyRuntime;

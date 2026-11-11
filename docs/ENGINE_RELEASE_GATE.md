@@ -258,3 +258,16 @@ targeted consumable healing, three equipped item categories, quest
 state and the same native save journal across `am force-stop` restart.
 This is synthetic neutral project data running in the installed app,
 **not** player content or physical phone acceptance.
+
+
+## Opt-in character/party progression checkpoint
+
+A reusable configurable progression policy now derives levels from
+cumulative experience, applies actor-specific per-level combat and
+resource growth, and unlocks catalog skills at validated level
+thresholds. Victory awards XP through the same single v2 party journal,
+preserving previous ally gear. The generic panel displays progress and
+next-level threshold. The option requires a content-revision binding
+so old v2 saves are never reinterpreted silently. Node/Rhino/WebView
+packaging tests have been added; physical QA and full character
+creation remain outstanding.
