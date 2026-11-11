@@ -283,3 +283,22 @@ the generic inventory UI renders XP/levels, and force-stop/restart must
 rehydrate the same saved progression. This is a verification target for
 the opt-in leveling engine, not physical-device acceptance or a complete
 character creation system.
+
+## Landscape orientation and responsive game-shell acceptance — November 11
+
+The **experimental unified engine Activity only** now requests sensor
+landscape (including reverse landscape) while the original launcher is
+untouched. The v2 World/Party/Save interface uses the Engine v1-port
+aspect-safe viewport with CSS safe-area insets, fixed 800x450 logical
+canvas/UI stage, and device-sized scaling/letterboxing. Full-screen
+gameplay hides document scrolling; long inventory, event choices and
+multi-actor battle menus use Previous/Next pages without altering the
+canonical game save. The full diagnostic control surface remains
+available from an explicit developer view outside normal play.
+
+Node geometry and paging regressions plus installed Android
+`unified-landscape` instrumentation check the requested orientation,
+real displayed WebView geometry, safe inset / ultrawide/tablet profile
+fitting, World/Party/Save visibility, and no-scroll presentation.
+This emulator evidence is **not** the same as physical Moto G-class
+landscape, notch, Bluetooth, accessibility or rotation acceptance.

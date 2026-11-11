@@ -336,6 +336,11 @@ jobs:
             adb shell am instrument -w -e stage unified-gear-ui-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/gear-ui-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-gear-ui-second' "$RUNNER_TEMP/gear-ui-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/gear-ui-second.txt"
+            # Landscape orientation and real WebView bounds/screen tabs.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-landscape dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-landscape.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-landscape' "$RUNNER_TEMP/unified-landscape.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-landscape.txt"
             # Android-native journal content revisions must fail closed when
             # maps, rules or item data change but the project id does not.
             adb shell pm clear dev.bearframe.ridge

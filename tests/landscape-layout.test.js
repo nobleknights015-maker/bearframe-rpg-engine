@@ -1,0 +1,111 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const make=require('../enginehost/landscape-layout');
+const pager=require('../enginehost/landscape-pager');
+const fs=require('node:fs'),path=require('node:path');
+const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+function classList(){
+ const set=new Set();
+ return {toggle:(x,b)=>b?set.add(x):set.delete(x),contains:x=>set.has(x)};
+}
+function layoutHarness(){
+ const events={};
+ const win={innerWidth:917,innerHeight:411,addEventListener:(n,f)=>events[n]=f,
+   getComputedStyle:()=>({paddingTop:'12px',paddingRight:'18px',
+    paddingBottom:'8px',paddingLeft:'22px'})};
+ const doc={defaultView:win,body:{classList:classList(),appendChild(){}},
+  documentElement:{classList:classList()},getElementById:()=>null,
+  createElement:()=>({setAttribute(){},className:''})};
+ const stage={ownerDocument:doc,style:{}};
+ return {layout:make(stage,win),doc,win,events,stage};
+}
+test('Engine v1 landscape transform letterboxes every aspect and safe-area profile',()=>{
+ const h=layoutHarness();
+ for(const [w,height] of [[917,411],[640,360],[742,360],[1920,1080],[1024,768],[390,844]]){
+  const fit=h.layout.fit(w,height,{left:22,right:18,top:12,bottom:8});
+  assert.ok(fit.scale>0);
+  assert.ok(fit.offsetX>=22-1e-6);
+  assert.ok(fit.offsetY>=12-1e-6);
+  assert.ok(fit.offsetX+800*fit.scale<=w-18+1e-6);
+  assert.ok(fit.offsetY+450*fit.scale<=height-8+1e-6);
+  assert.equal(fit.stageWidth,800);
+  assert.equal(fit.stageHeight,450);
+ }
+ assert.equal(h.layout.snapshot().width,917);
+ assert.equal(h.doc.body.classList.contains('landscape-gameplay'),true);
+ assert.equal(h.doc.documentElement.classList.contains('landscape-gameplay'),true);
+ assert.match(h.stage.style.transform,/translate\([\d.]+px,[\d.]+px\) scale\([\d.]+\)/);
+ h.layout.setDebug(true);
+ assert.equal(h.doc.body.classList.contains('landscape-debug'),true);
+ assert.equal(h.doc.documentElement.classList.contains('landscape-gameplay'),false);
+ h.layout.setDebug(false);
+ h.win.innerWidth=1024;h.win.innerHeight=600;h.events.resize();
+ assert.equal(h.layout.snapshot().width,1024);
+});
+function fakeRoot(){
+ const doc={createElement(tag){return node(tag.toUpperCase());}};
+ function node(tag){
+  const n={tagName:tag,children:[],ownerDocument:doc,attrs:{},disabled:false,
+   listeners:{},className:'',textContent:'',type:null,
+   appendChild(x){this.children.push(x);return x;},
+   removeChild(x){this.children.splice(this.children.indexOf(x),1);},
+   setAttribute(k,v){this.attrs[k]=v;},
+   removeAttribute(k){delete this.attrs[k];},
+   hasAttribute(k){return Object.prototype.hasOwnProperty.call(this.attrs,k);},
+   querySelector(sel){return this.children.find(x=>
+    sel==='.engine-page-nav'&&x.className==='engine-page-nav')||null;},
+   addEventListener(k,fn){this.listeners[k]=fn;}};
+  n.classList={contains:k=>n.className.split(' ').includes(k)};
+  n.click=()=>{if(!n.disabled&&n.listeners.click)n.listeners.click();};
+  return n;
+ }
+ return node('DIV');
+}
+test('inventory paging exposes every item without scrolling or altering commands',()=>{
+ const inventory=fakeRoot(),events=fakeRoot(),battle=fakeRoot();
+ for(let i=0;i<9;i++){
+  const line=inventory.ownerDocument.createElement('div');
+  line.className='inventory-line';line.setAttribute('data-item','item'+i);
+  inventory.appendChild(line);
+ }
+ for(let i=0;i<7;i++){
+  const choice=events.ownerDocument.createElement('button');
+  choice.setAttribute('data-event-choice','choice'+i);events.appendChild(choice);
+ }
+ for(let i=0;i<5;i++){
+  const actor=battle.ownerDocument.createElement('div');
+  actor.className='party-command';battle.appendChild(actor);
+ }
+ const commit=battle.ownerDocument.createElement('button');
+ commit.id='party-commit';battle.appendChild(commit);
+ const p=pager({inventory,events,battle});
+ assert.deepEqual(p.refresh('inventory',true),{page:1,pages:5,items:9});
+ assert.equal(inventory.children.filter(x=>x.className==='inventory-line'&&
+  !x.hasAttribute('data-engine-page-hidden')).length,2);
+ let nav=inventory.querySelector('.engine-page-nav');nav.children[2].click();
+ assert.equal(p.current('inventory'),1);
+ assert.equal(inventory.children.filter(x=>x.className==='inventory-line'&&
+  !x.hasAttribute('data-engine-page-hidden')).length,2);
+ p.refresh('events',true);assert.equal(events.children.filter(x=>
+  x.hasAttribute('data-event-choice')&&!x.hasAttribute('data-engine-page-hidden')).length,4);
+ p.refresh('battle',true);assert.equal(battle.children.filter(x=>
+  x.className==='party-command'&&!x.hasAttribute('data-engine-page-hidden')).length,1);
+ assert.equal(commit.hasAttribute('data-engine-page-hidden'),false);
+ for(let i=0;i<4;i++)battle.querySelector('.engine-page-nav').children[2].click();
+ assert.equal(p.current('battle'),4);
+ assert.equal(battle.children.filter(x=>x.className==='party-command'&&
+  !x.hasAttribute('data-engine-page-hidden')).length,1);
+});
+test('Android landscape-only Activity, fixed shell and installed geometry gate are present',()=>{
+ const manifest=read('android/AndroidManifest.xml'),html=read('enginehost/index.html');
+ const css=read('enginehost/host.css'),java=read('android/test/RouteRunner.java');
+ const ci=read('.github/workflows/engine-ci.yml');
+ assert.match(manifest,/UnifiedEngineActivity" android:exported="false" android:screenOrientation="sensorLandscape"/);
+ assert.doesNotMatch(manifest,/ExpeditionActivity"[^>]+screenOrientation/);
+ assert.match(html,/id="engine-landscape-stage"/);
+ assert.match(html,/landscape-layout\.js/);
+ assert.match(html,/landscape-pager\.js/);
+ assert.match(css,/overflow:hidden!important/);
+ assert.match(css,/data-engine-page-hidden/);
+ assert.match(java,/checkLandscapeViewport\(\)/);
+ assert.match(ci,/stage unified-landscape/);
+});

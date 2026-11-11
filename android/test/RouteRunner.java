@@ -1074,6 +1074,68 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("inventoryUi",
             "PASS party equipment/consumable DOM, no duplicated gear, Android native restart");
     }
+    /** Landscape is not a cosmetic CSS width: prove the live installed
+     * Activity rotates, fits the logical stage inside safe view bounds,
+     * and exposes all menus as pages instead of scrollable document content. */
+    private void checkLandscapeViewport() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        if(screen.getRequestedOrientation()!=
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
+            throw new AssertionError("Unified Android engine did not request sensor landscape");
+        if(screen.getResources().getConfiguration().orientation!=
+            android.content.res.Configuration.ORIENTATION_LANDSCAPE)
+            throw new AssertionError("Installed engine is still in portrait orientation");
+        String reply=evalHost("(function(){try{" +
+            "var l=window.BearframeLandscape,stage=document.getElementById('engine-landscape-stage');" +
+            "if(!l||!stage)throw Error('Missing landscape host');" +
+            "var rect=stage.getBoundingClientRect();" +
+            "var w=window.visualViewport?window.visualViewport.width:innerWidth;" +
+            "var h=window.visualViewport?window.visualViewport.height:innerHeight;" +
+            "var insets={top:12,right:18,bottom:8,left:22};" +
+            "var sizes=[[640,360],[917,411],[1024,768],[1920,1080],[742,360]];" +
+            "var fits=sizes.map(function(size){var f=l.fit(size[0],size[1],insets);" +
+            "return f.scale>0&&f.offsetX>=insets.left-.01&&f.offsetY>=insets.top-.01&&" +
+            "f.offsetX+800*f.scale<=size[0]-insets.right+.01&&" +
+            "f.offsetY+450*f.scale<=size[1]-insets.bottom+.01;});" +
+            "var world=document.getElementById('pw-tab-world'),party=document.getElementById('pw-tab-party');" +
+            "var save=document.getElementById('pw-tab-save');" +
+            "party.click();var partyVisible=!document.getElementById('pw-screen-party').hidden;" +
+            "save.click();var saveVisible=!document.getElementById('pw-screen-save').hidden;" +
+            "world.click();" +
+            "var nav=document.getElementById('party-world-navigation').getBoundingClientRect();" +
+            "var canvas=document.getElementById('party-world-surface').getBoundingClientRect();" +
+            "function inside(a){return a.left>=rect.left-1&&a.top>=rect.top-1&&" +
+            "a.right<=rect.right+1&&a.bottom<=rect.bottom+1;}" +
+            "var debug=l.setDebug(true),debugOpen=document.body.classList.contains('landscape-debug');" +
+            "l.setDebug(false);" +
+            "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
+            "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
+            "fits:fits,inside:inside(nav)&&inside(canvas)," +
+            "scroll:getComputedStyle(document.documentElement).overflowY," +
+            "game:document.body.classList.contains('landscape-gameplay')," +
+            "party:partyVisible,save:saveVisible,debug:debug&&debugOpen});" +
+            "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
+        JSONObject result=new JSONObject((String)new JSONTokener(reply).nextValue());
+        if(result.has("error"))throw new AssertionError("Landscape JS failed: "+result);
+        JSONArray fits=result.getJSONArray("fits");
+        for(int i=0;i<fits.length();i++)
+            if(!fits.getBoolean(i))
+                throw new AssertionError("Landscape clipped screen profile "+i+": "+result);
+        if(result.getDouble("w")<=result.getDouble("h")||
+           result.getDouble("left")< -2||result.getDouble("top")< -2||
+           result.getDouble("right")>result.getDouble("w")+2||
+           result.getDouble("bottom")>result.getDouble("h")+2||
+           !"hidden".equals(result.getString("scroll"))||
+           !result.getBoolean("inside")||!result.getBoolean("party")||
+           !result.getBoolean("save")||!result.getBoolean("debug")||
+           !result.getBoolean("game"))
+            throw new AssertionError("Landscape scene/panels overflow: "+result);
+        resultMeta.putString("landscape","PASS forced Android landscape, responsive safe-area fit, no-scroll panels and diagnostics toggle");
+    }
     private void checkUnifiedContentBinding(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -2081,6 +2143,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedPartyInventoryUi(stage.equals("unified-gear-ui-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-landscape")){
+                checkLandscapeViewport();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-landscape");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
