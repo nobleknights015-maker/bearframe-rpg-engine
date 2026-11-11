@@ -64,7 +64,7 @@ test('layer geometry and explicit tile IDs are validated before rendering',()=>{
  reject(p=>p.maps.hub.visualLayers={},/at most 6 layers/);
  reject(p=>p.maps.hub.visualLayers=Array.from({length:7},()=>({depth:'ground',cells:{}})),/at most 6 layers/);
  assert.throws(()=>composer(project,{...theme,tiles:{
-   ...theme.tiles,grass:undefined}}),/missing atlas/);
+   ...theme.tiles,grass:undefined}}),/Unknown visual tile grass/);
  const absent=clone(theme);delete absent.tiles.roof;
  assert.throws(()=>composer(project,absent),/Unknown visual tile roof/);
  const malformed=clone(theme);malformed.tiles.roof.w=33;
