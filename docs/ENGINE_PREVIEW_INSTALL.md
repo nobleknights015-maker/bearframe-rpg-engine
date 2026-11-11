@@ -42,3 +42,23 @@ Removing the preview removes its private synthetic progress and compatibility
 journal; export any desired test progress to an external JSON first.
 APK build verification and emulator launch are CI checks. Real physical-device
 acceptance is still outstanding.
+
+## Separate v2 party-world diagnostic (engine only)
+
+Below the original v1 world diagnostic, the offline preview now contains a
+**separate rendered v2 party-world scene**. Its own D-pad, event choices,
+inventory, party combat, XP/level display, and save-verification control use
+one canonical session with a different synthetic project ID and journal
+namespace. The world canvas uses the existing packaged PNG atlas and
+renderer; it is not a new campaign or permanent production layout.
+
+After recruiting a second party member, the generic status section shows
+both actors' HP, MP and stats. Equipping an item reserves one physical copy
+from shared inventory. Android memory trim pauses controls when required
+atlases are missing; restoration redraws the scene without changing the
+journal. Returning to the original v1 panel will not load or rewrite the
+v2 test save.
+
+The app may still need to be uninstalled **only from its separate preview
+package** before installing a later CI APK signed with another disposable
+key. This is not the production upgrade path.

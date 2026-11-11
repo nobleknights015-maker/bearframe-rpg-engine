@@ -25,7 +25,7 @@ The engine has **one canonical gameplay state machine** (`framework/runtime.js`)
 | Assets | version 1 manifest, cache, offline packager | Path/type/dimension/byte checks, safe memory trim and rehydrate | Node, signed-APK pack and installed WebView decode |
 | Controller | portable mapping + native adapter | Touch, keyboard, gamepad navigation/action mapping | Synthetic Android gamepad; physical Bluetooth/USB pending |
 | Audio | director + HTMLMediaElement adapter | Music/SFX, pause/resume, bus gain, audio focus | Node lifecycle/race tests, installed offline WAV decode; focus/device output pending |
-| Party battle (opt-in v2) | `party-round` command through the **same session** | Speed, MP, status, resistance, target selection and persistence | Node/Rhino tests and installed synthetic party diagnostic; full UX and progression pending |
+| Party battle (opt-in v2) | `party-round` through the **same session** | Speed, MP, status, resistance, target selection and persistence | Node/Rhino + synthetic Android world UI: inventory/gear, battles, level/skill growth, renderer pixels and restart; final production UX and real-device acceptance pending |
 | Save import / original-rule compatibility | `save-import.inspect/commit` and isolated `legacy-compat.inspectFile/commitFile` | Explicit preview and consent, never erase source, reject occupied targets | Node/installed Android emulator legacy archive, gameplay, file import/export/restart and same-signed APK replacement; migration into different game rules and real-device testing still open |
 
 Commands, project schemas and journal versions must be frozen and semantically versioned before `v1.0.0`. A green test against a synthetic fixture is **not** proof of compatibility with untested original game data.
