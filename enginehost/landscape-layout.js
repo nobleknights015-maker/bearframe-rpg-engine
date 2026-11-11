@@ -62,7 +62,10 @@ function createBearframeLandscapeLayout(stage,win){
   if(close)close.addEventListener('click',function(){setDebug(false);});
   view.addEventListener('resize',resize);
   if(view.visualViewport&&view.visualViewport.addEventListener)
-    view.visualViewport.addEventListener('resize',resize);
+    {view.visualViewport.addEventListener('resize',resize);
+    // Browser chrome and keyboard can pan the visual viewport without a
+    // resize. Keep the stage aligned with its actual visible origin.
+    view.visualViewport.addEventListener('scroll',resize);}
   setDebug(false);
   return Object.freeze({fit:fit,resize:resize,setDebug:setDebug,
     snapshot:function(){return last?JSON.parse(JSON.stringify(last)):null;},
