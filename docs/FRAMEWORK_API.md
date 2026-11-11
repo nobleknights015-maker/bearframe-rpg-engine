@@ -113,7 +113,9 @@ An ordinary route avoids walls and unresolved events, battles and map exits.
 Cleared one-time events and defeated encounters become usable again; repeatable
 dialogue is intentionally excluded. During an active dialogue or encounter,
 `session.planPath` returns `{ok:false,reason:'busy'}`. A caller may explicitly
-set `allowTriggers:true` to inspect a route through interrupts, but must
+set `allowDestinationTrigger:true` to route to **one** interaction/encounter
+tile without crossing unrelated scripted triggers, or set
+`allowTriggers:true` to inspect routes through all interrupts, but must
 process each movement through the normal durable `dispatch` contract;
 it is **not** an autonomous walking or quest navigation API.
 
