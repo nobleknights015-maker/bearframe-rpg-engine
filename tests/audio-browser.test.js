@@ -173,3 +173,15 @@ test('disposal during pending playback prevents queued commands from starting',a
  assert.equal(elements.length,1);
  assert.equal(backend.status().music,null);
 });
+
+test('explicit audio voice limits fail closed instead of silently falling back to eight',async()=>{
+ for(const invalid of [0,-1,1.5,33,NaN,Infinity,'2',null])
+   assert.throws(()=>rig({maxSfxVoices:invalid}),/Invalid audio maxSfxVoices/);
+ const defaultRig=rig();
+ assert.equal(defaultRig.backend.status().maxSfxVoices,8);
+ const bounded=rig({maxSfxVoices:1});
+ assert.equal(bounded.backend.status().maxSfxVoices,1);
+ await bounded.backend.execute([sfx('first'),sfx('second')]);
+ assert.equal(bounded.backend.status().activeSfx,1);
+ assert.equal(bounded.elements[0].src,'');
+});
