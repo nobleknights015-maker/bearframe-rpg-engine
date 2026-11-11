@@ -144,13 +144,25 @@ function createBearframeSceneComposer(project,theme){
     var tick=options.tick===undefined?0:options.tick;
     if(!integer(width,16,4096)||!integer(height,16,4096)||!integer(tick,0,2147483647))
       throw new TypeError('Invalid viewport or animation tick');
-    var ts=theme.tileSize, worldW=map.rows[0].length*ts,worldH=map.rows.length*ts;
+    var ts=theme.tileSize,worldW=map.rows[0].length*ts,worldH=map.rows.length*ts;
+    // Optional fractional tile-coordinate focus for scripted scenes and
+    // camera pans. The player remains at the canonical view position.
+    // The host owns interpolation; the scene composer stays stateless.
+    var focus=options.cameraTarget;
+    if(focus!==undefined){
+      if(!focus||typeof focus!=='object'||Array.isArray(focus)||
+         typeof focus.x!=='number'||typeof focus.y!=='number'||
+         !isFinite(focus.x)||!isFinite(focus.y)||
+         focus.x<0||focus.y<0||
+         focus.x>=map.rows[0].length||focus.y>=map.rows.length)
+        throw new TypeError('Invalid scene camera target');
+    }else focus={x:view.x,y:view.y};
     function camera(target,extent,worldExtent){
       if(worldExtent<=extent)return Math.floor((worldExtent-extent)/2);
       return Math.max(0,Math.min(worldExtent-extent,Math.floor(target-extent/2)));
     }
-    var cx=camera((view.x+0.5)*ts,width,worldW);
-    var cy=camera((view.y+0.5)*ts,height,worldH);
+    var cx=camera((focus.x+0.5)*ts,width,worldW);
+    var cy=camera((focus.y+0.5)*ts,height,worldH);
     var commands=[{type:'clear',color:theme.clearColor}];
     var minX=Math.max(0,Math.floor(cx/ts)),minY=Math.max(0,Math.floor(cy/ts));
     var maxX=Math.min(map.rows[0].length,Math.ceil((cx+width)/ts));
