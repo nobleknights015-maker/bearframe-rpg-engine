@@ -39,6 +39,18 @@ test('optional scenery layers paint below and above character sprites',()=>{
   assert.deepEqual(c.compose(e.view(state),{width:96,height:96,tick:0}),scene);
   assert.equal(e.serialize(state),e.serialize(e.fresh('Layer test',13)));
 });
+test('overlapping same-depth scenery obeys declared layer order in every host',()=>{
+ const {project,theme}=withLayers();
+ project.maps.hub.visualLayers.unshift({
+   depth:'ground',cells:{'1,1':'roof'}});
+ const game=engine(project),c=composer(project,theme);
+ const draws=c.compose(game.view(game.fresh('Layer order',29)),{
+   width:96,height:96,tick:0}).commands.filter(cmd=>
+     cmd.layer===0.5&&cmd.world.x===1&&cmd.world.y===1);
+ assert.deepEqual(draws.map(cmd=>cmd.source.x),[96,64],
+   'higher-numbered ground layers must paint last even at identical x/y');
+ assert.equal(draws.length,2);
+});
 test('base geometry and gameplay event triggers remain unchanged by visual layers',()=>{
  const {project,theme}=withLayers(),game=engine(project),s=game.fresh('Layer test',3);
  const p=game.step(s,{type:'move',dir:'right'});
