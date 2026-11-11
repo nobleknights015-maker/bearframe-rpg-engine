@@ -1098,6 +1098,26 @@ public final class RouteRunner extends Instrumentation {
             "var pathPlan=navHost.planPath({x:4,y:3});" +
             "var interaction=navHost.planPath({x:2,y:1},{allowDestinationTrigger:true});" +
             "var pathUnchanged=navHost.view().sequence===navRevision;" +
+            "var layerProject=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_FIXTURE));" +
+            "layerProject.maps.hub.visualLayers=[" +
+            "{depth:'ground',cells:{'1,1':'floor'}}," +
+            "{depth:'canopy',cells:{'1,1':'wall'}}];" +
+            "var layerTheme={tileSize:32,clearColor:'#101018'," +
+            "atlases:{terrain:{width:64,height:32},characters:{width:64,height:48}}," +
+            "tiles:{floor:{atlas:'terrain',x:0,y:0,w:32,h:32}," +
+            "wall:{atlas:'terrain',x:32,y:0,w:32,h:32}}," +
+            "sprites:{player:{ticksPerFrame:1,frames:[" +
+            "{atlas:'characters',x:0,y:0,w:32,h:48}]}}};" +
+            "var layerEngine=createBearframeEngine(layerProject);" +
+            "var layerView=layerEngine.view(layerEngine.fresh('Layer test',43));" +
+            "var layerScene=createBearframeSceneComposer(layerProject,layerTheme)" +
+            ".compose(layerView,{width:96,height:96,tick:0});" +
+            "var layerCommands=layerScene.commands;" +
+            "var under=layerCommands.findIndex(function(c){return c.layer===0.5;});" +
+            "var actor=layerCommands.findIndex(function(c){return c.actor==='player';});" +
+            "var over=layerCommands.findIndex(function(c){return c.layer===2;});" +
+            "var layerOrder=under>0&&actor>under&&over>actor&&" +
+            "layerCommands[under].source.x===0&&layerCommands[over].source.x===32;" +
             "var walker=createBearframeCharacterSpriteRenderer({" +
             "atlas:'characters',frameWidth:16,frameHeight:12,columns:3,rows:4});" +
             "var directional=walker.frameFor({direction:'left',moving:true,elapsedMs:300});" +
@@ -1125,7 +1145,7 @@ public final class RouteRunner extends Instrumentation {
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
             "npcAudit:npcAudit,pathPlan:pathPlan,interaction:interaction," +
-            "pathUnchanged:pathUnchanged," +
+            "pathUnchanged:pathUnchanged,layerOrder:layerOrder," +
             "directional:directional,idle:idle," +
             "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
@@ -1141,6 +1161,8 @@ public final class RouteRunner extends Instrumentation {
            npcAudit.getInt("revisionBefore")!=npcAudit.getInt("revisionAfter")||
            !npcAudit.getJSONArray("actorIds").toString().contains("event:mechanic:2,2"))
             throw new AssertionError("Installed WebView hides a configured NPC: "+npcAudit);
+        if(!result.getBoolean("layerOrder"))
+            throw new AssertionError("Installed scene painter order hides character layers: "+result);
         JSONObject pathPlan=result.getJSONObject("pathPlan");
         JSONObject interaction=result.getJSONObject("interaction");
         if(!interaction.getBoolean("ok")||interaction.getInt("cost")!=1||
