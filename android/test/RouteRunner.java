@@ -1096,6 +1096,7 @@ public final class RouteRunner extends Instrumentation {
             "var npcAudit=BearframeHost.sceneVisibilityAudit();" +
             "var navHost=BearframeHost.partyWorld,navRevision=navHost.view().sequence;" +
             "var pathPlan=navHost.planPath({x:4,y:3});" +
+            "var interaction=navHost.planPath({x:2,y:1},{allowDestinationTrigger:true});" +
             "var pathUnchanged=navHost.view().sequence===navRevision;" +
             "var walker=createBearframeCharacterSpriteRenderer({" +
             "atlas:'characters',frameWidth:16,frameHeight:12,columns:3,rows:4});" +
@@ -1123,7 +1124,8 @@ public final class RouteRunner extends Instrumentation {
             "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
-            "npcAudit:npcAudit,pathPlan:pathPlan,pathUnchanged:pathUnchanged," +
+            "npcAudit:npcAudit,pathPlan:pathPlan,interaction:interaction," +
+            "pathUnchanged:pathUnchanged," +
             "directional:directional,idle:idle," +
             "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
@@ -1140,6 +1142,10 @@ public final class RouteRunner extends Instrumentation {
            !npcAudit.getJSONArray("actorIds").toString().contains("event:mechanic:2,2"))
             throw new AssertionError("Installed WebView hides a configured NPC: "+npcAudit);
         JSONObject pathPlan=result.getJSONObject("pathPlan");
+        JSONObject interaction=result.getJSONObject("interaction");
+        if(!interaction.getBoolean("ok")||interaction.getInt("cost")!=1||
+           !"right".equals(interaction.getJSONArray("directions").getString(0)))
+            throw new AssertionError("NPC destination path was not a safe single action: "+result);
         if(!pathPlan.getBoolean("ok")||pathPlan.getInt("cost")!=5||
            !result.getBoolean("pathUnchanged")||
            !"[\"down\",\"down\",\"right\",\"right\",\"right\"]".equals(
