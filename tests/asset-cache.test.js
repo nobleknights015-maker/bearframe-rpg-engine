@@ -310,7 +310,7 @@ test('loader metadata mutation cannot change retained asset accounting',async()=
 test('oversized preload group fails before any decode starts or cache changes',async()=>{
  const calls=[];
  const cache=create(manifest,(d,id)=>{calls.push(id);return fake(d);},
-   {maxMemoryBytes:16384});
+   {maxMemoryBytes:32768});
  const enlarged=replace(m=>{m.assets.huge={
    type:'image',path:'assets/huge.png',width:128,height:128
  };});
