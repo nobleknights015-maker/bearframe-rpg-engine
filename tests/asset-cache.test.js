@@ -326,3 +326,24 @@ test('oversized preload group fails before any decode starts or cache changes',a
  assert.deepEqual(Object.keys(result),['terrain','actor']);
  assert.deepEqual(calls,['terrain','actor']);
 });
+
+test('preload rejects groups that cannot coexist without starting decodes or evicting resident assets',async()=>{
+ const terrainBytes=64*32*4,actorBytes=64*48*4;
+ let decodes=0;
+ const loader=async d=>{decodes++;return fake(d);};
+ const memoryLimited=create(manifest,loader,{maxMemoryBytes:terrainBytes+actorBytes-1});
+ await memoryLimited.load('terrain');
+ const before=memoryLimited.snapshot();
+ assert.throws(()=>memoryLimited.preload(['terrain','actor']),/preload group exceeds cache budget/);
+ assert.deepEqual(memoryLimited.snapshot(),before);
+ assert.equal(decodes,1);
+ const entryLimited=create(manifest,loader,{maxEntries:1});
+ assert.throws(()=>entryLimited.preload(['terrain','actor']),/preload group exceeds cache budget/);
+ assert.deepEqual(entryLimited.snapshot().loaded,[]);
+ assert.equal(decodes,1);
+ const fitting=create(manifest,loader,{maxEntries:2,maxMemoryBytes:terrainBytes+actorBytes});
+ const group=await fitting.preload(['terrain','actor','terrain']);
+ assert.strictEqual(fitting.get('terrain'),group.terrain);
+ assert.strictEqual(fitting.get('actor'),group.actor);
+ assert.equal(fitting.snapshot().memoryBytes,terrainBytes+actorBytes);
+});
