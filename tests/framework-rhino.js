@@ -62,6 +62,13 @@ ensure(baseTileAt(frameA,1,1)===0&&baseTileAt(frameB,1,1)===64,
   'animated tiles select frames under Rhino');
 ensure(state.sequence===0,'tile animation must not advance gameplay');
 print('PASS animated tile frame selection under Rhino');
+var sceneFocus=composer.compose(engine.view(state),{
+  width:64,height:64,tick:0,cameraTarget:{x:5,y:3}});
+ensure(sceneFocus.camera.x===144&&sceneFocus.camera.y===80,
+  'fractional cutscene camera focus under Rhino');
+ensure(state.player.x===1&&state.player.y===1&&state.sequence===0,
+  'scene focus must not change canonical Rhino player state');
+print('PASS read-only cutscene camera target under Rhino');
 
 var audio=createBearframeAudioDirector({
  theme:{type:'music',path:'audio/music/theme.ogg',loop:true},
