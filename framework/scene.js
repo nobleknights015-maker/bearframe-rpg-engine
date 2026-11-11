@@ -43,12 +43,33 @@ function createBearframeSceneComposer(project,theme){
     throw new TypeError('floor and wall tile frames required');
   // Every tile referenced by visual scenery layers is an atlas-backed tile.
   // Collision still comes exclusively from project.maps[*].rows.
+  // Animated tiles use the existing deterministic presentation tick, never
+  // simulation state. Old static theme entries remain unchanged.
   Object.keys(theme.tiles).forEach(function(id){
     var tile=theme.tiles[id];
-    verifyFrame(tile,'tile '+id);
-    if(tile.w!==theme.tileSize||tile.h!==theme.tileSize)
-      throw new TypeError('tile frames must match tileSize');
+    if(tile&&has(tile,'frames')){
+      if(!Array.isArray(tile.frames)||!tile.frames.length||
+         tile.frames.length>128||!integer(tile.ticksPerFrame,1,1000))
+        throw new TypeError('Invalid animated tile '+id);
+      if(has(tile,'atlas')||has(tile,'x')||has(tile,'y')||
+         has(tile,'w')||has(tile,'h'))
+        throw new TypeError('Animated tile cannot include static frame '+id);
+      tile.frames.forEach(function(frame,index){
+        verifyFrame(frame,'tile '+id+'['+index+']');
+        if(frame.w!==theme.tileSize||frame.h!==theme.tileSize)
+          throw new TypeError('tile frames must match tileSize');
+      });
+    }else{
+      verifyFrame(tile,'tile '+id);
+      if(tile.w!==theme.tileSize||tile.h!==theme.tileSize)
+        throw new TypeError('tile frames must match tileSize');
+    }
   });
+  function tileFrame(name,tick){
+    var tile=theme.tiles[name];
+    return has(tile,'frames')?
+      tile.frames[Math.floor(tick/tile.ticksPerFrame)%tile.frames.length]:tile;
+  }
   var scenery={};
   Object.keys(project.maps).forEach(function(mapId){
     var layers=project.maps[mapId].visualLayers||[];
@@ -61,7 +82,7 @@ function createBearframeSceneComposer(project,theme){
           throw new TypeError('Unknown visual tile '+tileId+' on '+mapId);
         var xy=at.split(','),x=+xy[0],y=+xy[1];
         if(!rows[y])rows[y]=[];
-        rows[y].push({x:x,frame:theme.tiles[tileId],order:layerIndex});
+        rows[y].push({x:x,tileId:tileId,order:layerIndex});
       });
     });
     ['ground','canopy'].forEach(function(depth){
@@ -135,7 +156,7 @@ function createBearframeSceneComposer(project,theme){
     var maxX=Math.min(map.rows[0].length,Math.ceil((cx+width)/ts));
     var maxY=Math.min(map.rows.length,Math.ceil((cy+height)/ts));
     for(var y=minY;y<maxY;y++)for(var x=minX;x<maxX;x++){
-      var f=map.rows[y][x]==='#'?theme.tiles.wall:theme.tiles.floor;
+      var f=tileFrame(map.rows[y][x]==='#'?'wall':'floor',tick);
       commands.push({type:'sprite',imageId:f.atlas,
         source:{x:f.x,y:f.y,w:f.w,h:f.h},
         dest:{x:x*ts-cx,y:y*ts-cy,w:ts,h:ts},
@@ -148,7 +169,7 @@ function createBearframeSceneComposer(project,theme){
         for(var i=0;i<entries.length;i++){
           var tile=entries[i];
           if(tile.x<minX||tile.x>=maxX)continue;
-          var f=tile.frame;
+          var f=tileFrame(tile.tileId,tick);
           commands.push({type:'sprite',imageId:f.atlas,
             source:{x:f.x,y:f.y,w:f.w,h:f.h},
             dest:{x:tile.x*ts-cx,y:y*ts-cy,w:ts,h:ts},
