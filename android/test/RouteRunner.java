@@ -562,6 +562,72 @@ public final class RouteRunner extends Instrumentation {
      * native journal, battle UI, progression, and two-process restart. */
     /** Assert the installed Android 35 WebView actually renders v2 map pixels,
      * follows the canonical saved position, and resumes its scene on restart. */
+    /** Native renderer-memory eviction must preserve BOTH v2 world progress
+     * and visible decoded pixels. After rehydration, real touch works again. */
+    private void checkUnifiedPartyWorldMemory() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject baseline=unifiedSnapshot();
+        String worldReply=evalHost("JSON.stringify(BearframeHost.partyWorld.view())");
+        JSONObject worldBefore=new JSONObject((String)new JSONTokener(worldReply).nextValue());
+        if(worldBefore.getInt("sequence")!=0||worldBefore.getInt("x")!=1||
+           worldBefore.getInt("y")!=1||baseline.getInt("assetsLoaded")!=2)
+            throw new AssertionError("V2 memory test started with wrong state: "+worldBefore);
+        String hashScript="(function(){var c=document.getElementById('party-world-surface');"+
+            "var data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;"+
+            "var n=2166136261;for(var i=0;i<data.length;i+=4){"+
+            "n=Math.imul(n^data[i],16777619)>>>0;"+
+            "n=Math.imul(n^data[i+1],16777619)>>>0;"+
+            "n=Math.imul(n^data[i+2],16777619)>>>0;}return n;})()";
+        long original=Long.parseLong(evalHost(hashScript));
+        AtomicReference<Throwable> failure=new AtomicReference<>();
+        runOnMainSync(()->{
+            try{screen.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE);}
+            catch(Throwable error){failure.set(error);}
+        });
+        if(failure.get()!=null)throw new AssertionError(failure.get());
+        boolean restored=false;
+        for(int i=0;i<50;i++){
+            JSONObject main=new JSONObject((String)new JSONTokener(
+                evalHost("BearframeHost.snapshotJson()")).nextValue());
+            JSONObject world=new JSONObject((String)new JSONTokener(
+                evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
+            if(main.getInt("sequence")!=baseline.getInt("sequence")||
+               main.getInt("savedRevision")!=baseline.getInt("savedRevision")||
+               world.getInt("sequence")!=0||world.getInt("x")!=1||
+               world.getInt("y")!=1)
+                throw new AssertionError("Memory trim mutated saved engine state");
+            if(main.getInt("trimCount")>0&&main.getInt("recoveryCount")>0&&
+               !main.getBoolean("restoring")&&main.getInt("assetsLoaded")==2){
+                restored=true;break;
+            }
+            Thread.sleep(200);
+        }
+        if(!restored)throw new AssertionError("V2 atlases did not rehydrate");
+        long rehydrated=Long.parseLong(evalHost(hashScript));
+        if(rehydrated!=original)
+            throw new AssertionError("Rehydrated v2 canvas pixels differ");
+        if(!"false".equals(evalHost(
+            "document.querySelector('[data-party-world-dir=down]').disabled")))
+            throw new AssertionError("V2 movement remained disabled after atlas recovery");
+        evalHost("document.querySelector('[data-party-world-dir=down]').click()");
+        String advanced=evalHost("JSON.stringify(BearframeHost.partyWorld.view())");
+        JSONObject next=new JSONObject((String)new JSONTokener(advanced).nextValue());
+        String valid=evalHost("JSON.stringify(BearframeHost.partyWorld.verifySave())");
+        JSONObject verified=new JSONObject((String)new JSONTokener(valid).nextValue());
+        if(next.getInt("sequence")!=1||next.getInt("y")!=2||
+           !verified.getBoolean("ok")||verified.getInt("revision")!=1||
+           Long.parseLong(evalHost(hashScript))==rehydrated)
+            throw new AssertionError("Restored v2 scene did not advance/save");
+        JSONObject mainAfter=unifiedSnapshot();
+        if(mainAfter.getInt("sequence")!=baseline.getInt("sequence")||
+           mainAfter.getInt("savedRevision")!=baseline.getInt("savedRevision"))
+            throw new AssertionError("V2 memory recovery polluted v1 journal");
+        resultMeta.putString("partyWorldMemory",
+            "PASS native trim, v2 atlas pixel rehydration, input and isolated journal");
+    }
     private void checkUnifiedPartyWorldCanvas(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1681,6 +1747,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedProgression(stage.equals("unified-level-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-party-world-memory")){
+                checkUnifiedPartyWorldMemory();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-party-world-memory");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

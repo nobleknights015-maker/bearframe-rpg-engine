@@ -284,6 +284,12 @@ jobs:
             adb shell am instrument -w -e stage unified-party-world-canvas-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-world-canvas-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-world-canvas-second' "$RUNNER_TEMP/party-world-canvas-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-world-canvas-second.txt"
+            # Native Android memory trim: both v1 and v2 canvases must reload
+            # packaged atlases without altering either journal.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-party-world-memory dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-world-memory.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-world-memory' "$RUNNER_TEMP/party-world-memory.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-world-memory.txt"
             # Real WebView party inventory UI: item pickup, actor-specific
             # weapon/armor/accessory buttons, healing, physical copy counts,
             # then two-process recovery through native synchronous journal.
