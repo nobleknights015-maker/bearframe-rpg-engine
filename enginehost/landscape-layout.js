@@ -6,6 +6,9 @@ function createBearframeLandscapeLayout(stage,win){
   if(!view||!view.addEventListener)throw new TypeError('Viewport window required');
   var create=(typeof module!=='undefined'&&module.exports)?
     require('../framework/viewport.js'):createBearframeViewport;
+  // Engine v1 adaptive viewport: preserve a minimum logical 800x450
+  // coordinate space, then expand the short/long logical axis to the usable
+  // screen aspect. A fixed 16:9 box letterboxed the Founder's wide phone.
   var viewport=create(800,450),last=null,debug=false;
   var probe=doc.createElement('div');probe.className='landscape-safe-area-probe';
   probe.setAttribute('aria-hidden','true');doc.body.appendChild(probe);
@@ -16,13 +19,22 @@ function createBearframeLandscapeLayout(stage,win){
       bottom:pixel(style.paddingBottom),left:pixel(style.paddingLeft)};
   }
   function fit(width,height,insets){
-    var v=viewport.fit(width,height,insets||{});
-    return {width:v.cssWidth,height:v.cssHeight,scale:v.scale,
-      offsetX:v.offsetX,offsetY:v.offsetY,stageWidth:800,stageHeight:450,
-      safeArea:v.safeArea};
+    var original=viewport.fit(width,height,insets||{}),safeArea=original.safeArea;
+    var ratio=safeArea.width/safeArea.height;
+    var lw=800,lh=450;
+    if(ratio>800/450)lw=Math.min(1280,450*ratio);
+    else if(ratio<800/450)lh=Math.min(720,800/ratio);
+    // Adapt the logical stage, not its child pixels: gameplay controls
+    // remain correctly proportioned without stretching or scrolling.
+    var adapted=create(lw,lh).fit(width,height,insets||{});
+    return {width:adapted.cssWidth,height:adapted.cssHeight,scale:adapted.scale,
+      offsetX:adapted.offsetX,offsetY:adapted.offsetY,
+      stageWidth:lw,stageHeight:lh,safeArea:adapted.safeArea};
   }
   function apply(width,height,insets){
     var v=fit(width,height,insets);
+    stage.style.width=v.stageWidth+'px';
+    stage.style.height=v.stageHeight+'px';
     stage.style.transformOrigin='top left';
     stage.style.transform='translate('+v.offsetX+'px,'+v.offsetY+'px) scale('+v.scale+')';
     last=v;return v;
