@@ -86,7 +86,7 @@ function createBearframeAssetCache(manifest,loader,options){
         seen[id]=true;unique.push(id);
       }
     });
-    return Promise.all(unique.map(load)).then(function(values){
+    // Reject an impossible group before starting any asynchronous decode.\n    // Otherwise Promise.all can reject while other members keep loading and\n    // unexpectedly consume memory after the caller handles the failure.\n    unique.forEach(function(id){\n      if(estimate(source[id])>maxMemoryBytes)\n        throw new RangeError('Asset exceeds memory budget '+id);\n    });\n    return Promise.all(unique.map(load)).then(function(values){
       var result={};unique.forEach(function(id,index){result[id]=values[index];});
       return result;
     });
