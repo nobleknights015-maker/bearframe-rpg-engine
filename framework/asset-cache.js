@@ -89,10 +89,18 @@ function createBearframeAssetCache(manifest,loader,options){
     // Reject an impossible group before starting any asynchronous decode.
     // Otherwise Promise.all can reject while other members keep loading and
     // unexpectedly consume memory after the caller handles the failure.
+    var groupBytes=0;
     unique.forEach(function(id){
-      if(estimate(source[id])>maxMemoryBytes)
+      var bytes=estimate(source[id]);
+      if(bytes>maxMemoryBytes)
         throw new RangeError('Asset exceeds memory budget '+id);
+      groupBytes+=bytes;
     });
+    // Every requested resource must remain resident together after preload.
+    // Otherwise LRU eviction can discard the first atlas before the caller
+    // receives the group, leaving a scene with missing required textures.
+    if(unique.length>maxEntries||groupBytes>maxMemoryBytes)
+      throw new RangeError('Asset preload group exceeds cache budget');
     return Promise.all(unique.map(load)).then(function(values){
       var result={};unique.forEach(function(id,index){result[id]=values[index];});
       return result;
