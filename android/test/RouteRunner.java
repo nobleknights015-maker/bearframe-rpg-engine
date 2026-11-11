@@ -1099,8 +1099,8 @@ public final class RouteRunner extends Instrumentation {
             "var sizes=[[640,360],[917,411],[1024,768],[1920,1080],[742,360]];" +
             "var fits=sizes.map(function(size){var f=l.fit(size[0],size[1],insets);" +
             "return f.scale>0&&f.offsetX>=insets.left-.01&&f.offsetY>=insets.top-.01&&" +
-            "f.offsetX+800*f.scale<=size[0]-insets.right+.01&&" +
-            "f.offsetY+450*f.scale<=size[1]-insets.bottom+.01;});" +
+            "f.offsetX+f.stageWidth*f.scale<=size[0]-insets.right+.01&&" +
+            "f.offsetY+f.stageHeight*f.scale<=size[1]-insets.bottom+.01;});" +
             "var world=document.getElementById('pw-tab-world'),party=document.getElementById('pw-tab-party');" +
             "var save=document.getElementById('pw-tab-save');" +
             "party.click();var partyVisible=!document.getElementById('pw-screen-party').hidden;" +
@@ -1115,6 +1115,7 @@ public final class RouteRunner extends Instrumentation {
             "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
+            "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
             "game:document.body.classList.contains('landscape-gameplay')," +
             "party:partyVisible,save:saveVisible,debug:debug&&debugOpen});" +
@@ -1125,6 +1126,8 @@ public final class RouteRunner extends Instrumentation {
         for(int i=0;i<fits.length();i++)
             if(!fits.getBoolean(i))
                 throw new AssertionError("Landscape clipped screen profile "+i+": "+result);
+        if(result.getDouble("coverage")<0.80)
+            throw new AssertionError("Landscape viewport wastes too much phone display: "+result);
         if(result.getDouble("w")<=result.getDouble("h")||
            result.getDouble("left")< -2||result.getDouble("top")< -2||
            result.getDouble("right")>result.getDouble("w")+2||
