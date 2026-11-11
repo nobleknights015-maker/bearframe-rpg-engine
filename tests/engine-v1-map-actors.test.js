@@ -68,7 +68,7 @@ test('explicit cutscene actors override engine event markers; missing art never 
 test('bundled Android WebView loads port before session and includes event marker binding',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
- assert.match(read('enginehost/index.html'),/map-actors\.js<\/script>[\s\S]*session\.js/);
+ assert.match(read('enginehost/index.html'),/map-actors\.js"><\/script>[\s\S]*session\.js/);
  assert.match(read('enginehost/boot.js'),/eventSprites:\{supply:'eventMarker'/);
  assert.match(read('android/build.sh'),/framework\/\*\.js/);
  assert.match(read('.github/workflows/engine-ci.yml'),/framework\/map-actors\.js/);
