@@ -203,6 +203,20 @@
         party:document.getElementById('pw-screen-party'),
         save:document.getElementById('pw-screen-save')
       });
+    var partyWorldInput=createBearframeWorldInput(
+      partyWorldScreens,function(){return partyWorld.view();},
+      function(dir){
+        if(!partyWorldInteractive())
+          return {ok:false,reason:'assets-restoring'};
+        var result=partyWorld.navigate(dir);
+        if(result.ok)renderPartyWorld();
+        else partyWorldStatus.textContent='Party movement refused: '+result.reason;
+        return result;
+      },{
+        world:document.getElementById('pw-screen-world'),
+        party:document.getElementById('pw-screen-party'),
+        save:document.getElementById('pw-screen-save')
+      });
     function partyWorldAction(command){
       if(!partyWorldInteractive()){
         partyWorldStatus.textContent='Party scene unavailable; controls are paused.';
@@ -439,6 +453,7 @@
       party:partyProbe,
       partyWorld:partyWorld,
       partyWorldScreens:partyWorldScreens,
+      input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});
