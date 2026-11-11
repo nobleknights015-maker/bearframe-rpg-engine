@@ -42,6 +42,11 @@ function validateBearframeAssets(manifest) {
         throw new TypeError('Invalid pixel-art flag '+id);
     } else if(has(d,'width')||has(d,'height')||has(d,'pixelArt')) {
       throw new TypeError('Audio asset cannot have image dimensions '+id);
+    } else if(!has(d,'bytes')) {
+      // Audio cache residency is budgeted from declared encoded bytes.
+      // Without a positive budget, arbitrarily many audio resources could
+      // occupy the cache while reporting zero memory consumption.
+      throw new TypeError('Audio asset requires byte budget '+id);
     }
     if(d.preload!==undefined&&typeof d.preload!=='boolean')
       throw new TypeError('Invalid preload flag '+id);
