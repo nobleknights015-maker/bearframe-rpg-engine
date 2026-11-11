@@ -389,6 +389,47 @@
         alteredPixels:pixels,ground:under,player:actor,canopy:over,
         beforeRevision:before.sequence,afterRevision:after.sequence};
     }
+    // Installed WebView proof: animation must alter real pixels, without
+    // touching the engine's single durable journal or mutating project data.
+    function animatedTileAudit(){
+      if(!partyWorldInteractive())return {ok:false,reason:'scene-not-ready'};
+      var before=partyWorld.view(),animated=JSON.parse(JSON.stringify(theme));
+      animated.tiles.floor={ticksPerFrame:1,frames:[
+        {atlas:'terrain',x:0,y:0,w:32,h:32},
+        {atlas:'terrain',x:32,y:0,w:32,h:32}
+      ]};
+      var composer=createBearframeSceneComposer(FRAMEWORK_PARTY_FIXTURE,animated);
+      var opts={width:partyWorldSurface.width,
+        height:partyWorldSurface.height,actors:[]};
+      function packet(tick){
+        return composer.compose(before,{width:opts.width,height:opts.height,
+          tick:tick,actors:[]});
+      }
+      var first=packet(0),second=packet(1),start=null,end=null;
+      first.commands.forEach(function(cmd){
+        if(cmd.layer===0&&cmd.world.x===1&&cmd.world.y===1)start=cmd.source.x;
+      });
+      second.commands.forEach(function(cmd){
+        if(cmd.layer===0&&cmd.world.x===1&&cmd.world.y===1)end=cmd.source.x;
+      });
+      var canvasA=document.createElement('canvas'),canvasB=document.createElement('canvas');
+      canvasA.width=canvasB.width=opts.width;
+      canvasA.height=canvasB.height=opts.height;
+      var sheets={terrain:assets.get('terrain'),characters:assets.get('characters')};
+      drawBearframeSceneCanvas(canvasA,first,sheets);
+      drawBearframeSceneCanvas(canvasB,second,sheets);
+      var a=canvasA.getContext('2d').getImageData(0,0,opts.width,opts.height).data,
+        b=canvasB.getContext('2d').getImageData(0,0,opts.width,opts.height).data,
+        changed=0;
+      for(var i=0;i<a.length;i+=4)
+        if(a[i]!==b[i]||a[i+1]!==b[i+1]||
+           a[i+2]!==b[i+2]||a[i+3]!==b[i+3])changed++;
+      var after=partyWorld.view();
+      return {ok:start===0&&end===32&&changed>20&&
+        before.sequence===after.sequence,
+        firstFrame:start,secondFrame:end,changedPixels:changed,
+        revisionBefore:before.sequence,revisionAfter:after.sequence};
+    }
     partyWorldButtons.forEach(function(button){
       button.addEventListener('click',function(){
         var direction=button.getAttribute('data-party-world-dir');
@@ -554,6 +595,7 @@
       partyWorld:partyWorld,
       sceneVisibilityAudit:sceneVisibilityAudit,
       sceneryLayerAudit:sceneryLayerAudit,
+      animatedTileAudit:animatedTileAudit,
       partyWorldScreens:partyWorldScreens,
       input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
