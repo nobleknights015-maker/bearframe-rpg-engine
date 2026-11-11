@@ -117,6 +117,27 @@ function validateEngineProject(project) {
     map.rows.forEach(function(row,i){
       if(typeof row!=='string'||row.length!==width||/[^.#]/.test(row))fail('map '+key+' row '+i+' must contain only # or . with matching width');
     });
+    // Optional visual layers never affect movement collision or event
+    // coordinates. A scenery tile may legitimately cover a wall cell.
+    if(map.visualLayers!==undefined){
+      if(!Array.isArray(map.visualLayers)||map.visualLayers.length>6)
+        fail('map '+key+'.visualLayers must be at most 6 layers');
+      else map.visualLayers.forEach(function(layer,n){
+        var label='map '+key+'.visualLayers['+n+']';
+        layer=record(layer,label);
+        if(layer.depth!=='ground'&&layer.depth!=='canopy')
+          fail(label+' depth must be ground or canopy');
+        var cells=record(layer.cells,label+'.cells');
+        Object.keys(cells).forEach(function(at){
+          var match=/^(0|[1-9][0-9]*),(0|[1-9][0-9]*)$/.exec(at);
+          if(!match||+match[1]>=width||+match[2]>=map.rows.length)
+            fail(label+' out-of-bounds visual cell '+at);
+          id(cells[at],label+' cell '+at);
+        });
+        if(Object.keys(cells).length>width*map.rows.length)
+          fail(label+' too many visual cells');
+      });
+    }
     ['exits','events','encounters'].forEach(function(group){
       var entries=record(map[group],'map '+key+'.'+group);
       Object.keys(entries).forEach(function(where){
