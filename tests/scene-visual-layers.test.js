@@ -67,7 +67,7 @@ test('layer geometry and explicit tile IDs are validated before rendering',()=>{
    ...theme.tiles,grass:undefined}}),/Unknown visual tile grass/);
  const absent=clone(theme);delete absent.tiles.roof;
  assert.throws(()=>composer(project,absent),/Unknown visual tile roof/);
- const malformed=clone(theme);malformed.tiles.roof.w=33;
+ const malformed=clone(theme);malformed.tiles.roof.w=31;
  assert.throws(()=>composer(project,malformed),/tile frames must match tileSize/);
 });
 test('world render layers and camera culling work at a 256x256 map boundary',()=>{
