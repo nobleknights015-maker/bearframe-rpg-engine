@@ -101,3 +101,15 @@ test('existing unlayered projects and persisted saves remain byte compatible',()
  visual.compose({width:96,height:96,tick:0});
  assert.equal(visual.serialize(),serialized,'rendering may not write saves');
 });
+
+test('Android emulator must validate painter order in the installed offline WebView',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+ const route=read('android/test/RouteRunner.java');
+ const ci=read('.github/workflows/engine-ci.yml');
+ assert.match(route,/layerProject\.maps\.hub\.visualLayers/);
+ assert.match(route,/createBearframeSceneComposer\(layerProject,layerTheme\)/);
+ assert.match(route,/layerOrder=under>0&&actor>under&&over>actor/);
+ assert.match(route,/getBoolean\("layerOrder"\)/);
+ assert.match(ci,/stage unified-landscape/);
+});
