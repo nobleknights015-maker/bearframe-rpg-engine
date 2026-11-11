@@ -13,8 +13,11 @@ function createBearframeBrowserAudioBackend(createElement, config) {
   if(typeof prefix!=='string'||
     (prefix!==''&&!/^(?:[A-Za-z0-9_-]+\/)+$/.test(prefix)))
     throw new TypeError('Local audio asset prefix required');
-  var maxSfx=Number.isInteger(config.maxSfxVoices)&&
-    config.maxSfxVoices>=1&&config.maxSfxVoices<=32?config.maxSfxVoices:8;
+  if(config.maxSfxVoices!==undefined&&
+    (!Number.isInteger(config.maxSfxVoices)||
+     config.maxSfxVoices<1||config.maxSfxVoices>32))
+    throw new TypeError('Invalid audio maxSfxVoices');
+  var maxSfx=config.maxSfxVoices===undefined?8:config.maxSfxVoices;
   var liveMusic=null,voices=[],destroyed=false;
   var pending=Promise.resolve();
   var gain={music:1,sfx:1};
