@@ -419,7 +419,7 @@ test('asset APIs reject non-string IDs without invoking user-defined coercion',a
    assert.throws(()=>cache.descriptor(id),/Asset id must be a string/);
    assert.throws(()=>cache.get(id),/Asset id must be a string/);
    assert.throws(()=>cache.release(id),/Asset id must be a string/);
-   await assert.rejects(cache.load(id),/Asset id must be a string/);
+   assert.throws(()=>cache.load(id),/Asset id must be a string/);
    assert.throws(()=>cache.preload([id]),/Asset id must be a string/);
  }
  assert.equal(coerced,0);
