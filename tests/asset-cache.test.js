@@ -306,3 +306,23 @@ test('loader metadata mutation cannot change retained asset accounting',async()=
  assert.equal(cache.snapshot().memoryBytes,64*32*4);
  assert.equal(cache.descriptor('terrain').width,64);
 });
+
+test('oversized preload group fails before any decode starts or cache changes',async()=>{
+ const calls=[];
+ const cache=create(manifest,(d,id)=>{calls.push(id);return fake(d);},
+   {maxMemoryBytes:16384});
+ const enlarged=replace(m=>{m.assets.huge={
+   type:'image',path:'assets/huge.png',width:128,height:128
+ };});
+ const guarded=create(enlarged,(d,id)=>{calls.push(id);return fake(d);},
+   {maxMemoryBytes:16384});
+ assert.throws(()=>guarded.preload(['terrain','huge','actor']),
+   /Asset exceeds memory budget huge/);
+ await Promise.resolve();
+ assert.deepEqual(calls,[]);
+ assert.deepEqual(guarded.snapshot().loaded,[]);
+ assert.deepEqual(guarded.snapshot().inflight,[]);
+ const result=await cache.preload(['terrain','actor']);
+ assert.deepEqual(Object.keys(result),['terrain','actor']);
+ assert.deepEqual(calls,['terrain','actor']);
+});
