@@ -25,12 +25,21 @@ test('Engine v1 landscape transform letterboxes every aspect and safe-area profi
   assert.ok(fit.scale>0);
   assert.ok(fit.offsetX>=22-1e-6);
   assert.ok(fit.offsetY>=12-1e-6);
-  assert.ok(fit.offsetX+800*fit.scale<=w-18+1e-6);
-  assert.ok(fit.offsetY+450*fit.scale<=height-8+1e-6);
-  assert.equal(fit.stageWidth,800);
-  assert.equal(fit.stageHeight,450);
+  assert.ok(fit.offsetX+fit.stageWidth*fit.scale<=w-18+1e-6);
+  assert.ok(fit.offsetY+fit.stageHeight*fit.scale<=height-8+1e-6);
+  assert.ok(fit.stageWidth>=800&&fit.stageHeight>=450,
+    'Engine v1 adaptive stage never shrinks below its logical baseline');
+  if(w>=height){
+    assert.ok(Math.abs(fit.stageWidth*fit.scale-fit.safeArea.width)<1,
+      'landscape stage uses full usable width instead of letterboxing');
+    assert.ok(Math.abs(fit.stageHeight*fit.scale-fit.safeArea.height)<1,
+      'landscape stage uses full usable height');
+  }
  }
  assert.equal(h.layout.snapshot().width,917);
+ assert.ok(h.layout.snapshot().stageWidth>800,
+   'ultrawide screen expands the logical stage instead of wasting side margins');
+ assert.equal(h.stage.style.width,h.layout.snapshot().stageWidth+'px');
  assert.equal(h.doc.body.classList.contains('landscape-gameplay'),true);
  assert.equal(h.doc.documentElement.classList.contains('landscape-gameplay'),true);
  assert.match(h.stage.style.transform,/translate\([\d.]+px,[\d.]+px\) scale\([\d.]+\)/);
