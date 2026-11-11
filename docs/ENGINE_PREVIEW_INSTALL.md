@@ -22,7 +22,9 @@ regular `android/AndroidManifest.xml` and existing app behavior do not change.
 3. The preview's engine host shows its synthetic scene, directional controls,
    event, inventory, party and historical-save recovery controls. Events and
    combat must be resolved before movement resumes; their controls appear
-   directly below the scene in current builds. Every successful action saves
+   directly below the scene in current builds. When one opens, the preview
+   automatically focuses and scrolls to the required action rather than
+   leaving the disabled D-pad looking unresponsive. Every successful action saves
    automatically into the preview's independent journal. The **Save and
    continue** section offers a read-only **Verify saved progress** button.
    This is an engineering diagnostic, not a polished game menu.

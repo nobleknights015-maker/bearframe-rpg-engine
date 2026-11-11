@@ -1372,8 +1372,10 @@ public final class RouteRunner extends Instrumentation {
                !"true".equals(evalHost(
                     "document.getElementById('runtime-phase').textContent.includes('choice')"))||
                !"true".equals(evalHost(
-                    "document.querySelector('[data-event-choice=collect]')!==null")))
-                throw new AssertionError("Event prompt not explained and selectable: "+event);
+                    "document.querySelector('[data-event-choice=collect]')!==null"))||
+               !"true".equals(evalHost(
+                    "document.activeElement&&document.activeElement.hasAttribute('data-event-choice')")))
+                throw new AssertionError("Event prompt not explained, focused and selectable: "+event);
             evalHost("document.querySelector('[data-event-choice=collect]').click()");
             JSONObject selected=unifiedSnapshot();
             if(selected.getInt("sequence")!=2||
@@ -1394,8 +1396,10 @@ public final class RouteRunner extends Instrumentation {
                !"true".equals(evalHost(
                     "document.getElementById('runtime-phase').textContent.includes('combat action')"))||
                !"true".equals(evalHost(
-                    "document.querySelector('[data-runtime-combat=strike]')!==null")))
-                throw new AssertionError("Combat soft-lock without visible actions: "+encounter);
+                    "document.querySelector('[data-runtime-combat=strike]')!==null"))||
+               !"true".equals(evalHost(
+                    "document.activeElement&&document.activeElement.hasAttribute('data-runtime-combat')")))
+                throw new AssertionError("Combat soft-lock without focused actions: "+encounter);
             evalHost("document.querySelector('[data-runtime-combat=strike]').click()");
             JSONObject progressed=unifiedSnapshot();
             if(progressed.getInt("sequence")!=5||

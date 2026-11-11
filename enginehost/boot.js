@@ -290,6 +290,7 @@
     var phaseStatus=document.getElementById('runtime-phase');
     var actionStatus=document.getElementById('runtime-action-status');
     var directional=Array.from(document.querySelectorAll('[data-dir]'));
+    var previousRuntimeMode=null;
     var runtimeCombat=createBearframeRuntimeCombatPanel(
       document.getElementById('runtime-combat-controls'),
       FRAMEWORK_FIXTURE,
@@ -328,10 +329,27 @@
       var blocked=!!v.prompt||!!v.battle||!!v.partyBattle;
       directional.forEach(function(button){button.disabled=blocked;});
       phaseStatus.textContent=v.prompt?
-        'A conversation needs your choice before movement can continue.':
-        v.battle?'An encounter has begun. Choose a combat action below.':
+        'A conversation needs your choice. Select an option above; movement is paused.':
+        v.battle?'An encounter has begun. Choose a combat action above; movement is paused.':
         v.partyBattle?'Party encounter active. Use party combat controls.':
         'Exploring — use the directional buttons to move.';
+      // On a small phone the player can be looking at the D-pad when an
+      // event/encounter opens above it. Move focus only on phase entry.
+      // Never activate a choice or mutate the journal as a side effect.
+      var currentMode=v.prompt?'event':v.battle?'combat':
+        v.partyBattle?'party-combat':'explore';
+      if(currentMode!==previousRuntimeMode){
+        previousRuntimeMode=currentMode;
+        var nextAction=currentMode==='event'?
+          document.querySelector('#runtime-event-controls [data-event-choice]'):
+          currentMode==='combat'?
+          document.querySelector('#runtime-combat-controls [data-runtime-combat]'):null;
+        if(nextAction){
+          nextAction.focus();
+          if(typeof nextAction.scrollIntoView==='function')
+            nextAction.scrollIntoView({block:'nearest'});
+        }
+      }
       actionStatus.textContent=v.message;
       saveStatus.textContent=snap.journal.latestSequence===v.sequence?
         'Auto-saved · revision '+v.sequence+'. Progress resumes when this app reopens.':
