@@ -38,6 +38,21 @@
     <p id="party-status" role="status" aria-live="polite">Party combat not started.</p>
     <div id="party-controls" aria-label="Choose party skills and targets"></div>
   </section>
+  <section aria-label="Integrated v2 party world engine diagnostics">
+    <h2>Integrated party world · engine test</h2>
+    <p id="party-world-status" role="status" aria-live="polite">Loading v2 world journal…</p>
+    <div class="pad" aria-label="Party world directional movement">
+      <button data-party-world-dir="up" aria-label="Party world move up">↑</button>
+      <button data-party-world-dir="left" aria-label="Party world move left">←</button>
+      <button data-party-world-dir="down" aria-label="Party world move down">↓</button>
+      <button data-party-world-dir="right" aria-label="Party world move right">→</button>
+    </div>
+    <div id="party-world-events" aria-label="Party world scripted events"></div>
+    <div id="party-world-inventory" aria-label="Party world shared inventory, equipment and levels"></div>
+    <div id="party-world-battle" aria-label="Party world battle commands"></div>
+    <button id="party-world-verify" type="button">Verify party world save</button>
+    <p id="party-world-save-status" role="status" aria-live="polite"></p>
+  </section>
   <section aria-label="Historical save recovery diagnostics">
     <p>Old saves are never changed. This copies validated save bytes to a separate recovery archive; it does not convert the old campaign into a playable new-engine save.</p>
     <button id="legacy-preview" type="button">Inspect historical save (no changes)</button>
@@ -85,10 +100,12 @@
 <script src="assets.js"></script>
 <script src="../fixtures/engine-project.js"></script>
 <script src="../fixtures/party-engine-project.js"></script>
+<script src="../fixtures/party-world-project.js"></script>
 <script src="../framework/audio.js"></script>
 <script src="../framework/audio-browser.js"></script>
 <script src="audio-probe.js"></script>
 <script src="party-probe.js"></script>
+<script src="party-world-host.js"></script>
 <script src="party-ui.js"></script>
 <script src="runtime-panels.js"></script>
 <script src="runtime-combat-panel.js"></script>

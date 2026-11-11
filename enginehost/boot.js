@@ -184,6 +184,62 @@
       if(!r.ok)partyStatus.textContent='Party round blocked: '+r.reason;
     });
     describeParty();panel.render();
+    // End-to-end opt-in v2 world: visible navigation, scripted choices,
+    // shared gear, party turns and XP all use a single separate native journal.
+    // The old launcher, v1 diagnostics and historical saves remain untouched.
+    var partyWorld=createBearframePartyWorldHost(storage,FRAMEWORK_PARTY_WORLD_FIXTURE);
+    var partyWorldStatus=document.getElementById('party-world-status');
+    var partyWorldSaveStatus=document.getElementById('party-world-save-status');
+    var partyWorldButtons=Array.from(document.querySelectorAll('[data-party-world-dir]'));
+    function partyWorldAction(command){
+      var result=partyWorld.dispatch(command);
+      if(result.ok)renderPartyWorld();
+      else partyWorldStatus.textContent='Party action refused: '+result.reason;
+      return result;
+    }
+    var partyWorldPanels=createBearframeRuntimePanels(
+      document.getElementById('party-world-events'),
+      document.getElementById('party-world-inventory'),
+      partyWorldStatus,FRAMEWORK_PARTY_WORLD_FIXTURE,
+      function(){return partyWorld.view();},partyWorldAction);
+    var partyWorldBattlePanel=createBearframePartyCommandPanel(
+      document.getElementById('party-world-battle'),partyWorld,
+      FRAMEWORK_PARTY_WORLD_FIXTURE.partyCombat.skills,function(outcome){
+        if(outcome.ok)renderPartyWorld();
+        else partyWorldStatus.textContent='Party order refused: '+outcome.reason;
+      });
+    function renderPartyWorld(){
+      var snap=partyWorld.snapshot(),v=snap.view;
+      if(!v){
+        partyWorldStatus.textContent='Party world unavailable: '+snap.error;
+        partyWorldButtons.forEach(function(b){b.disabled=true;});
+        return;
+      }
+      var locked=!!v.prompt||!!v.partyBattle||!!v.battle;
+      partyWorldStatus.textContent='v2 '+v.mapName+' ('+v.x+','+v.y+
+        ') · revision '+v.sequence+' · '+(v.prompt?'Event choice':
+        v.partyBattle?'Party combat':'Explore')+' · '+v.message;
+      partyWorldButtons.forEach(function(button){button.disabled=locked;});
+      partyWorldPanels.render();partyWorldBattlePanel.render();
+      partyWorldSaveStatus.textContent=snap.journal.latestSequence===v.sequence?
+        'Party world auto-saved · revision '+v.sequence:
+        'Party world has not verified durable storage.';
+    }
+    partyWorldButtons.forEach(function(button){
+      button.addEventListener('click',function(){
+        var direction=button.getAttribute('data-party-world-dir');
+        var result=partyWorld.navigate(direction);
+        if(result.ok)renderPartyWorld();
+        else partyWorldStatus.textContent='Party movement refused: '+result.reason;
+      });
+    });
+    document.getElementById('party-world-verify').addEventListener('click',function(){
+      var result=partyWorld.verifySave();
+      partyWorldSaveStatus.textContent=result.ok?
+        'Verified party world checkpoint revision '+result.revision:
+        'Party world save verification failed: '+result.reason;
+    });
+    renderPartyWorld();
     var load=engine.resume();
     if(!load.ok&&load.reason==='no-save')load=engine.start('Engine host',8735);
     if(!load.ok)throw new Error('Safe engine startup blocked: '+load.reason);
@@ -310,6 +366,7 @@
       memoryPressure:memoryPressure,
       verifySave:verifySaved,
       party:partyProbe,
+      partyWorld:partyWorld,
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});
