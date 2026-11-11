@@ -284,3 +284,25 @@ test('release preserves other in-flight resources and does not mutate their cach
  assert.deepEqual(cache.snapshot().loaded,['actor']);
  assert.equal(cache.snapshot().memoryBytes,64*48*4);
 });
+
+test('loader cannot mutate authoritative metadata to bypass image validation',async()=>{
+ const cache=create(manifest,async d=>{
+   d.width=1;d.height=1;d.path='assets/changed.png';
+   return {naturalWidth:1,naturalHeight:1,complete:true};
+ });
+ await assert.rejects(cache.load('terrain'),/Asset dimensions mismatch terrain/);
+ assert.equal(cache.descriptor('terrain').width,64);
+ assert.equal(cache.descriptor('terrain').path,'enginehost/assets/terrain.png');
+ assert.equal(cache.get('terrain'),null);
+ assert.deepEqual(cache.snapshot().inflight,[]);
+});
+test('loader metadata mutation cannot change retained asset accounting',async()=>{
+ const cache=create(manifest,async d=>{
+   const width=d.width,height=d.height;
+   d.width=1;d.height=1;d.bytes=1;
+   return {naturalWidth:width,naturalHeight:height,complete:true};
+ });
+ await cache.load('terrain');
+ assert.equal(cache.snapshot().memoryBytes,64*32*4);
+ assert.equal(cache.descriptor('terrain').width,64);
+});
