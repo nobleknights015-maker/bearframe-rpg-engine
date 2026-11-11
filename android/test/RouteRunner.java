@@ -560,6 +560,54 @@ public final class RouteRunner extends Instrumentation {
     }
     /** Exercise the visible integrated v2 world: real DOM buttons, one
      * native journal, battle UI, progression, and two-process restart. */
+    /** Assert the installed Android 35 WebView actually renders v2 map pixels,
+     * follows the canonical saved position, and resumes its scene on restart. */
+    private void checkUnifiedPartyWorldCanvas(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String reply=evalHost("(function(){try{" +
+            "var w=window.BearframeHost&&BearframeHost.partyWorld;" +
+            "var c=document.getElementById('party-world-surface');" +
+            "if(!w||!c)return JSON.stringify({error:'world canvas unavailable'});" +
+            "function hash(){var data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;" +
+            "var n=2166136261;for(var i=0;i<data.length;i+=4){" +
+            "n=Math.imul(n^data[i],16777619)>>>0;" +
+            "n=Math.imul(n^data[i+1],16777619)>>>0;" +
+            "n=Math.imul(n^data[i+2],16777619)>>>0;}return n;}" +
+            "function actor(){var v=w.view(),frame=w.compose({width:c.width,height:c.height,tick:v.sequence%100});" +
+            "var list=frame.commands.filter(function(cmd){return cmd.actor==='player'});" +
+            "if(list.length!==1)throw new Error('missing world player sprite');" +
+            "return list[0].world;}" +
+            "var before=w.view(),start=hash(),oldActor=actor();" +
+            "var button=document.querySelector('[data-party-world-dir="+(restart?"up":"down")+"]');" +
+            "if(!button||button.disabled)throw new Error('rendered movement button disabled');" +
+            "button.click();" +
+            "var after=w.view(),end=hash(),newActor=actor();" +
+            "return JSON.stringify({start:start,end:end,beforeX:before.x,beforeY:before.y," +
+            "afterX:after.x,afterY:after.y,from:oldActor,to:newActor," +
+            "beforeRev:before.sequence,afterRev:after.sequence,verified:w.verifySave()," +
+            "canvasWidth:c.width,canvasHeight:c.height});" +
+            "}catch(error){return JSON.stringify({error:String(error),stack:String(error.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(reply).nextValue());
+        if(proof.has("error"))
+            throw new AssertionError("V2 rendered Android world failed: "+reply);
+        JSONObject from=proof.getJSONObject("from"),to=proof.getJSONObject("to");
+        if(proof.getInt("canvasWidth")!=224||proof.getInt("canvasHeight")!=160||
+           proof.getLong("start")==proof.getLong("end")||
+           proof.getInt("beforeX")!=1||proof.getInt("afterX")!=1||
+           proof.getInt("beforeY")!=(restart?2:1)||
+           proof.getInt("afterY")!=(restart?1:2)||
+           from.getInt("y")!=(restart?2:1)||to.getInt("y")!=(restart?1:2)||
+           proof.getInt("beforeRev")!=(restart?1:0)||
+           proof.getInt("afterRev")!=(restart?2:1)||
+           !proof.getJSONObject("verified").getBoolean("ok"))
+            throw new AssertionError("V2 world renderer state/pixels not recoverable: "+reply);
+        resultMeta.putString("partyWorldCanvas",
+            "PASS offline v2 scene pixels, movement, native journal and process restart");
+    }
     private void checkUnifiedPartyWorldUi(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1627,6 +1675,14 @@ public final class RouteRunner extends Instrumentation {
             if(stage.equals("unified-level-first") ||
                stage.equals("unified-level-second")){
                 checkUnifiedProgression(stage.equals("unified-level-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-party-world-canvas-first") ||
+               stage.equals("unified-party-world-canvas-second")){
+                checkUnifiedPartyWorldCanvas(stage.equals("unified-party-world-canvas-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
