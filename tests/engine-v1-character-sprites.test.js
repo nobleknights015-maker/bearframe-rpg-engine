@@ -72,5 +72,9 @@ test('existing flat-frame sprite projects remain valid, and port ships in Androi
  assert.ok(html.indexOf('character-sprites.js')<html.indexOf('scene.js'),
    'portable sprite helper must load before scene composer');
  assert.match(ci,/framework\/character-sprites\.js/);
+ const android=read('android/test/RouteRunner.java');
+ assert.match(android,/createBearframeCharacterSpriteRenderer/);
+ assert.match(android,/getJSONObject\("directional"\)/);
+ assert.match(android,/walk\.getInt\("column"\)!=2/);
  assert.match(read('android/build.sh'),/framework\/\*\.js/);
 });
