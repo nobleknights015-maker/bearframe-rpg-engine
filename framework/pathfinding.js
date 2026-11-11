@@ -36,6 +36,9 @@ function createBearframePathfinder(project){
       return result(false,'different-map',view.map,from,destination,[],[],0);
     if(options.allowTriggers!==undefined&&typeof options.allowTriggers!=='boolean')
       throw new TypeError('allowTriggers must be boolean');
+    if(options.allowDestinationTrigger!==undefined&&
+       typeof options.allowDestinationTrigger!=='boolean')
+      throw new TypeError('allowDestinationTrigger must be boolean');
     var limit=options.maxNodes===undefined?width*height:options.maxNodes;
     if(!Number.isInteger(limit)||limit<1||limit>65536)
       throw new TypeError('Invalid pathfinder node budget');
@@ -45,7 +48,8 @@ function createBearframePathfinder(project){
     var allow=options.allowTriggers===true;
     function blocked(x,y){
       if(rows[y][x]==='#')return 'wall';
-      if(allow)return null;
+      if(allow||(options.allowDestinationTrigger===true&&
+          x===destination.x&&y===destination.y))return null;
       var key=x+','+y,origin=view.map+':'+key,evId=map.events[key];
       if(evId){
         var event=project.events[evId];
