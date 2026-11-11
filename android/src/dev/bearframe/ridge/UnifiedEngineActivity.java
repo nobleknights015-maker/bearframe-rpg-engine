@@ -58,6 +58,13 @@ public final class UnifiedEngineActivity extends Activity {
         if(controller!=null&&controller.onKeyEvent(event))return true;
         return super.dispatchKeyEvent(event);
     }
+    // Dispatch intercepts generic motion before a focused WebView can
+    // consume the physical joystick event. Keep the fallback for callers
+    // that explicitly invoke Activity.onGenericMotionEvent().
+    @Override public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        if(controller!=null&&controller.onMotionEvent(event))return true;
+        return super.dispatchGenericMotionEvent(event);
+    }
     @Override public boolean onGenericMotionEvent(MotionEvent event) {
         if(controller!=null&&controller.onMotionEvent(event))return true;
         return super.onGenericMotionEvent(event);

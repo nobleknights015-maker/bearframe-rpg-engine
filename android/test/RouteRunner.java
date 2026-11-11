@@ -77,6 +77,29 @@ public final class RouteRunner extends Instrumentation {
         });
         if(error.get()!=null)throw new AssertionError(error.get());
     }
+    /** Exercise the Android dispatch path, not just the Activity callback.
+     * A focused WebView must not consume raw joystick navigation first. */
+    private void gamepadAxisViaDispatch(float axisX,float axisY){
+        AtomicReference<Throwable> error=new AtomicReference<>();
+        runOnMainSync(()->{
+            try{
+                long t=android.os.SystemClock.uptimeMillis();
+                MotionEvent.PointerProperties properties=new MotionEvent.PointerProperties();
+                properties.id=0;properties.toolType=MotionEvent.TOOL_TYPE_UNKNOWN;
+                MotionEvent.PointerCoords coords=new MotionEvent.PointerCoords();
+                coords.setAxisValue(MotionEvent.AXIS_X,axisX);
+                coords.setAxisValue(MotionEvent.AXIS_Y,axisY);
+                MotionEvent e=MotionEvent.obtain(t,t,MotionEvent.ACTION_MOVE,1,
+                    new MotionEvent.PointerProperties[]{properties},
+                    new MotionEvent.PointerCoords[]{coords},0,0,1f,1f,0,0,
+                    InputDevice.SOURCE_JOYSTICK,0);
+                boolean handled=screen.dispatchGenericMotionEvent(e);
+                e.recycle();
+                if(!handled)throw new AssertionError("Physical joystick dispatch was not handled");
+            }catch(Throwable failure){error.set(failure);}
+        });
+        if(error.get()!=null)throw new AssertionError(error.get());
+    }
     private void walk(String path){
         for(char dir:path.toCharArray())tap(dir=='R'?"Move east":dir=='U'?"Move north":dir=='D'?"Move south":"Move west");
     }
@@ -743,8 +766,8 @@ public final class RouteRunner extends Instrumentation {
             if(walked.getInt("sequence")!=3||walked.getInt("x")!=1||
                walked.getInt("y")!=2)
                 throw new AssertionError("Controller could not move after restart: "+walked);
-            gamepadAxis(0f,-0.9f);
-            gamepadAxis(0f,0f);
+            gamepadAxisViaDispatch(0f,-0.9f);
+            gamepadAxisViaDispatch(0f,0f);
             JSONObject analog=new JSONObject((String)new JSONTokener(
                 evalHost("JSON.stringify(BearframeHost.partyWorld.view())")).nextValue());
             if(analog.getInt("sequence")!=4||analog.getInt("x")!=1||

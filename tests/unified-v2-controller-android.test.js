@@ -4,7 +4,9 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('unified Android native controller drives semantic v2 actions, never old game namespace',()=>{
  const java=read('android/src/dev/bearframe/ridge/UnifiedEngineActivity.java');
  for(const token of ['ControllerInputRouter','dispatchKeyEvent(KeyEvent event)',
-   'onGenericMotionEvent(MotionEvent event)','routeController("navigate",direction)',
+   'onGenericMotionEvent(MotionEvent event)',
+   'dispatchGenericMotionEvent(MotionEvent event)',
+   'routeController("navigate",direction)',
    'routeController("confirm",null)','routeController("menu",null)',
    'routeController(delta<0?"previous-tab":"next-tab",null)',
    'controller.clear()','window.BearframeHost.input'])
@@ -21,7 +23,9 @@ test('installed emulator stages cover D-pad, confirm, menu, shoulders, analog an
   'gamepadKey(KeyEvent.KEYCODE_BUTTON_X)',
   'gamepadKey(KeyEvent.KEYCODE_BUTTON_R1)',
   'gamepadKey(KeyEvent.KEYCODE_BUTTON_B)',
-  'gamepadAxis(0f,-0.9f)','BearframeHost.partyWorld.verifySave()',
+  'gamepadAxisViaDispatch(0f,-0.9f)',
+  'screen.dispatchGenericMotionEvent(e)',
+  'BearframeHost.partyWorld.verifySave()',
   'unified-v2-controller-first','unified-v2-controller-second'])
   assert.ok(java.includes(token),'Missing installed input acceptance '+token);
  assert.match(ci,/stage unified-v2-controller-first/);
