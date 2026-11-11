@@ -244,3 +244,43 @@ test('noncritical memory trim cannot retain pending pre-trim decode or lose a ne
  assert.deepEqual(cache.snapshot().loaded,['terrain']);
  assert.equal(cache.snapshot().memoryBytes,64*32*4);
 });
+
+
+test('release of an in-flight scene asset prevents late cache repopulation',async()=>{
+ let resolveOld,resolveNew,calls=0;
+ const cache=create(manifest,()=>new Promise(resolve=>{
+   if(++calls===1)resolveOld=resolve;
+   else resolveNew=resolve;
+ }));
+ const old=cache.load('terrain');
+ await Promise.resolve();
+ assert.equal(cache.release('terrain'),true);
+ assert.deepEqual(cache.snapshot().inflight,[]);
+ const newer=cache.load('terrain');
+ await Promise.resolve();
+ assert.equal(calls,2);
+ resolveOld(fake(manifest.assets.terrain));
+ await old;
+ assert.equal(cache.get('terrain'),null);
+ assert.deepEqual(cache.snapshot().inflight,['terrain']);
+ resolveNew(fake(manifest.assets.terrain));
+ const fresh=await newer;
+ assert.strictEqual(cache.get('terrain'),fresh);
+ assert.equal(cache.snapshot().memoryBytes,64*32*4);
+ assert.equal(cache.release('terrain'),true);
+ assert.equal(cache.release('terrain'),false);
+ assert.equal(cache.snapshot().memoryBytes,0);
+});
+
+test('release preserves other in-flight resources and does not mutate their cache',async()=>{
+ const pending={};
+ const cache=create(manifest,(d,id)=>new Promise(resolve=>{pending[id]=resolve;}));
+ const terrain=cache.load('terrain'),actor=cache.load('actor');
+ await Promise.resolve();
+ assert.equal(cache.release('terrain'),true);
+ pending.terrain(fake(manifest.assets.terrain));
+ pending.actor(fake(manifest.assets.actor));
+ await Promise.all([terrain,actor]);
+ assert.deepEqual(cache.snapshot().loaded,['actor']);
+ assert.equal(cache.snapshot().memoryBytes,64*48*4);
+});
