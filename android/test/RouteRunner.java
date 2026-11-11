@@ -1095,6 +1095,7 @@ public final class RouteRunner extends Instrumentation {
             "var rect=stage.getBoundingClientRect();" +
             "var npcAudit=BearframeHost.sceneVisibilityAudit();" +
             "var sceneryAudit=BearframeHost.sceneryLayerAudit();" +
+            "var animationAudit=BearframeHost.animatedTileAudit();" +
             "var navHost=BearframeHost.partyWorld,navRevision=navHost.view().sequence;" +
             "var pathPlan=navHost.planPath({x:4,y:3});" +
             "var interaction=navHost.planPath({x:2,y:1},{allowDestinationTrigger:true});" +
@@ -1146,6 +1147,7 @@ public final class RouteRunner extends Instrumentation {
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
             "npcAudit:npcAudit,sceneryAudit:sceneryAudit," +
+            "animationAudit:animationAudit," +
             "pathPlan:pathPlan,interaction:interaction," +
             "pathUnchanged:pathUnchanged,layerOrder:layerOrder," +
             "directional:directional,idle:idle," +
@@ -1156,6 +1158,11 @@ public final class RouteRunner extends Instrumentation {
             "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
         JSONObject result=new JSONObject((String)new JSONTokener(reply).nextValue());
         if(result.has("error"))throw new AssertionError("Landscape JS failed: "+result);
+        JSONObject animationAudit=result.getJSONObject("animationAudit");
+        if(!animationAudit.getBoolean("ok")||
+           animationAudit.getInt("changedPixels")<=20||
+           animationAudit.getInt("revisionBefore")!=animationAudit.getInt("revisionAfter"))
+            throw new AssertionError("Installed Canvas tile animation pixels missing: "+animationAudit);
         JSONObject sceneryAudit=result.getJSONObject("sceneryAudit");
         if(!sceneryAudit.getBoolean("ok")||
            sceneryAudit.getInt("alteredPixels")<=20||
