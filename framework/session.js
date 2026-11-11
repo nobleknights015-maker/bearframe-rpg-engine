@@ -11,6 +11,9 @@ function createBearframeSession(project, storage, theme, opts) {
   var engine=engineFactory(project);
   var journal=journalFactory(engine,storage,opts.slotPrefix);
   var scene=theme?sceneFactory(project,theme):null;
+  var actorsFactory=theme?
+    (node?require('./map-actors.js'):createBearframeMapActors):null;
+  var mapActors=actorsFactory?actorsFactory(project,theme):null;
   var current=null,lastError=null;
   function result(ok,reason) {
     return {ok:ok,reason:reason||null,
@@ -73,7 +76,13 @@ function createBearframeSession(project, storage, theme, opts) {
   }
   function compose(options) {
     if(!scene||!current)throw new Error('Session rendering unavailable');
-    return scene.compose(engine.view(current),options);
+    // Engine v1-style map event sprites are rendered from the same saved
+    // snapshot, never from UI-owned state. Explicit caller actors remain
+    // supported and take precedence (e.g. cutscenes and diagnostic tests).
+    var renderOptions=Object.assign({},options||{});
+    if(!Object.prototype.hasOwnProperty.call(renderOptions,'actors')&&mapActors)
+      renderOptions.actors=mapActors(current.player.map,current.flags);
+    return scene.compose(engine.view(current),renderOptions);
   }
   function serialize() {return current?engine.serialize(current):null;}
   return Object.freeze({resume:resume,start:start,dispatch:dispatch,
