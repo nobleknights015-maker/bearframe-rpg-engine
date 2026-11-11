@@ -271,3 +271,15 @@ next-level threshold. The option requires a content-revision binding
 so old v2 saves are never reinterpreted silently. Node/Rhino/WebView
 packaging tests have been added; physical QA and full character
 creation remain outstanding.
+
+
+## Installed XP progression checkpoint
+
+Two Android 35 instrumented stages `unified-level-first/second` exercise
+a synthetic, **content-revision-bound** v2 party project inside the actual
+offline WebView and native save bridge. Recruited allies participate in
+battle, victory XP advances levels and maximum resources, skills unlock,
+the generic inventory UI renders XP/levels, and force-stop/restart must
+rehydrate the same saved progression. This is a verification target for
+the opt-in leveling engine, not physical-device acceptance or a complete
+character creation system.

@@ -488,6 +488,76 @@ public final class RouteRunner extends Instrumentation {
     /** A real installed WebView drives v2 party inventory DOM controls into
      * native durable storage, verifies physical gear reservations, then
      * restarts and continues without changing the original Rhino save. */
+    /** Opt-in level 2 progression via the actual offline Android WebView and
+     * native journal. Separate test data does not change saved v1/v2 games. */
+    private void checkUnifiedProgression(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String result=evalHost("(function(){try{" +
+            "var p=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_FIXTURE));" +
+            "p.contentRevision='leveling_1';" +
+            "p.partyCombat.skills.focus={kind:'damage',power:16,cost:1,element:'physical'};" +
+            "p.partyCombat.progression={thresholds:[0,10,30],growth:{" +
+            "pilot:{hp:4,mp:1,attack:2,defense:1,speed:0}," +
+            "scout:{hp:3,mp:1,attack:1,defense:1,speed:1}}," +
+            "unlocks:{pilot:{2:['focus']},scout:{2:['pulse']}}};" +
+            "p.events.supply.choices[0].effects.push({type:'recruit',ally:'scout'});" +
+            "var store={read:function(k){return BearframeNative.read(k)}," +
+            "write:function(k,v){return BearframeNative.write(k,v)}};" +
+            "var s=createBearframeSession(p,store,null," +
+            "{slotPrefix:'bf:framework-party-test:v2:leveling'});" +
+            "var launched="+(restart?"s.resume()":"s.start('Leveler',23)")+";" +
+            "if(!launched.ok)return JSON.stringify({error:launched.reason});" +
+            "if(!"+(restart?"true":"false")+"){" +
+            "var moves=[{type:'move',dir:'right'},{type:'choose',id:'collect'}," +
+            "{type:'equip',item:'blade'},{type:'move',dir:'right'}," +
+            "{type:'move',dir:'right'}];" +
+            "for(var i=0;i<moves.length;i++){" +
+            "var out=s.dispatch(moves[i]);if(!out.ok)return JSON.stringify({error:out.reason,step:i});}" +
+            "var limit=0;" +
+            "while(s.snapshot().view.partyBattle&&limit++<10){" +
+            "var done=s.dispatch({type:'party-round',orders:[" +
+            "{actor:'pilot',skill:'strike',target:'crawler'}," +
+            "{actor:'scout',skill:'strike',target:'crawler'}]});" +
+            "if(!done.ok)return JSON.stringify({error:done.reason,step:'battle'});" +
+            "}" +
+            "if(s.snapshot().view.partyBattle)return JSON.stringify({error:'battle not finished'});" +
+            "}else{" +
+            "var walked=s.dispatch({type:'move',dir:'down'});" +
+            "if(!walked.ok)return JSON.stringify({error:walked.reason,step:'resume move'});" +
+            "}" +
+            "var v=s.snapshot().view;" +
+            "var eventRoot=document.createElement('div'),gear=document.createElement('div');" +
+            "var status=document.createElement('p');" +
+            "var panel=createBearframeRuntimePanels(eventRoot,gear,status,p," +
+            "function(){return s.snapshot().view},function(cmd){return s.dispatch(cmd)});" +
+            "panel.render();" +
+            "return JSON.stringify({progress:v.partyProgression," +
+            "xp:v.xp,maxHp:v.maxHp,charge:v.maxCharge," +
+            "leadSkills:v.partyActors[0].skills,allySkills:v.partyActors[1].skills," +
+            "weapon:v.partyGear.pilot.weapon,display:gear.textContent," +
+            "valid:s.verifySave(),sequence:v.sequence});" +
+            "}catch(error){return JSON.stringify({error:String(error),stack:String(error.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(result).nextValue());
+        if(proof.has("error"))throw new AssertionError("Installed progression failed "+result);
+        JSONObject progress=proof.getJSONObject("progress");
+        JSONObject pilot=progress.getJSONObject("pilot"),scout=progress.getJSONObject("scout");
+        if(pilot.getInt("level")!=2||scout.getInt("level")!=2||
+           pilot.getInt("xp")!=10||scout.getInt("xp")!=10||
+           proof.getInt("maxHp")!=34||proof.getInt("charge")!=4||
+           !"blade".equals(proof.getString("weapon"))||
+           !proof.getJSONArray("leadSkills").toString().contains("focus")||
+           !proof.getJSONArray("allySkills").toString().contains("pulse")||
+           !proof.getString("display").contains("Level 2")||
+           !proof.getJSONObject("valid").getBoolean("ok")||
+           proof.getInt("sequence")<(restart?8:7))
+            throw new AssertionError("Level growth/skill save did not survive Android "+result);
+        resultMeta.putString("leveling",
+            "PASS opt-in XP, ally skills, level growth, save and force-stop recovery");
+    }
     private void checkUnifiedPartyInventoryUi(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -1503,6 +1573,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedRecreate();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-recreate");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-level-first") ||
+               stage.equals("unified-level-second")){
+                checkUnifiedProgression(stage.equals("unified-level-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
