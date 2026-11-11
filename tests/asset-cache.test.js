@@ -377,3 +377,17 @@ test('preload refuses false readiness after memory-pressure invalidates pending 
  await assert.rejects(pending,/Asset preload lost required resource terrain/);
  assert.deepEqual(cache.snapshot().loaded,[]);
 });
+
+test('preload retains valid asset IDs matching inherited object property names',async()=>{
+ const special=replace(m=>{
+   m.assets.constructor={type:'image',path:'assets/special-constructor.png',width:8,height:8};
+   m.assets.tostring={type:'image',path:'assets/special-tostring.png',width:8,height:8};
+ });
+ const calls=[];
+ const cache=create(special,(d,id)=>{calls.push(id);return fake(d);});
+ const result=await cache.preload(['constructor','terrain','constructor','tostring']);
+ assert.deepEqual(Object.keys(result),['constructor','terrain','tostring']);
+ assert.deepEqual(calls,['constructor','terrain','tostring']);
+ assert.strictEqual(result.constructor,cache.get('constructor'));
+ assert.equal(cache.snapshot().memoryBytes,8*8*4+64*32*4+8*8*4);
+});
