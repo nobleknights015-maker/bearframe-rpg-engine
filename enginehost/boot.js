@@ -352,6 +352,43 @@
         actorIds:actors.map(function(c){return c.actor;}),
         canvasWidth:width,canvasHeight:height};
     }
+    // Diagnostic-only Canvas pixel comparison for scenery layering.
+    // The original world journal is never touched by this audit.
+    function sceneryLayerAudit(){
+      if(!partyWorldInteractive())return {ok:false,reason:'scene-not-ready'};
+      var before=partyWorld.view(),
+        project=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_FIXTURE));
+      project.maps.hub.visualLayers=[
+        {depth:'ground',cells:{'1,2':'wall'}},
+        {depth:'canopy',cells:{'2,1':'wall'}}
+      ];
+      var opts={width:partyWorldSurface.width,height:partyWorldSurface.height,
+        tick:before.sequence%100,actors:[]};
+      var baseline=createBearframeSceneComposer(FRAMEWORK_PARTY_FIXTURE,theme)
+        .compose(before,opts);
+      var layered=createBearframeSceneComposer(project,theme)
+        .compose(before,opts);
+      var base=document.createElement('canvas'),enhanced=document.createElement('canvas');
+      base.width=enhanced.width=opts.width;
+      base.height=enhanced.height=opts.height;
+      var sheets={terrain:assets.get('terrain'),characters:assets.get('characters')};
+      drawBearframeSceneCanvas(base,baseline,sheets);
+      drawBearframeSceneCanvas(enhanced,layered,sheets);
+      var one=base.getContext('2d').getImageData(0,0,opts.width,opts.height).data,
+        two=enhanced.getContext('2d').getImageData(0,0,opts.width,opts.height).data,
+        pixels=0;
+      for(var i=0;i<one.length;i+=4)
+        if(one[i]!==two[i]||one[i+1]!==two[i+1]||
+          one[i+2]!==two[i+2]||one[i+3]!==two[i+3])pixels++;
+      var under=layered.commands.findIndex(function(c){return c.layer===0.5;}),
+        actor=layered.commands.findIndex(function(c){return c.actor==='player';}),
+        over=layered.commands.findIndex(function(c){return c.layer===2;});
+      var after=partyWorld.view();
+      return {ok:under>=0&&under<actor&&over>actor&&pixels>20&&
+        before.sequence===after.sequence,
+        alteredPixels:pixels,ground:under,player:actor,canopy:over,
+        beforeRevision:before.sequence,afterRevision:after.sequence};
+    }
     partyWorldButtons.forEach(function(button){
       button.addEventListener('click',function(){
         var direction=button.getAttribute('data-party-world-dir');
@@ -516,6 +553,7 @@
       party:partyProbe,
       partyWorld:partyWorld,
       sceneVisibilityAudit:sceneVisibilityAudit,
+      sceneryLayerAudit:sceneryLayerAudit,
       partyWorldScreens:partyWorldScreens,
       input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
