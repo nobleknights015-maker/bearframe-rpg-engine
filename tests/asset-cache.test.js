@@ -409,3 +409,23 @@ test('preload preserves inherited JavaScript identifiers without inherited resul
  }
  assert.equal(cache.snapshot().loaded.length,2);
 });
+
+
+test('asset APIs reject non-string IDs without invoking user-defined coercion',async()=>{
+ let coerced=0,loaded=0;
+ const malicious={toString(){coerced++;return 'terrain';}};
+ const cache=create(manifest,d=>{loaded++;return fake(d);});
+ for(const id of [malicious,0,null,undefined,Symbol('terrain')]){
+   assert.throws(()=>cache.descriptor(id),/Asset id must be a string/);
+   assert.throws(()=>cache.get(id),/Asset id must be a string/);
+   assert.throws(()=>cache.release(id),/Asset id must be a string/);
+   await assert.rejects(cache.load(id),/Asset id must be a string/);
+   assert.throws(()=>cache.preload([id]),/Asset id must be a string/);
+ }
+ assert.equal(coerced,0);
+ assert.equal(loaded,0);
+ assert.deepEqual(cache.snapshot().inflight,[]);
+ assert.deepEqual(cache.snapshot().loaded,[]);
+ const valid=await cache.load('terrain');
+ assert.strictEqual(cache.get('terrain'),valid);
+});
