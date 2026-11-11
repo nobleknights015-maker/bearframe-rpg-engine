@@ -38,6 +38,11 @@ function createBearframePartyWorldHost(storage,project,theme){
     // Scene composition is read-only. The canonical session remains the
     // single source of geometry and journal state across Android restarts.
     compose:function(options){return session.compose(options);},
+    planPath:function(destination,options){
+      if(startupError)return {ok:false,reason:startupError,
+        directions:[],positions:[],cost:0,visited:0};
+      return session.planPath(destination,options);
+    },
     verifySave:function(){
       if(startupError)return {ok:false,reason:startupError};
       return session.verifySave();
