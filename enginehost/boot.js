@@ -8,6 +8,7 @@
   var status=document.getElementById('status');
   var metrics=document.getElementById('metrics');
   var surface=document.getElementById('surface');
+  var retryAssets=document.getElementById('runtime-assets-retry');
   function text(id,value){document.getElementById(id).textContent=String(value);}
   // Audio is a host-only diagnostic. Never touch the simulation journal.
   var audioProbe=createBearframeAudioProbe(function(tag){return document.createElement(tag);});
@@ -251,11 +252,13 @@
       if(!assets.get('terrain')||!assets.get('characters')){
         if(!restoring){
           status.textContent='Restoring offline scene assets';
+          retryAssets.disabled=true;retryAssets.hidden=true;
           restoring=assets.preload(['terrain','characters']).then(function(){
             restoring=null;recoveryCount++;show();return true;
           },function(error){
             restoring=null;recoveryFailures++;
             status.textContent='Scene restoration failed: '+error.message;
+            retryAssets.disabled=false;retryAssets.hidden=false;
             metrics.textContent='Saved state preserved; retry after resources recover.';
             return false;
           });
@@ -263,6 +266,10 @@
       }
       return {ok:true,evicted:trimmed.evicted,restoring:!!restoring};
     }
+    retryAssets.addEventListener('click',function(){
+      retryAssets.disabled=true;retryAssets.hidden=true;
+      memoryPressure(80);
+    });
     function act(command) {
       if(restoring||!assets.get('terrain')||!assets.get('characters'))
         return {ok:false,reason:'assets-restoring'};
@@ -322,6 +329,8 @@
     show();
     }).catch(function(error){
       status.textContent='Asset loading failed: '+error.message;
+      retryAssets.disabled=false;retryAssets.hidden=false;
+      retryAssets.addEventListener('click',function(){location.reload();});
       metrics.textContent='Existing save preserved; no partial scene was presented.';
       window.BearframeHost=Object.freeze({
         snapshotJson:function(){return JSON.stringify({ready:false,error:error.message});}
