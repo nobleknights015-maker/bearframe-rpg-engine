@@ -25,6 +25,7 @@ test('world path is deterministic, shortest, and refuses scripted event/encounte
   assert.equal(planner.find(view,{x:0,y:0}).reason,'wall');
   assert.equal(planner.find(view,{x:5,y:1}).reason,'trigger');
   assert.equal(planner.find(view,{x:3,y:1}).reason,'trigger');
+  assert.equal(planner.find(view,{map:'field',x:4,y:3}).reason,'different-map');
   assert.deepEqual(planner.find(view,{x:2,y:1},{allowTriggers:true}).directions,
     ['right']);
 });
