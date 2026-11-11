@@ -1093,6 +1093,7 @@ public final class RouteRunner extends Instrumentation {
             "var l=window.BearframeLandscape,stage=document.getElementById('engine-landscape-stage');" +
             "if(!l||!stage)throw Error('Missing landscape host');" +
             "var rect=stage.getBoundingClientRect();" +
+            "var npcAudit=BearframeHost.sceneVisibilityAudit();" +
             "var w=window.visualViewport?window.visualViewport.width:innerWidth;" +
             "var h=window.visualViewport?window.visualViewport.height:innerHeight;" +
             "var insets={top:12,right:18,bottom:8,left:22};" +
@@ -1115,6 +1116,7 @@ public final class RouteRunner extends Instrumentation {
             "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
             "fits:fits,inside:inside(nav)&&inside(canvas)," +
+            "npcAudit:npcAudit," +
             "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
             "game:document.body.classList.contains('landscape-gameplay')," +
@@ -1122,6 +1124,13 @@ public final class RouteRunner extends Instrumentation {
             "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
         JSONObject result=new JSONObject((String)new JSONTokener(reply).nextValue());
         if(result.has("error"))throw new AssertionError("Landscape JS failed: "+result);
+        JSONObject npcAudit=result.getJSONObject("npcAudit");
+        if(!npcAudit.getBoolean("ok")||
+           npcAudit.getInt("eventActors")<2||
+           npcAudit.getInt("differentPixels")<20||
+           npcAudit.getInt("revisionBefore")!=npcAudit.getInt("revisionAfter")||
+           !npcAudit.getJSONArray("actorIds").toString().contains("event:mechanic:2,2"))
+            throw new AssertionError("Installed WebView hides a configured NPC: "+npcAudit);
         JSONArray fits=result.getJSONArray("fits");
         for(int i=0;i<fits.length();i++)
             if(!fits.getBoolean(i))
