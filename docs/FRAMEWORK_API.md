@@ -101,6 +101,25 @@ invisible. The included APK test fixture uses diagnostic sprites only.
 
 This intentionally supports original multi-frame sprite art and scalable maps instead of locking game content to the prototype's hand-coded shapes.
 
+### Deterministic animated tiles
+
+A `theme.tiles` entry can be a static atlas rectangle (original format)
+or a bounded animated tile:
+
+```js
+water: {ticksPerFrame:4,frames:[
+  {atlas:'terrain',x:0,y:48,w:48,h:48},
+  {atlas:'terrain',x:48,y:48,w:48,h:48}
+]}
+```
+
+Animated tile definitions work in `floor`, `wall`, and optional scenery
+layers. Every frame must match `theme.tileSize` and stay inside its atlas.
+The renderer selects a frame using the caller-supplied deterministic `tick`
+without modifying maps, RPG state or saves. Each animation has 1–128 frames
+and a 1–1000 tick frame interval. Invalid definitions fail at scene setup.
+The same sprite commands are consumed by Rhino, browser Canvas and Android.
+
 ### Optional tile scenery (below and above characters)
 
 The existing `map.rows` retain authoritative wall/floor collision geometry.
