@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "tileSize": 32,
+  "clearColor": "#101018",
+  "tiles": {
+    "floor": {
+      "source_archive": "Bearframe assets.zip",
+      "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+      "original_path": "SciFi_Station_Mega_Kit/01_Floor/sprites/01_smooth_steel_plate.png"
+    },
+    "wall": {
+      "source_archive": "Bearframe assets.zip",
+      "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+      "original_path": "SciFi_Station_Mega_Kit/02_Station_Walls/sprites/01_horizontal_wall_top.png"
+    }
+  },
+  "sprites": {
+    "player": {
+      "ticksPerFrame": 1,
+      "frames": [
+        {
+          "source_archive": "Bearframe assets.zip",
+          "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+          "original_path": "SciFi_Station_Mega_Kit/31_Service_Robots/sprites/13_android_butler.png"
+        }
+      ]
+    },
+    "eventMarker": {
+      "ticksPerFrame": 1,
+      "frames": [
+        {
+          "source_archive": "Bearframe assets.zip",
+          "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+          "original_path": "SciFi_Station_Mega_Kit/31_Service_Robots/sprites/14_android_technician.png"
+        }
+      ]
+    }
+  },
+  "eventSprites": {
+    "supply": "eventMarker",
+    "mechanic": "eventMarker",
+    "scout": "eventMarker"
+  }
+}
