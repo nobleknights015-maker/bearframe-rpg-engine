@@ -34,6 +34,38 @@ printf '%s\n' \
 if [[ -n "${BF_ASSET_PACK_DIR:-}" ]]; then
   node "$root/scripts/verify_asset_pack.js" "$BF_ASSET_PACK_DIR" \
     "$work/assets/enginehost/packs/active"
+  # Scene roles are data-only. Validate every owner image ID and descriptor
+  # before synthesizing the sole CSP-local script; never execute source ZIP code.
+  if [[ -f "$BF_ASSET_PACK_DIR/art-profile.json" ]]; then
+    python3 - "$BF_ASSET_PACK_DIR" "$work/assets/enginehost/art-profile.js" <<'BF_OWNER_ART_PY'
+import json, pathlib, sys
+pack=pathlib.Path(sys.argv[1])
+src=pack/"art-profile.json"
+if src.stat().st_size>4000000:
+    raise SystemExit("Owner art profile exceeds build input limit")
+profile=json.loads(src.read_text(encoding="utf-8"))
+original=json.loads((pack/"asset-manifest.json").read_text(encoding="utf-8"))
+if profile.get("version")!=1 or not isinstance(profile.get("manifest"),dict) or original.get("version")!=1:
+    raise SystemExit("Invalid versioned owner art profile")
+assets=profile["manifest"].get("assets")
+if not isinstance(assets,dict) or len(assets)!=len(original["assets"]):
+    raise SystemExit("Owner art profile must register EVERY original image")
+for ident,desc in original["assets"].items():
+    expected={**desc,"path":"enginehost/packs/active/"+desc["path"],"preload":False}
+    if assets.get(ident)!=expected:
+        raise SystemExit("Owner art profile is not byte-library-consistent: "+ident)
+required=profile.get("requiredImages")
+if not isinstance(required,list) or not 1<=len(required)<=32 or len(set(required))!=len(required) or any(
+        ident not in assets for ident in required):
+    raise SystemExit("Invalid owner scene dependency list")
+theme=profile.get("theme")
+if not isinstance(theme,dict) or theme.get("tileSize")!=32 or not all(
+        k in theme.get("tiles",{}) for k in ("floor","wall")):
+    raise SystemExit("Owner profile must preserve native 32x32 terrain")
+pathlib.Path(sys.argv[2]).write_text("var BEARFRAME_OWNER_ART_PROFILE = "+
+    json.dumps(profile,ensure_ascii=True,separators=(",",":"))+";\n",encoding="utf-8")
+BF_OWNER_ART_PY
+  fi
 fi
 # A generated, original silent WAV proves local audio packaging without game media.
 node "$root/scripts/generate_audio_fixture.js" "$work/assets/enginehost/audio/diagnostics/silence.wav"
