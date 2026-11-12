@@ -266,6 +266,11 @@
     }
     var partyWorldSaveStatus=document.getElementById('party-world-save-status');
     var partyWorldButtons=Array.from(document.querySelectorAll('[data-party-world-dir]'));
+    partyWorldButtons.forEach(function(button){
+      if(button.getAttribute('data-party-world-dir').indexOf('-')>=0)
+        button.hidden=!(partyWorldProject.movement&&
+          partyWorldProject.movement.mode==='free');
+    });
     var partyWorldScreens=createBearframeScreenNavigator(
       document.getElementById('party-world-navigation'),{
         world:document.getElementById('pw-screen-world'),
@@ -335,10 +340,11 @@
         throw new Error('Scene atlas loading or recovery in progress');
       var current=partyWorld.view();
       if(current){
+        var pos=current.freePosition||current;
         if(lastDrawnPlayer&&current.map===lastDrawnPlayer.map&&
-           (current.x!==lastDrawnPlayer.x||current.y!==lastDrawnPlayer.y))
+           (pos.x!==lastDrawnPlayer.x||pos.y!==lastDrawnPlayer.y))
           playerWalkUntilTick=tick+5;
-        lastDrawnPlayer={map:current.map,x:current.x,y:current.y};
+        lastDrawnPlayer={map:current.map,x:pos.x,y:pos.y};
       }
       var frame=partyWorld.compose({
         width:partyWorldSurface.width,height:partyWorldSurface.height,tick:tick,
