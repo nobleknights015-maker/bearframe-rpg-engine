@@ -350,6 +350,12 @@ jobs:
             adb shell am instrument -w -e stage unified-party-screens-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-screens-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-screens-second' "$RUNNER_TEMP/party-screens-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-screens-second.txt"
+            # Actual player-facing JRPG modal: verify controller menu navigation,
+            # event lock, equipped item save and visibility inside WebView.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-jrpg-menu dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/jrpg-menu.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-jrpg-menu' "$RUNNER_TEMP/jrpg-menu.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/jrpg-menu.txt"
             # Native physical input routing on installed Android 35 WebView.
             # Covers real KeyEvent/joystick adapters and independent v2 saves.
             adb shell pm clear dev.bearframe.ridge
