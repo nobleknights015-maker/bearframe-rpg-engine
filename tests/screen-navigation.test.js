@@ -78,3 +78,16 @@ test('Android host presents separate screens and native controls',()=>{
  assert.match(boot,/createBearframeScreenNavigator\(/);
  assert.match(boot,/partyWorldScreens\.sync\(/);
 });
+
+test('screen changes notify the visual clock only when selection changes',()=>{
+ const f=ui(),seen=[];
+ const nav=make(f.nav,f.panels,id=>seen.push(id));
+ assert.deepEqual(seen,['world']);
+ nav.select('party');nav.select('save');
+ nav.sync('explore',true);
+ assert.deepEqual(seen,['world','party','save']);
+ nav.sync('event',true);
+ assert.equal(seen.at(-1),'world');
+ const bad=ui();
+ assert.throws(()=>make(bad.nav,bad.panels,3),/selection callback/);
+});
