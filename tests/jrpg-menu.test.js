@@ -136,3 +136,17 @@ test('Android source wires JRPG menu while preserving original developer diagnos
   assert.match(read('enginehost/host.css'),/jrpg-pad-hidden/);
   assert.match(read('android/build.sh'),/enginehost\/\*\.js/);
 });
+
+test('Android CI explicitly exercises the visible JRPG command modal and saved equipment',()=>{
+  const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+  const java=read('android/test/RouteRunner.java');
+  const workflow=read('.github/workflows/engine-ci.yml');
+  for(const token of [
+    'checkUnifiedJrpgMenu()', 'stage.equals("unified-jrpg-menu")',
+    "BearframeHost.jrpgMenu", "m.open('equipment')",
+    "Equip Training blade", "getComputedStyle(overlay)",
+    "h.verifySave().ok", "h.view().sequence===before+3"
+  ])assert.ok(java.includes(token),'Android menu acceptance missing '+token);
+  assert.match(workflow,/stage unified-jrpg-menu/);
+  assert.match(workflow,/route=PASS unified-jrpg-menu/);
+});
