@@ -8,6 +8,8 @@ test('Android memory trim reloads v2 scene without mutating main or party journa
   'onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE)',
   'party-world-surface',
   'BearframeHost.partyWorld.view()',
+  'renderVisualTickForAudit(0)',
+  'BearframeHost.presentationClock.start()',
   'rehydrated!=original',
   '(long)Double.parseDouble(evalHost(hashScript))',
   'V2 movement remained disabled after atlas recovery',
