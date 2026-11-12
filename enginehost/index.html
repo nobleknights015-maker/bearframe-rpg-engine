@@ -40,7 +40,7 @@
     <div id="party-controls" aria-label="Choose party skills and targets"></div>
   </section>
   <section class="party-world-section" id="engine-landscape-stage" data-phase="explore" aria-label="Integrated v2 party world engine diagnostics">
-    <h2>Integrated party world · engine test</h2>
+    <h2 class="jrpg-world-title">BEARFRAME <span id="jrpg-world-location">Field Exploration</span></h2>
     <nav id="party-world-navigation" class="party-screen-tabs"
       role="tablist" aria-label="Party world engine screens">
       <button id="pw-tab-world" type="button" role="tab" data-party-world-tab="world"
@@ -55,6 +55,8 @@
       <p id="party-world-status" role="status" aria-live="polite">Loading v2 world journal…</p>
       <canvas id="party-world-surface" width="224" height="160"
         aria-label="Rendered v2 party world scene"></canvas>
+      <button id="jrpg-menu-open" type="button" aria-haspopup="dialog"
+        aria-controls="jrpg-menu">☰ Menu</button>
       <div id="party-world-room-transition" class="room-transition"
         aria-live="polite" aria-atomic="true" aria-label="Entered room"></div>
       <div class="pad" aria-label="Party world directional movement">
@@ -78,6 +80,18 @@
       <p id="party-world-save-status" role="status" aria-live="polite"></p>
       <button id="landscape-open-diagnostics" type="button">Developer diagnostics</button>
     </div>
+    <section id="jrpg-menu" class="jrpg-menu" role="dialog" aria-modal="true"
+      aria-label="JRPG command menu" aria-hidden="true" hidden>
+      <div class="jrpg-menu-top">
+        <strong>BEARFRAME</strong><span data-jrpg-heading>Command Menu</span>
+        <button type="button" data-jrpg-close aria-label="Back or close menu">Back</button>
+      </div>
+      <div class="jrpg-menu-layout">
+        <nav data-jrpg-commands class="jrpg-commands" aria-label="Game commands"></nav>
+        <section data-jrpg-details class="jrpg-details" aria-label="Command details"></section>
+      </div>
+      <p data-jrpg-message class="jrpg-menu-message" role="status" aria-live="polite"></p>
+    </section>
   </section>
   <section aria-label="Historical save recovery diagnostics">
     <p>Old saves are never changed. This copies validated save bytes to a separate recovery archive; it does not convert the old campaign into a playable new-engine save.</p>
@@ -143,6 +157,7 @@
 <script src="screen-navigation.js"></script>
 <script src="presentation-clock.js"></script>
 <script src="input-host.js"></script>
+<script src="jrpg-menu.js"></script>
 <script src="touch-pad.js"></script>
 <script src="party-ui.js"></script>
 <script src="runtime-panels.js"></script>
