@@ -914,18 +914,22 @@ public final class RouteRunner extends Instrumentation {
                chosen.getInt("x")!=1||chosen.getInt("y")!=1)
                 throw new AssertionError("Controller confirm did not commit event: "+chosen);
             gamepadKey(KeyEvent.KEYCODE_BUTTON_X);
-            if(!"\"party\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
-                throw new AssertionError("Controller menu did not open Party");
+            if(!"true".equals(evalHost("BearframeHost.jrpgMenu.isOpen()")))
+                throw new AssertionError("Controller menu did not open JRPG commands");
             gamepadKey(KeyEvent.KEYCODE_BUTTON_R1);
-            if(!"\"save\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
-                throw new AssertionError("Shoulder did not move to Save screen");
+            if(!"true".equals(evalHost(
+                "document.querySelector('[data-jrpg-command=techniques]').getAttribute('data-jrpg-selected')==='true'")))
+                throw new AssertionError("Shoulder did not select next JRPG command");
             gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
-            if(!"\"world\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
+            if(!"false".equals(evalHost("BearframeHost.jrpgMenu.isOpen()"))||
+               !"\"world\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
                 throw new AssertionError("Controller cancel did not return to World");
         }else{
             gamepadKey(KeyEvent.KEYCODE_BUTTON_L1);
-            if(!"\"save\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
-                throw new AssertionError("Left shoulder did not wrap to Save");
+            if(!"true".equals(evalHost("BearframeHost.jrpgMenu.isOpen()"))||
+               !"true".equals(evalHost(
+                   "document.querySelector('[data-jrpg-command=options]').getAttribute('data-jrpg-selected')==='true'")))
+                throw new AssertionError("Left shoulder did not wrap to Options menu");
             gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
             gamepadKey(KeyEvent.KEYCODE_DPAD_DOWN);
             JSONObject walked=new JSONObject((String)new JSONTokener(
@@ -953,6 +957,62 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("v2Controller",
             "PASS native D-pad, A/B, menus, shoulders, analog and two-process journal");
     }
+    /** Installed Android WebView acceptance for the actual JRPG command dialog.
+     * Uses real UI buttons and the same durable world game session.
+     */
+    private void checkUnifiedJrpgMenu() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String raw=evalHost("(function(){try{" +
+            "var h=BearframeHost.partyWorld,m=BearframeHost.jrpgMenu;" +
+            "if(!h||!m)throw Error('JRPG menu missing');" +
+            "var before=h.view().sequence;" +
+            "var overlay=document.getElementById('jrpg-menu');" +
+            "var tabs=document.getElementById('party-world-navigation');" +
+            "if(!overlay.hidden)throw Error('Menu should start closed');" +
+            "if(!BearframeHost.input({type:'menu'}))throw Error('Menu button not routed');" +
+            "if(overlay.hidden||getComputedStyle(overlay).display==='none')" +
+              "throw Error('JRPG dialog not visible');" +
+            "if(getComputedStyle(tabs).opacity!=='0')" +
+              "throw Error('Developer tabs still player visible');" +
+            "if(!BearframeHost.input({type:'navigate',direction:'down'})||" +
+              "!BearframeHost.input({type:'confirm'})||m.current()!=='techniques')" +
+              "throw Error('Controller menu selection broken');" +
+            "if(!BearframeHost.input({type:'cancel'})||m.current()!=='overview'||" +
+              "!BearframeHost.input({type:'cancel'})||m.isOpen())" +
+              "throw Error('Controller menu cancel broken');" +
+            "if(h.view().sequence!==before)" +
+              "throw Error('Menu navigation modified saved gameplay');" +
+            "if(!h.navigate('right').ok||!h.view().prompt)" +
+              "throw Error('Expected scripted event');" +
+            "if(m.open())throw Error('Menu opened on top of event choices');" +
+            "if(!h.dispatch({type:'choose',id:'collect'}).ok)" +
+              "throw Error('Item collection refused');" +
+            "if(!m.open('equipment'))throw Error('Equipment menu unavailable');" +
+            "var buttons=Array.from(overlay.querySelectorAll('[data-jrpg-action]'));" +
+            "var equip=buttons.find(function(b){return b.textContent==='Equip Training blade';});" +
+            "if(!equip||equip.disabled||!equip.getClientRects().length)" +
+              "throw Error('Real equipment action not visible');" +
+            "equip.click();" +
+            "var gear=h.view().partyGear.pilot.weapon;" +
+            "var same=h.verifySave().ok&&h.view().sequence===before+3;" +
+            "m.close();" +
+            "return JSON.stringify({gear:gear,saved:same,menuClosed:overlay.hidden," +
+              "sequence:h.view().sequence,original:before});" +
+            "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(raw).nextValue());
+        if(proof.has("error"))throw new AssertionError("Installed JRPG menu failed: "+proof);
+        if(!"blade".equals(proof.getString("gear"))||
+           !proof.getBoolean("saved")||!proof.getBoolean("menuClosed")||
+           proof.getInt("sequence")!=proof.getInt("original")+3)
+            throw new AssertionError("JRPG menu changed or failed journal: "+proof);
+        resultMeta.putString("jrpgMenu",
+            "PASS installed command menu, controller, gear, original autosave");
+    }
+
     private void checkUnifiedPartyWorldScreens(boolean restart) throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -2385,6 +2445,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedControllerWorld(stage.equals("unified-v2-controller-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-jrpg-menu")){
+                checkUnifiedJrpgMenu();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-jrpg-menu");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

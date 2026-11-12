@@ -108,3 +108,24 @@ test('controller Confirm opens visible event pages and closes events without cho
  assert.equal(answer.clicked,0,'Close cannot choose the first dialogue answer');
  assert.equal(h.moves(),0);
 });
+
+test('production JRPG shoulders open command UI instead of invisible developer tabs',()=>{
+ const base=harness(),calls=[];let open=false,moves=0;
+ const menu={isOpen:()=>open,handle:function(action){
+   calls.push(action.type);
+   if(action.type==='menu')open=true;
+   if(action.type==='cancel')open=false;
+   return true;
+ }};
+ const input=make({current:()=>base.screen(),select:()=>{}},
+   ()=>base.state,()=>{moves++;return {ok:true};},base.panels,menu);
+ assert.equal(input.handle({type:'previous-tab'}),true);
+ assert.deepEqual(calls,['menu','previous-tab']);
+ assert.equal(open,true);
+ assert.equal(input.handle({type:'navigate',direction:'right'}),true);
+ assert.equal(moves,0,'menu directional input never moves the world');
+ assert.equal(input.handle({type:'cancel'}),true);
+ assert.equal(open,false);
+ assert.equal(input.handle({type:'next-tab'}),true);
+ assert.deepEqual(calls.slice(-2),['menu','next-tab']);
+});

@@ -2,7 +2,7 @@
  * Native Android, browser keyboard or Gamepad pollers submit semantic input
  * here; it NEVER bypasses the visible DOM, canonical dispatch or save gate.
  */
-function createBearframeWorldInput(screens,view,navigate,roots){
+function createBearframeWorldInput(screens,view,navigate,roots,menu){
   if(!screens||typeof screens.current!=='function'||
      typeof screens.select!=='function'||typeof view!=='function'||
      typeof navigate!=='function'||!roots||
@@ -90,6 +90,16 @@ function createBearframeWorldInput(screens,view,navigate,roots){
   }
   function handle(event){
     if(!event||typeof event!=='object')return false;
+    // The visible modal handles all controller input before world movement.
+    // Calls without a menu keep the existing diagnostics test interface.
+    if(menu&&(menu.isOpen()||event.type==='menu'||event.type==='pause'||
+       event.type==='next-tab'||event.type==='previous-tab')){
+      // Shoulder buttons are command-category navigation in gameplay, not
+      // hidden diagnostic-tab navigation. Open the modal on first press.
+      if(!menu.isOpen()&&(event.type==='next-tab'||event.type==='previous-tab')&&
+         !menu.handle({type:'menu'}))return false;
+      return menu.handle(event);
+    }
     var mode=screens.current(),v=view();
     if(!v)return false;
     var blocked=!!v.prompt||!!v.partyBattle||!!v.battle;
