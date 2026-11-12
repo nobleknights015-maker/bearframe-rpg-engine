@@ -46,7 +46,13 @@ function createBearframePresentationClock(options){
         return;
       }
     }
-    if(active)handle=request(frame);
+    if(active){
+      try{handle=request(frame);}
+      catch(error){
+        failures++;stop();
+        if(typeof options.onError==='function')options.onError(error);
+      }
+    }
   }
   function start(){
     if(active)return false;
