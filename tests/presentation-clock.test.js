@@ -162,3 +162,28 @@ test('RAF cancellation failure cannot strand active clock or block restart',()=>
  assert.equal(clock.snapshot().running,false);
  assert.equal(clock.snapshot().failures,2);
 });
+
+test('stale RAF callback after stop/restart cannot paint or schedule a competing loop',()=>{
+ let next=0,callbacks=new Map(),pending=new Set(),paints=[];
+ const clock=makeClock({
+  requestFrame:fn=>{const id=++next;callbacks.set(id,fn);pending.add(id);return id;},
+  cancelFrame:id=>{pending.delete(id);},
+  paint:tick=>{paints.push(tick);}
+ });
+ clock.start();
+ const stale=callbacks.get(1);
+ clock.stop();
+ clock.start();
+ assert.equal(pending.size,1);
+ stale(1000);
+ assert.equal(pending.size,1,'stale callback must not create a second loop');
+ assert.deepEqual(paints,[]);
+ const id=[...pending][0];
+ pending.delete(id);callbacks.get(id)(0);
+ assert.equal(pending.size,1);
+ const id2=[...pending][0];
+ pending.delete(id2);callbacks.get(id2)(50);
+ assert.deepEqual(paints,[1]);
+ assert.equal(pending.size,1);
+ clock.stop();
+});
