@@ -1077,6 +1077,75 @@ public final class RouteRunner extends Instrumentation {
     /** Landscape is not a cosmetic CSS width: prove the live installed
      * Activity rotates, fits the logical stage inside safe view bounds,
      * and exposes all menus as pages instead of scrollable document content. */
+    /** Installed Android WebView: real idle pixels advance on the world page
+     * with no gameplay input, saved revisions or background RAF leak. */
+    private void checkUnifiedPresentationClock() throws Exception {
+        String setup=evalHost("(function(){try{" +
+            "var h=BearframeHost,p=h.presentationClock,c=document.getElementById('party-world-surface');" +
+            "if(!p||!c)throw Error('missing host presentation clock');" +
+            "if(h.partyWorldScreens.current()!=='world')throw Error('world page not active');" +
+            "var v=h.partyWorld.view(),state=p.snapshot();" +
+            "function hash(){var d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;" +
+            "var x=2166136261;for(var i=0;i<d.length;i+=4){" +
+            "x=Math.imul(x^d[i],16777619)>>>0;" +
+            "x=Math.imul(x^d[i+1],16777619)>>>0;" +
+            "x=Math.imul(x^d[i+2],16777619)>>>0;}return x;}" +
+            "return JSON.stringify({run:state.running,tick:state.tick,paints:state.paints," +
+            "hash:hash(),revision:v.sequence});" +
+            "}catch(e){return JSON.stringify({error:String(e)})}})()");
+        JSONObject first=new JSONObject((String)new JSONTokener(setup).nextValue());
+        if(first.has("error")||!first.getBoolean("run"))
+            throw new AssertionError("Idle clock did not start: "+first);
+        boolean pixelsChanged=false;
+        JSONObject sample=null;
+        for(int i=0;i<15;i++){
+            Thread.sleep(90);
+            String result=evalHost("(function(){var p=BearframeHost.presentationClock.snapshot()," +
+                "c=document.getElementById('party-world-surface')," +
+                "d=c.getContext('2d').getImageData(0,0,c.width,c.height).data,x=2166136261;" +
+                "for(var i=0;i<d.length;i+=4){" +
+                "x=Math.imul(x^d[i],16777619)>>>0;" +
+                "x=Math.imul(x^d[i+1],16777619)>>>0;" +
+                "x=Math.imul(x^d[i+2],16777619)>>>0;}" +
+                "return JSON.stringify({hash:x,tick:p.tick,paints:p.paints," +
+                "revision:BearframeHost.partyWorld.view().sequence});})()");
+            sample=new JSONObject((String)new JSONTokener(result).nextValue());
+            if(sample.getLong("hash")!=first.getLong("hash") &&
+               sample.getInt("paints")>first.getInt("paints")){
+                pixelsChanged=true;break;
+            }
+        }
+        if(!pixelsChanged||sample.getInt("revision")!=first.getInt("revision"))
+            throw new AssertionError("Real idle scene pixels did not advance without saves: "+
+                first+" -> "+sample);
+        String paused=evalHost("(function(){BearframeHost.partyWorldScreens.select('party');" +
+            "return JSON.stringify(BearframeHost.presentationClock.snapshot());})()");
+        JSONObject pauseBefore=new JSONObject((String)new JSONTokener(paused).nextValue());
+        if(pauseBefore.getBoolean("running"))
+            throw new AssertionError("Offscreen world kept RAF running");
+        Thread.sleep(250);
+        JSONObject pauseAfter=new JSONObject((String)new JSONTokener(evalHost(
+            "JSON.stringify(BearframeHost.presentationClock.snapshot())")).nextValue());
+        if(pauseAfter.getInt("tick")!=pauseBefore.getInt("tick")||
+           pauseAfter.getInt("paints")!=pauseBefore.getInt("paints"))
+            throw new AssertionError("Hidden screen continued ticking");
+        String resume=evalHost("(function(){BearframeHost.partyWorldScreens.select('world');" +
+            "var started=BearframeHost.presentationClock.snapshot().running;" +
+            "BearframeHost.suspend();" +
+            "var stopped=!BearframeHost.presentationClock.snapshot().running;" +
+            "BearframeHost.resume();" +
+            "return JSON.stringify({started:started,stopped:stopped," +
+            "resumed:BearframeHost.presentationClock.snapshot().running," +
+            "sequence:BearframeHost.partyWorld.view().sequence," +
+            "save:BearframeHost.partyWorld.verifySave().ok});})()");
+        JSONObject finalState=new JSONObject((String)new JSONTokener(resume).nextValue());
+        if(!finalState.getBoolean("started")||!finalState.getBoolean("stopped")||
+           !finalState.getBoolean("resumed")||!finalState.getBoolean("save")||
+           finalState.getInt("sequence")!=first.getInt("revision"))
+            throw new AssertionError("RAF lifecycle damaged world save: "+resume);
+        resultMeta.putString("presentationClock",
+            "PASS real idle pixel changes, tab/Activity pause-resume, unchanged saved revision");
+    }
     private void checkLandscapeViewport() throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -2229,6 +2298,7 @@ public final class RouteRunner extends Instrumentation {
             }
             if(stage.equals("unified-landscape")){
                 checkLandscapeViewport();
+                checkUnifiedPresentationClock();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-landscape");
                 finish(Activity.RESULT_OK,result);
