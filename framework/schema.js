@@ -23,6 +23,26 @@ function validateEngineProject(project) {
   var items=record(project.items,'project.items');
   var foes=record(project.foes,'project.foes');
   var quests=record(project.quests,'project.quests');
+  // Free locomotion is explicitly opt-in. Historical saved map projects
+  // remain strict four-cardinal tile movement without schema migrations.
+  if(project.movement!==undefined){
+    var locomotion=record(project.movement,'project.movement');
+    if(locomotion.mode!=='free'&&locomotion.mode!=='tile')
+      fail('project.movement.mode must be free or tile');
+    Object.keys(locomotion).forEach(function(name){
+      if(['mode','speed','radius'].indexOf(name)<0)
+        fail('unknown project.movement option '+name);
+    });
+    if(locomotion.mode==='tile'&&
+       (locomotion.speed!==undefined||locomotion.radius!==undefined))
+      fail('tile movement does not accept free-motion tuning');
+    if(locomotion.mode==='free'){
+      if(locomotion.speed!==undefined)
+        integer(locomotion.speed,8,64,'project.movement.speed');
+      if(locomotion.radius!==undefined)
+        integer(locomotion.radius,8,96,'project.movement.radius');
+    }
+  }
   var ruleRanges={
     playerHp:[1,9999],playerCharge:[1,999],baseAttack:[1,9999],
     pulseBonus:[0,9999],pulseCost:[1,99],guardReduction:[0,9999],
