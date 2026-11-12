@@ -15,10 +15,14 @@ function createBearframePresentationClock(options){
     (view&&view.cancelAnimationFrame&&view.cancelAnimationFrame.bind(view));
   if(typeof request!=='function'||typeof cancel!=='function')
     throw new TypeError('Animation frame scheduler required');
-  var active=false,handle=null,previous=null,tick=0,paints=0,failures=0;
+  var active=false,handle=null,previous=null,tick=0,paints=0,failures=0,generation=0;
+  function schedule(){
+    var token=generation;
+    return request(function(timestamp){if(token===generation)frame(timestamp);});
+  }
   function stop(){
     var wasActive=active;
-    active=false;previous=null;
+    active=false;previous=null;generation++;
     if(handle!==null){
       var pending=handle;
       handle=null;
@@ -54,7 +58,7 @@ function createBearframePresentationClock(options){
       }
     }
     if(active){
-      try{handle=request(frame);}
+      try{handle=schedule();}
       catch(error){
         failures++;stop();
         if(typeof options.onError==='function')options.onError(error);
@@ -63,8 +67,8 @@ function createBearframePresentationClock(options){
   }
   function start(){
     if(active)return false;
-    active=true;previous=null;
-    try{handle=request(frame);}
+    active=true;previous=null;generation++;
+    try{handle=schedule();}
     catch(error){active=false;previous=null;throw error;}
     return true;
   }
