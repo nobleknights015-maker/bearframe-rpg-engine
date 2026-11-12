@@ -26,7 +26,7 @@ test('validates a complete author-owned project without executing source code',(
     const sandbox={};vm.runInNewContext(text,sandbox,{timeout:1000});
     assert.equal(sandbox.BEARFRAME_CONTENT_PROFILE.version,1);
     assert.equal(sandbox.BEARFRAME_CONTENT_PROFILE.project.id,'ci-content-source');
-    assert.deepEqual(sandbox.BEARFRAME_CONTENT_PROFILE.project.maps.hub.rows,
+    assert.deepEqual(Array.from(sandbox.BEARFRAME_CONTENT_PROFILE.project.maps.hub.rows),
       fixture.maps.hub.rows);
     assert.ok(!text.includes('require('));
   }finally{x.clean();}
