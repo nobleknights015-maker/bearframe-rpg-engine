@@ -14,7 +14,7 @@ def build(folder, role_path):
         raise ValueError("Invalid owner asset manifest")
     if roles.get("version")!=1 or roles.get("tileSize")!=32:
         raise ValueError("Only version 1 and native 32x32 terrain supported")
-    if set(roles)-{"version","tileSize","tiles","sprites","eventSprites","clearColor"}:
+    if set(roles)-{"version","tileSize","tiles","sprites","eventSprites","clearColor","mapTiles","portals"}:
         raise ValueError("Unknown art role metadata")
     records={}
     for record in inventory["source_entries"]:
@@ -85,6 +85,22 @@ def build(folder, role_path):
             raise ValueError("Invalid animation timing "+name)
         scene_sprites[name]={"ticksPerFrame":ticks,
                              "frames":[frame(ref,"sprite."+name) for ref in frames]}
+    map_tiles=roles.get("mapTiles",{})
+    portals=roles.get("portals",{})
+    if not isinstance(map_tiles,dict) or not isinstance(portals,dict):
+        raise ValueError("Invalid map appearance metadata")
+    if len(map_tiles)>256 or len(portals)>256:
+        raise ValueError("Too many map appearances")
+    for map_id,appearance in map_tiles.items():
+        if not valid_name(map_id) or not isinstance(appearance,dict) or not appearance or \
+                set(appearance)-{"floor","wall"} or any(
+                not isinstance(value,str) or value not in scene_tiles
+                for value in appearance.values()):
+            raise ValueError("Invalid map tile roles "+str(map_id))
+    for map_id,source_frame in portals.items():
+        if not valid_name(map_id):
+            raise ValueError("Invalid portal map ID")
+    scene_portals={name:frame(ref,"portal."+name) for name,ref in portals.items()}
     events=roles.get("eventSprites",{})
     if not isinstance(events,dict) or len(events)>64 or any(
             not valid_name(k) or not isinstance(v,str) or v not in scene_sprites for k,v in events.items()):
@@ -102,6 +118,8 @@ def build(folder, role_path):
            "atlases":{ident:{"width":all_assets[ident]["width"],"height":all_assets[ident]["height"]}
                       for ident in sorted(required)},
            "tiles":scene_tiles,"sprites":scene_sprites,"eventSprites":events}
+    if map_tiles: theme["mapTiles"]=map_tiles
+    if scene_portals: theme["portals"]=scene_portals
     output={"version":1,"manifest":{"version":1,"assets":registered},
             "theme":theme,"requiredImages":sorted(required)}
     # Refuse overwrite; a rejected mapping must never rewrite working art data.

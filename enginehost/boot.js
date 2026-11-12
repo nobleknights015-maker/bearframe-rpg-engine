@@ -246,6 +246,20 @@
     var partyWorldSceneReady=false,partyWorldClock=null;
     // Presentation-only step window; never stored in the durable journal.
     var lastDrawnPlayer=null,playerWalkUntilTick=-1;
+    var lastRoom=null;
+    var roomTransition=document.getElementById('party-world-room-transition');
+    function announceRoom(view){
+      if(!view||lastRoom===view.map)return;
+      var changed=lastRoom!==null;
+      lastRoom=view.map;
+      // Initial load establishes the room without pretending the player
+      // entered via a door; later transitions are presentation-only.
+      if(!changed||!roomTransition)return;
+      roomTransition.textContent=view.mapName||view.map;
+      roomTransition.classList.remove('room-transition-playing');
+      void roomTransition.offsetWidth;
+      roomTransition.classList.add('room-transition-playing');
+    }
     function partyWorldInteractive(){
       return partyWorldSceneReady&&!restoring&&
         sceneReady();
@@ -352,6 +366,7 @@
         partyWorldButtons.forEach(function(b){b.disabled=true;});
         return;
       }
+      announceRoom(v);
       var sceneError=null;
       try {
         paintPartyWorldFrame(partyWorldClock?partyWorldClock.tick():0);

@@ -65,6 +65,28 @@ function createBearframeSceneComposer(project,theme){
         throw new TypeError('tile frames must match tileSize');
     }
   });
+  // Optional authored map appearance and visible exit/door frames. Each role
+  // refers to an original pixel atlas rectangle; collision and warp rules
+  // still live exclusively in project.maps[*].rows and .exits.
+  var mapTiles=theme.mapTiles||{},portals=theme.portals||{};
+  if(typeof mapTiles!=='object'||Array.isArray(mapTiles)||
+     typeof portals!=='object'||Array.isArray(portals))
+    throw new TypeError('Invalid map tile or portal appearance');
+  Object.keys(mapTiles).forEach(function(mapId){
+    if(!has(project.maps,mapId))throw new TypeError('Unknown map tile appearance '+mapId);
+    var roles=mapTiles[mapId];
+    if(!roles||typeof roles!=='object'||Array.isArray(roles)||
+       Object.keys(roles).some(function(k){return k!=='floor'&&k!=='wall';}))
+      throw new TypeError('Invalid map tile appearance '+mapId);
+    Object.keys(roles).forEach(function(k){
+      if(typeof roles[k]!=='string'||!has(theme.tiles,roles[k]))
+        throw new TypeError('Unknown map tile role '+mapId+'.'+k);
+    });
+  });
+  Object.keys(portals).forEach(function(mapId){
+    if(!has(project.maps,mapId))throw new TypeError('Unknown portal map '+mapId);
+    verifyFrame(portals[mapId],'portal '+mapId);
+  });
   function tileFrame(name,tick){
     var tile=theme.tiles[name];
     return has(tile,'frames')?
@@ -198,8 +220,10 @@ function createBearframeSceneComposer(project,theme){
     var minX=Math.max(0,Math.floor(cx/ts)),minY=Math.max(0,Math.floor(cy/ts));
     var maxX=Math.min(map.rows[0].length,Math.ceil((cx+width)/ts));
     var maxY=Math.min(map.rows.length,Math.ceil((cy+height)/ts));
+    var appearance=mapTiles[view.map]||{};
     for(var y=minY;y<maxY;y++)for(var x=minX;x<maxX;x++){
-      var f=tileFrame(map.rows[y][x]==='#'?'wall':'floor',tick);
+      var base=map.rows[y][x]==='#'?'wall':'floor';
+      var f=tileFrame(appearance[base]||base,tick);
       commands.push({type:'sprite',imageId:f.atlas,
         source:{x:f.x,y:f.y,w:f.w,h:f.h},
         dest:{x:x*ts-cx,y:y*ts-cy,w:ts,h:ts},
@@ -223,6 +247,22 @@ function createBearframeSceneComposer(project,theme){
     // Draw in painter order, not just layer metadata order: both browser
     // Canvas and native Android Canvas process commands sequentially.
     addScenery('ground',0.5);
+    // Every gameplay exit receives a recognizable original door sprite when
+    // the art theme supplies one. Door bottom sits exactly on exit tile feet;
+    // painter order allows the player to appear in front of a tall doorway.
+    var portal=portals[view.map];
+    if(portal){
+      Object.keys(map.exits).sort().forEach(function(at){
+        var xy=at.split(','),x=+xy[0],y=+xy[1];
+        var dx=Math.floor((x+0.5)*ts-portal.w/2-cx);
+        var dy=(y+1)*ts-portal.h-cy;
+        if(dx+portal.w<=0||dy+portal.h<=0||dx>=width||dy>=height)return;
+        commands.push({type:'sprite',imageId:portal.atlas,
+          source:{x:portal.x,y:portal.y,w:portal.w,h:portal.h},
+          dest:{x:dx,y:dy,w:portal.w,h:portal.h},
+          layer:0.75,exit:{map:map.exits[at].map,x:x,y:y}});
+      });
+    }
     var actors=[{id:'player',x:view.x,y:view.y,sprite:'player',
       direction:options.playerDirection,moving:!!options.playerMoving,
       pattern:options.playerPattern}];

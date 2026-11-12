@@ -36,3 +36,29 @@ Gameplay movement/collision decisions and saved journal remain authoritative.
 Animations cannot fabricate a movement success or write into a save.
 Full gameplay actor art, NPC-specific animation, equipment overlays,
 lighting/effects and physical-device release acceptance remain open.
+
+
+## JRPG room entrances and distinct map identity
+
+The owner-role JSON now optionally supports:
+- `mapTiles`: per-map overrides for `floor` and `wall` tile role IDs,
+  e.g. `{"field":{"floor":"fieldFloor","wall":"fieldWall"}}`.
+  All referenced roles are still native 32x32 and validated in the pure scene
+  composer against real project map IDs.
+- `portals`: a map ID to an independently referenced original image frame
+  for doors/thresholds. Portals may be 32x64 and are feet-anchored over each
+  destination entry in that map's existing `exits` list. No map collision,
+  warp target, progression or journal field changes.
+
+The included example deliberately exercises a closed service door in `hub`
+and an open service door in `field`, with visibly different grating and
+rusted wall art in the second room. Original owner bytes remain unchanged.
+These are engine-verification room styles rather than Bearframe canon maps.
+
+The WebView overlays a non-interactive arrival label for a brief fade when
+`view.map` changes. First startup/resuming a save does not pretend a
+transition happened; all effects are visual and preserve normal movement and
+save recovery. The default diagnostic theme and old art-profile syntax remain
+supported without an optional door asset. For a finished game, author proper
+doors and room palettes for every map rather than treating these two test
+rooms as the final world.
