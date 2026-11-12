@@ -393,6 +393,9 @@ public final class RouteRunner extends Instrumentation {
         JSONArray ids=proof.getJSONArray("images");
         if(ids.length()!=1 || !"test".equals(ids.getString(0)) || proof.getInt("painted")<32)
             throw new AssertionError("Canvas did not draw owner-role texture pixels: "+proof);
+        // Move DOWN into an empty passable tile: moving RIGHT instead starts the
+        // supply dialogue without relocating the player, so its unchanged
+        // pixels are correct event behavior and cannot prove locomotion.
         // Installed WebView must select real directional source rectangles, not
         // merely report one decoded image. Use synthetic CI atlas halves with
         // different pixels and preserve the exact party-world save revision.
@@ -408,7 +411,7 @@ public final class RouteRunner extends Instrumentation {
             "var original=new Uint8Array(cv.getContext('2d').getImageData(" +
               "0,0,cv.width,cv.height).data);" +
             "var revision=host.view().sequence;" +
-            "var accepted=BearframeHost.input({type:'navigate',direction:'right'});" +
+            "var accepted=BearframeHost.input({type:'navigate',direction:'down'});" +
             "var repainted=BearframeHost.renderVisualTickForAudit(0);" +
             "var latest=cv.getContext('2d').getImageData(" +
               "0,0,cv.width,cv.height).data,changed=0;" +
@@ -418,7 +421,8 @@ public final class RouteRunner extends Instrumentation {
             "return JSON.stringify({idle:idle.source.x,step:step.source.x," +
               "next:next.source.x,up:up.source.x,img:step.imageId," +
               "accepted:accepted,repainted:repainted,from:revision,to:host.view().sequence," +
-              "facing:host.facing(),saved:host.verifySave().ok,changed:changed," +
+              "facing:host.facing(),atX:host.view().x,atY:host.view().y," +
+              "saved:host.verifySave().ok,changed:changed," +
               "status:document.getElementById('party-world-status').textContent});})()");
         JSONObject movement=new JSONObject((String)new JSONTokener(visual).nextValue());
         if(movement.getInt("idle")!=32||movement.getInt("step")!=0||
@@ -427,7 +431,8 @@ public final class RouteRunner extends Instrumentation {
            !movement.getBoolean("accepted")||
            !movement.getJSONObject("repainted").getBoolean("ok")||
            movement.getInt("to")!=movement.getInt("from")+1||
-           !"right".equals(movement.getString("facing"))||
+           !"down".equals(movement.getString("facing"))||
+           movement.getInt("atX")!=1||movement.getInt("atY")!=2||
            !movement.getBoolean("saved")||movement.getInt("changed")<16)
             throw new AssertionError("Installed directional movement/animation wrong: "+movement);
         int partyRevision=movement.getInt("to");
