@@ -163,6 +163,7 @@ public final class UnifiedEngineActivity extends Activity {
         if (path.endsWith(".css")) return "text/css";
         if (path.endsWith(".js")) return "application/javascript";
         if (path.endsWith(".png")) return "image/png";
+        if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
         if (path.endsWith(".webp")) return "image/webp";
         if (path.endsWith(".wav")) return "audio/wav";
         if (path.endsWith(".ogg")) return "audio/ogg";
