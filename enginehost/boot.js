@@ -44,7 +44,7 @@
     else audioProbe.resume();
   });
   try {
-    var theme={tileSize:32,clearColor:'#101018',
+    var defaultTheme={tileSize:32,clearColor:'#101018',
       atlases:{terrain:{width:64,height:32},characters:{width:64,height:48}},
       tiles:{
         floor:{atlas:'terrain',x:0,y:0,w:32,h:32},
@@ -64,7 +64,20 @@
       },
       eventSprites:{supply:'eventMarker',mechanic:'eventMarker',scout:'eventMarker'}
     };
-    var assets=createBearframeAssetCache(BEARFRAME_HOST_ASSETS,function(descriptor,id){
+    // The complete original library stays registered; scene images alone are decoded.
+    // This visual dependency override is independent of the durable save journal.
+    var artProfile=(typeof BEARFRAME_OWNER_ART_PROFILE==='object'&&
+      BEARFRAME_OWNER_ART_PROFILE&&BEARFRAME_OWNER_ART_PROFILE.version===1)?
+      BEARFRAME_OWNER_ART_PROFILE:null;
+    var theme=artProfile?artProfile.theme:defaultTheme;
+    var renderManifest=artProfile?artProfile.manifest:BEARFRAME_HOST_ASSETS;
+    var requiredImages=artProfile?artProfile.requiredImages:['terrain','characters'];
+    validateBearframeAssets(renderManifest);
+    if(!Array.isArray(requiredImages)||requiredImages.length<1||
+       requiredImages.length>32||requiredImages.some(function(id){
+         return typeof id!=='string'||!Object.prototype.hasOwnProperty.call(renderManifest.assets,id);
+       }))throw new TypeError('Invalid scene art dependencies');
+    var assets=createBearframeAssetCache(renderManifest,function(descriptor,id){
       return new Promise(function(resolve,reject){
         var image=new Image();
         image.onload=function(){resolve(image);};
@@ -75,6 +88,18 @@
           (location.protocol==='file:'?descriptor.path.replace(/^enginehost\//,''):descriptor.path);
       });
     },{maxEntries:32,maxMemoryBytes:16777216});
+    function sceneReady(){
+      return requiredImages.every(function(id){return !!assets.get(id);});
+    }
+    function sceneImages(){
+      var images={};
+      requiredImages.forEach(function(id){
+        var image=assets.get(id);
+        if(!image)throw new Error('Missing scene image '+id);
+        images[id]=image;
+      });
+      return images;
+    }
     var storage=window.BearframeNative&&
       typeof window.BearframeNative.read==='function'&&
       typeof window.BearframeNative.write==='function'
@@ -205,7 +230,7 @@
     var partyWorldSceneReady=false,partyWorldClock=null;
     function partyWorldInteractive(){
       return partyWorldSceneReady&&!restoring&&
-        !!assets.get('terrain')&&!!assets.get('characters');
+        sceneReady();
     }
     var partyWorldSaveStatus=document.getElementById('party-world-save-status');
     var partyWorldButtons=Array.from(document.querySelectorAll('[data-party-world-dir]'));
@@ -266,14 +291,13 @@
     var previousPartyPhase=null;
     // Tick is a purely visual clock, independent of all persisted revisions.
     function paintPartyWorldFrame(tick){
-      var terrain=assets.get('terrain'),characters=assets.get('characters');
-      if(!terrain||!characters||restoring)
+      if(!sceneReady()||restoring)
         throw new Error('Scene atlas loading or recovery in progress');
       var frame=partyWorld.compose({
         width:partyWorldSurface.width,height:partyWorldSurface.height,tick:tick
       });
       drawBearframeSceneCanvas(partyWorldSurface,frame,
-        {terrain:terrain,characters:characters});
+        sceneImages());
     }
     function syncPresentationClock(){
       if(!partyWorldClock)return;
@@ -353,7 +377,7 @@
       });
       var full=document.createElement('canvas'),base=document.createElement('canvas');
       full.width=base.width=width;full.height=base.height=height;
-      var sheets={terrain:assets.get('terrain'),characters:assets.get('characters')};
+      var sheets=sceneImages();
       drawBearframeSceneCanvas(full,scene,sheets);
       drawBearframeSceneCanvas(base,without,sheets);
       var painted=full.getContext('2d').getImageData(0,0,width,height).data;
@@ -391,7 +415,7 @@
       var base=document.createElement('canvas'),enhanced=document.createElement('canvas');
       base.width=enhanced.width=opts.width;
       base.height=enhanced.height=opts.height;
-      var sheets={terrain:assets.get('terrain'),characters:assets.get('characters')};
+      var sheets=sceneImages();
       drawBearframeSceneCanvas(base,baseline,sheets);
       drawBearframeSceneCanvas(enhanced,layered,sheets);
       var one=base.getContext('2d').getImageData(0,0,opts.width,opts.height).data,
@@ -435,7 +459,7 @@
       var canvasA=document.createElement('canvas'),canvasB=document.createElement('canvas');
       canvasA.width=canvasB.width=opts.width;
       canvasA.height=canvasB.height=opts.height;
-      var sheets={terrain:assets.get('terrain'),characters:assets.get('characters')};
+      var sheets=sceneImages();
       drawBearframeSceneCanvas(canvasA,first,sheets);
       drawBearframeSceneCanvas(canvasB,second,sheets);
       var a=canvasA.getContext('2d').getImageData(0,0,opts.width,opts.height).data,
@@ -522,9 +546,8 @@
       var snap=engine.snapshot(),v=snap.view;
       if(!v)throw new Error('Engine state unavailable');
       var frame=engine.compose({width:224,height:160,tick:v.sequence%100});
-      var terrain=assets.get('terrain'),characters=assets.get('characters');
-      if(!terrain||!characters)throw new Error('Required scene atlases are not loaded');
-      drawBearframeSceneCanvas(surface,frame,{terrain:terrain,characters:characters});
+      if(!sceneReady())throw new Error('Required scene atlases are not loaded');
+      drawBearframeSceneCanvas(surface,frame,sceneImages());
       status.textContent='Unified runtime ready · '+(window.BearframeNative?'Android WebView':'Browser');
       metrics.textContent='Map '+v.mapName+' · Pos '+v.x+','+v.y+
         ' · Revision '+v.sequence+' · '+snap.journal.validSlots+' validated save slot(s)';
@@ -570,11 +593,11 @@
       var target=level>=80?0:level>=40?4194304:8388608;
       var trimmed=assets.trimTo(target);
       trimCount++;
-      if(!assets.get('terrain')||!assets.get('characters')){
+      if(!sceneReady()){
         if(!restoring){
           status.textContent='Restoring offline scene assets';
           retryAssets.disabled=true;retryAssets.hidden=true;
-          restoring=assets.preload(['terrain','characters']).then(function(){
+          restoring=assets.preload(requiredImages).then(function(){
             restoring=null;recoveryCount++;show();renderPartyWorld();return true;
           },function(error){
             restoring=null;recoveryFailures++;
@@ -594,7 +617,7 @@
       memoryPressure(80);
     });
     function act(command) {
-      if(restoring||!assets.get('terrain')||!assets.get('characters'))
+      if(restoring||!sceneReady())
         return {ok:false,reason:'assets-restoring'};
       var result=engine.dispatch(command);
       if(!result.ok){
@@ -623,10 +646,10 @@
         assetsLoaded:assets.snapshot().loaded.length,
         trimCount:trimCount,recoveryCount:recoveryCount,
         recoveryFailures:recoveryFailures,restoring:!!restoring,
-        atlasSource:'packaged-png',
+        atlasSource:'packaged-png',ownerArtActive:!!artProfile,
         renderer:surface.width+'x'+surface.height};
     }
-    assets.preload().then(function(){
+    assets.preload(requiredImages).then(function(){
     window.BearframeHost=Object.freeze({
       snapshot:snapshot,
       snapshotJson:function(){return JSON.stringify(snapshot());},

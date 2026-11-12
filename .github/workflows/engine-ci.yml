@@ -119,6 +119,37 @@ jobs:
             grep -q '^eaaae7e1a33e854df437f592ea0cc98e530e8b955172ae47b75406378e4ea179 '
           "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --verbose "$RUNNER_TEMP/bearframe-ci.apk"
           sha256sum "$RUNNER_TEMP/bearframe-ci.apk"
+      - name: Build a separate opt-in owner-profile APK (synthetic CI art only)
+        shell: bash
+        env:
+          BF_KEY_PASS: android-ci
+        run: |
+          set -euo pipefail
+          export RHINO_JAR="$RUNNER_TEMP/rhino.jar"
+          export TYPESCRIPT_PATH="$GITHUB_WORKSPACE/node_modules/typescript/lib/typescript.js"
+          export SIGNING_KEY="$RUNNER_TEMP/ci-only.p12"
+          export BF_ASSET_PACK_DIR="$RUNNER_TEMP/bf-asset-pack"
+          node - "$BF_ASSET_PACK_DIR" <<'NODE'
+          const fs=require('node:fs'),path=require('node:path');
+          const pack=process.argv[2],input=JSON.parse(fs.readFileSync(path.join(pack,'asset-manifest.json'),'utf8'));
+          const atlas=input.assets.test;
+          if(!atlas||atlas.width!==64||atlas.height!==32)throw Error('Invalid CI source atlas');
+          const frame=x=>({atlas:'test',x:x,y:0,w:32,h:32});
+          const profile={version:1,
+            manifest:{version:1,assets:{test:{...atlas,path:'enginehost/packs/active/'+atlas.path,preload:false}}},
+            theme:{tileSize:32,clearColor:'#101018',
+              atlases:{test:{width:64,height:32}},
+              tiles:{floor:frame(32),wall:frame(0)},
+              sprites:{player:{ticksPerFrame:2,frames:[frame(0)]},
+                eventMarker:{ticksPerFrame:1,frames:[frame(0)]}},
+              eventSprites:{supply:'eventMarker',mechanic:'eventMarker',scout:'eventMarker'}},
+            requiredImages:['test']};
+          fs.writeFileSync(path.join(path.dirname(pack),'art-profile.json'),JSON.stringify(profile));
+          NODE
+          bash android/build.sh "$RUNNER_TEMP/bearframe-owner-art-ci.apk"
+          unzip -p "$RUNNER_TEMP/bearframe-owner-art-ci.apk" assets/enginehost/art-profile.js |
+            grep -q 'var BEARFRAME_OWNER_ART_PROFILE ='
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$RUNNER_TEMP/bearframe-owner-art-ci.apk"
       - name: Enable KVM for Android emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -415,6 +446,12 @@ jobs:
             adb shell am instrument -w -e stage unified-soak-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-soak-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-soak-second' "$RUNNER_TEMP/unified-soak-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-soak-second.txt"
+            # Isolated opt-in profile APK, after all baseline emulator tests.
+            adb install -r "$RUNNER_TEMP/bearframe-owner-art-ci.apk"
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-owner-art dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/unified-owner-art.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-owner-art' "$RUNNER_TEMP/unified-owner-art.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/unified-owner-art.txt"
       - name: Publish non-release test APKs
         uses: actions/upload-artifact@v4
         with:

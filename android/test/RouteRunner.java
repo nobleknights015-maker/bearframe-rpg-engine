@@ -369,6 +369,47 @@ public final class RouteRunner extends Instrumentation {
         resultMeta.putString("soak","PASS "+(cycles*2)+
             " committed moves; "+elapsed+"ms; revision "+(initial+cycles*2));
     }
+    /** Installed WebView scene uses the opt-in profile, not diagnostic texture IDs.
+     * CI profile contains only synthetic pixels and runs after baseline tests. */
+    private void checkUnifiedOwnerArtProfile() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        JSONObject before=unifiedSnapshot();
+        if(!before.optBoolean("ownerArtActive") || before.getInt("assetsLoaded")!=1 ||
+           before.getInt("sequence")!=before.getInt("savedRevision"))
+            throw new AssertionError("Opt-in owner art scene did not load: "+before);
+        String pixelProof=evalHost("(function(){" +
+            "var scene=BearframeHost.partyWorld.compose({width:224,height:160,tick:0});" +
+            "var ids=Array.from(new Set(scene.commands.filter(function(c){" +
+              "return c.type==='sprite';}).map(function(c){return c.imageId;})));" +
+            "var canvas=document.getElementById('party-world-surface');" +
+            "var data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;" +
+            "var nonClear=0;for(var i=0;i<data.length;i+=4){" +
+              "if(data[i]!==16||data[i+1]!==16||data[i+2]!==24)nonClear++;}" +
+            "return JSON.stringify({images:ids,painted:nonClear});})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(pixelProof).nextValue());
+        JSONArray ids=proof.getJSONArray("images");
+        if(ids.length()!=1 || !"test".equals(ids.getString(0)) || proof.getInt("painted")<32)
+            throw new AssertionError("Canvas did not draw owner-role texture pixels: "+proof);
+        runOnMainSync(()->screen.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE));
+        boolean recovered=false;
+        for(int attempt=0;attempt<50;attempt++){
+            JSONObject snap=new JSONObject((String)new JSONTokener(
+                evalHost("BearframeHost.snapshotJson()")).nextValue());
+            if(snap.getInt("sequence")!=before.getInt("sequence")||
+               snap.getInt("savedRevision")!=before.getInt("savedRevision"))
+                throw new AssertionError("Owner art recovery changed journal: "+snap);
+            if(snap.getInt("recoveryCount")>0 && !snap.getBoolean("restoring") &&
+               snap.getInt("assetsLoaded")==1){recovered=true;break;}
+            Thread.sleep(200);
+        }
+        if(!recovered)throw new AssertionError("Owner art rehydration failed");
+        resultMeta.putString("ownerArt",
+            "PASS installed owner-role scene pixels, eviction, reload and unchanged save");
+    }
+
     /** Confirm the actual optional signed-APK asset pack decodes through the
      * restricted local WebView origin, with the legacy and journal state intact.
      * The synthetic pixel fixture has no narrative or production content. */
@@ -2157,6 +2198,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnified(stage.equals("unified-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-owner-art")){
+                checkUnifiedOwnerArtProfile();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-owner-art");
                 finish(Activity.RESULT_OK,result);
                 return;
             }
