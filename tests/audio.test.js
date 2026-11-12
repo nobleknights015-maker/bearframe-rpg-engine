@@ -62,3 +62,20 @@ test('invalid actions leave the audio state unchanged',()=>{
  }
  assert.equal(a.validateState({...s,volumes:{master:999,music:0,sfx:0}}),false);
 });
+
+test('catalog mutation cannot redirect playback or change validated clip semantics',()=>{
+ const supplied={theme:{type:'music',path:'audio/music/theme.ogg',loop:true},
+   tap:{type:'sfx',path:'audio/fx/tap.wav'}};
+ const director=create(supplied);
+ supplied.theme.path='https://attacker.example/track.mp3';
+ supplied.theme.type='sfx';supplied.theme.loop=false;
+ supplied.tap.path='../../outside.wav';supplied.tap.type='music';
+ delete supplied.theme;delete supplied.tap;
+ supplied.injected={type:'music',path:'audio/music/injected.ogg'};
+ const start=director.fresh();
+ assert.deepEqual(director.apply(start,{type:'music',id:'theme'}).commands,
+  [{type:'play',bus:'music',id:'theme',path:'audio/music/theme.ogg',loop:true,gain:80}]);
+ assert.deepEqual(director.apply(start,{type:'sfx',id:'tap'}).commands,
+  [{type:'play',bus:'sfx',id:'tap',path:'audio/fx/tap.wav',loop:false,gain:100}]);
+ assert.deepEqual(director.apply(start,{type:'music',id:'injected'}).commands,[]);
+});
