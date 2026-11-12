@@ -393,6 +393,41 @@ public final class RouteRunner extends Instrumentation {
         JSONArray ids=proof.getJSONArray("images");
         if(ids.length()!=1 || !"test".equals(ids.getString(0)) || proof.getInt("painted")<32)
             throw new AssertionError("Canvas did not draw owner-role texture pixels: "+proof);
+        // Installed WebView must select real directional source rectangles, not
+        // merely report one decoded image. Use synthetic CI atlas halves with
+        // different pixels and preserve the exact party-world save revision.
+        String visual=evalHost("(function(){" +
+            "var host=BearframeHost.partyWorld;" +
+            "var pose=function(dir,moving,tick){" +
+              "var s=host.compose({width:224,height:160,tick:tick," +
+                "playerDirection:dir,playerMoving:moving});" +
+              "return s.commands.find(function(c){return c.actor==='player';});};" +
+            "var idle=pose('left',false,0),step=pose('left',true,0)," +
+              "next=pose('left',true,2),up=pose('up',false,0);" +
+            "var cv=document.getElementById('party-world-surface');" +
+            "var original=new Uint8Array(cv.getContext('2d').getImageData(" +
+              "0,0,cv.width,cv.height).data);" +
+            "var revision=host.view().sequence;" +
+            "var accepted=BearframeHost.input({type:'navigate',direction:'right'});" +
+            "var latest=cv.getContext('2d').getImageData(" +
+              "0,0,cv.width,cv.height).data,changed=0;" +
+            "for(var i=0;i<latest.length;i+=4){" +
+              "if(original[i]!==latest[i]||original[i+1]!==latest[i+1]||" +
+                 "original[i+2]!==latest[i+2]||original[i+3]!==latest[i+3])changed++;}" +
+            "return JSON.stringify({idle:idle.source.x,step:step.source.x," +
+              "next:next.source.x,up:up.source.x,img:step.imageId," +
+              "accepted:accepted,from:revision,to:host.view().sequence," +
+              "facing:host.facing(),saved:host.verifySave().ok,changed:changed});})()");
+        JSONObject movement=new JSONObject((String)new JSONTokener(visual).nextValue());
+        if(movement.getInt("idle")!=32||movement.getInt("step")!=0||
+           movement.getInt("next")!=32||movement.getInt("up")!=32||
+           !"test".equals(movement.getString("img"))||
+           !movement.getBoolean("accepted")||
+           movement.getInt("to")!=movement.getInt("from")+1||
+           !"right".equals(movement.getString("facing"))||
+           !movement.getBoolean("saved")||movement.getInt("changed")<16)
+            throw new AssertionError("Installed directional movement/animation wrong: "+movement);
+        int partyRevision=movement.getInt("to");
         runOnMainSync(()->screen.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE));
         boolean recovered=false;
         for(int attempt=0;attempt<50;attempt++){
@@ -406,6 +441,17 @@ public final class RouteRunner extends Instrumentation {
             Thread.sleep(200);
         }
         if(!recovered)throw new AssertionError("Owner art rehydration failed");
+        // Memory rehydration must leave the independently durable v2 scene
+        // at the exact new revision committed by the controller move.
+        String afterParty=evalHost("(function(){" +
+            "var h=BearframeHost.partyWorld;" +
+            "return JSON.stringify({sequence:h.view().sequence," +
+              "saved:h.verifySave().ok});})()");
+        JSONObject rehydrated=new JSONObject((String)new JSONTokener(afterParty).nextValue());
+        if(rehydrated.getInt("sequence")!=partyRevision||
+           !rehydrated.getBoolean("saved"))
+            throw new AssertionError("Directional scene recovery altered save: "+rehydrated);
+
         resultMeta.putString("ownerArt",
             "PASS installed owner-role scene pixels, eviction, reload and unchanged save");
     }
