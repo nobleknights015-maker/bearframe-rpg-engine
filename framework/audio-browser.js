@@ -132,8 +132,15 @@ function createBearframeBrowserAudioBackend(createElement, config) {
     // Commands are sequential; a stop must happen before its replacement play.
     // Serialize separate batches as well as commands inside each batch.
     // Without this, simultaneous UI and lifecycle calls can reorder stop/play.
+    // Snapshot queued commands now, not when an earlier asynchronous play settles.
+    // A caller must not be able to rewrite an already accepted local asset path.
+    var queued=commands.map(function(cmd){
+      if(!cmd||typeof cmd!=='object')return cmd;
+      return {type:cmd.type,bus:cmd.bus,id:cmd.id,path:cmd.path,
+        loop:cmd.loop,gain:cmd.gain};
+    });
     var work=pending.then(function(){
-      return commands.reduce(function(p,cmd){
+      return queued.reduce(function(p,cmd){
         return p.then(function(results){
           if(destroyed){results.push({ok:false,reason:'destroyed'});return results;}
           return applyOne(cmd).then(function(item){results.push(item);return results;});
