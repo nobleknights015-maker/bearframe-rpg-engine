@@ -212,3 +212,30 @@ test('paint-triggered stop and restart does not schedule a second RAF loop',()=>
  clock.stop();
  assert.equal(pending.size,0);
 });
+
+test('throwing diagnostic observer cannot strand clock after frame failure or cancellation',()=>{
+ let next=0,callbacks=new Map(),pending=new Set(),errors=0,paintFails=true;
+ const clock=makeClock({
+  requestFrame:fn=>{const id=++next;callbacks.set(id,fn);pending.add(id);return id;},
+  cancelFrame:id=>{pending.delete(id);throw Error('cancel failed');},
+  paint:()=>{if(paintFails)throw Error('paint failed');},
+  onError:()=>{errors++;throw Error('observer failed');}
+ });
+ const fire=time=>{
+  const id=[...pending][0];assert.ok(id);
+  pending.delete(id);callbacks.get(id)(time);
+ };
+ clock.start();fire(0);
+ assert.doesNotThrow(()=>fire(50));
+ assert.equal(clock.snapshot().running,false);
+ assert.equal(clock.snapshot().failures,1);
+ assert.equal(errors,1);
+ paintFails=false;
+ assert.equal(clock.start(),true);
+ assert.doesNotThrow(()=>clock.stop());
+ assert.equal(clock.snapshot().running,false);
+ assert.equal(clock.snapshot().failures,2);
+ assert.equal(errors,2);
+ assert.equal(clock.start(),true);
+ assert.doesNotThrow(()=>clock.stop());
+});
