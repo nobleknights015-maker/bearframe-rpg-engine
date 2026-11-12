@@ -317,3 +317,15 @@ body.landscape-gameplay .jrpg-details .jrpg-pages button{
   min-height:30px;border:1px solid #8dacce;border-radius:5px;
   color:white;background:#274669;padding:3px 8px}
 body.landscape-gameplay.jrpg-reduced-motion .room-transition-playing{animation:none!important}
+
+/* Eight-direction touch overlay is opt-in; legacy 4-direction projects
+ * preserve their exact button order and occupancy. */
+#pw-screen-world .pad [hidden]{display:none!important}
+#pw-screen-world .pad [data-party-world-dir="up"]{grid-area:1 / 2}
+#pw-screen-world .pad [data-party-world-dir="down"]{grid-area:3 / 2}
+#pw-screen-world .pad [data-party-world-dir="left"]{grid-area:2 / 1}
+#pw-screen-world .pad [data-party-world-dir="right"]{grid-area:2 / 3}
+#pw-screen-world .pad [data-party-world-dir="up-left"]{grid-area:1 / 1}
+#pw-screen-world .pad [data-party-world-dir="up-right"]{grid-area:1 / 3}
+#pw-screen-world .pad [data-party-world-dir="down-left"]{grid-area:3 / 1}
+#pw-screen-world .pad [data-party-world-dir="down-right"]{grid-area:3 / 3}
