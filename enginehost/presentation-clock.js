@@ -19,7 +19,14 @@ function createBearframePresentationClock(options){
   function stop(){
     var wasActive=active;
     active=false;previous=null;
-    if(handle!==null){cancel(handle);handle=null;}
+    if(handle!==null){
+      var pending=handle;
+      handle=null;
+      try{cancel(pending);}catch(error){
+        failures++;
+        if(typeof options.onError==='function')options.onError(error);
+      }
+    }
     return wasActive;
   }
   function frame(timestamp){
