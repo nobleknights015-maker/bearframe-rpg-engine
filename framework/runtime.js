@@ -19,6 +19,10 @@ function createBearframeEngine(project) {
   var RULES={playerHp:30,playerCharge:3,baseAttack:5,pulseBonus:6,pulseCost:1,
     guardReduction:5,foeBurstBonus:3,foeVariance:3,victoryXp:10};
   if(project.rules)Object.keys(project.rules).forEach(function(k){RULES[k]=project.rules[k];});
+  var freeFactory=project.movement&&project.movement.mode==='free'?
+    (typeof module!=='undefined'&&module.exports?
+      require('./free-movement.js'):createBearframeFreeMovement):null;
+  var free=freeFactory?freeFactory(project):null;
   var partyFactory=project.partyCombat?
     (typeof module!=='undefined'&&module.exports?
       require('./party-runtime.js'):createBearframePartyRuntime):null;
@@ -39,6 +43,11 @@ function createBearframeEngine(project) {
         charge:RULES.playerCharge,maxCharge:RULES.playerCharge,xp:0},
       inventory:{},equipment:{weapon:null},flags:{},quests:{},allies:[],
       battle:null,prompt:null,message:'System initialized.'};
+    if(free){
+      var position=free.point(project.start.x,project.start.y);
+      state.player.px=position.px;
+      state.player.py=position.py;
+    }
     if(party)party.initialize(state);
     return state;
   }
@@ -51,6 +60,10 @@ function createBearframeEngine(project) {
       !has(project.maps,p.map)||!number(p.x,0,255)||!number(p.y,0,255)||!isOpen(p.map,p.x,p.y)||
       !number(p.maxHp,1,9999)||!number(p.hp,1,p.maxHp)||!number(p.maxCharge,1,999)||
       !number(p.charge,0,p.maxCharge)||!number(p.xp,0,2147483647))return false;
+    if(free&&(!number(p.px,0,65535)||!number(p.py,0,65535)||
+      Math.floor(p.px/free.scale)!==p.x||
+      Math.floor(p.py/free.scale)!==p.y||
+      !free.inside(p.map,p.px,p.py)))return false;
     if(!s.inventory||typeof s.inventory!=='object'||Array.isArray(s.inventory)||
       !s.equipment||typeof s.equipment!=='object'||!s.flags||
       typeof s.flags!=='object'||!s.quests||typeof s.quests!=='object'||!Array.isArray(s.allies))return false;
@@ -195,7 +208,13 @@ function createBearframeEngine(project) {
           }
           break;
         case 'message':s.message=effect.text;break;
-        case 'warp':s.player.map=effect.map;s.player.x=effect.x;s.player.y=effect.y;break;
+        case 'warp':
+          s.player.map=effect.map;s.player.x=effect.x;s.player.y=effect.y;
+          if(free){
+            var warpPosition=free.point(effect.x,effect.y);
+            s.player.px=warpPosition.px;s.player.py=warpPosition.py;
+          }
+          break;
       }
     }
     if(!choice.effects.some(function(e){return e.type==='message'||e.type==='battle';}))
@@ -206,7 +225,38 @@ function createBearframeEngine(project) {
     if(project.events[id].once&&s.flags['event:'+origin])return false;
     s.prompt={event:id,origin:origin};s.message=project.events[id].text;return true;
   }
+  function moveFree(s,dir){
+    var p=s.player,route=free.walk(p.map,p,dir);
+    if(!route.ok)return false;
+    var map=project.maps[p.map],moved=false;
+    for(var i=0;i<route.steps.length;i++){
+      var pos=route.steps[i],at=key(pos.x,pos.y);
+      var crossed=pos.x!==p.x||pos.y!==p.y;
+      if(crossed&&has(map.events,at)&&
+         openEvent(s,map.events[at],p.map+':'+at))
+        return true; // stop before touching an interactive event tile
+      if(crossed&&has(map.exits,at)){
+        var to=map.exits[at],spawn=free.point(to.x,to.y);
+        p.map=to.map;p.x=to.x;p.y=to.y;
+        p.px=spawn.px;p.py=spawn.py;
+        s.message=project.maps[to.map].name;
+        return true;
+      }
+      p.x=pos.x;p.y=pos.y;p.px=pos.px;p.py=pos.py;
+      moved=true;
+      if(crossed&&has(map.encounters,at)&&
+         !s.flags['encounter:'+map.name+':'+at]){
+        // Keep the same canonical encounter origin as tile movement.
+        var origin=map===project.maps[p.map]?p.map+':'+at:'';
+        if(!s.flags['encounter:'+origin])
+          beginBattle(s,map.encounters[at],'encounter:'+origin);
+        return true;
+      }
+    }
+    return moved;
+  }
   function move(s,dir){
+    if(free)return moveFree(s,dir);
     var delta={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[dir];
     if(!delta)return false;
     var p=s.player, nx=p.x+delta[0],ny=p.y+delta[1];
@@ -252,6 +302,10 @@ function createBearframeEngine(project) {
     if(s.player.hp===0){
       s.battle=null;s.player.map=project.start.map;s.player.x=project.start.x;
       s.player.y=project.start.y;s.player.hp=s.player.maxHp;
+      if(free){
+        var respawn=free.point(project.start.x,project.start.y);
+        s.player.px=respawn.px;s.player.py=respawn.py;
+      }
       s.player.charge=Math.min(2,s.player.maxCharge);
       s.message='Systems restored at the starting location.';
     }
@@ -306,6 +360,10 @@ function createBearframeEngine(project) {
       inventory:clone(s.inventory),equipment:clone(s.equipment),quests:clone(s.quests),
       battle:s.battle?clone(s.battle):null,prompt:s.prompt?clone(s.prompt):null,
       message:s.message,allies:s.allies.slice()};
+    result.movementMode=free?'free':'tile';
+    if(free)result.freePosition={
+      x:p.px/free.scale-0.5,y:p.py/free.scale-0.5
+    };
     if(party){
       result.partyBattle=s.partyBattle?clone(s.partyBattle):null;
       result.partyActors=party.rosterView(s);
