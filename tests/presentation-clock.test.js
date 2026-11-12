@@ -117,3 +117,23 @@ test('failed initial animation scheduling leaves clock restartable without phant
  assert.equal(clock.snapshot().paints,0);
  clock.stop();
 });
+
+test('subsequent RAF scheduling failure stops clock and permits recovery',()=>{
+ let requests=0,scheduled=null,errors=[];
+ const clock=makeClock({requestFrame:fn=>{
+  requests++;
+  if(requests===3)throw Error('RAF lost after paint');
+  scheduled=fn;return requests;
+ },cancelFrame:()=>{},paint:()=>{},onError:e=>errors.push(e.message)});
+ assert.equal(clock.start(),true);
+ scheduled(0);
+ assert.equal(clock.snapshot().running,true);
+ scheduled(50);
+ assert.deepEqual(errors,['RAF lost after paint']);
+ assert.equal(clock.snapshot().running,false);
+ assert.equal(clock.snapshot().failures,1);
+ assert.equal(clock.snapshot().paints,1);
+ assert.equal(clock.start(),true);
+ assert.equal(clock.snapshot().running,true);
+ clock.stop();
+});
