@@ -73,7 +73,8 @@ test('offline Android DOM exposes an independent full-world v2 integration UI',(
  assert.match(boot,/drawBearframeSceneCanvas\(partyWorldSurface,frame,/);
  assert.match(boot,/partyWorld\.compose\(/);
  assert.match(boot,/renderPartyWorld\(\)/);
- assert.match(boot,/createBearframePartyWorldHost\(storage,FRAMEWORK_PARTY_WORLD_FIXTURE,theme\)/);
+ assert.match(boot,/createBearframePartyWorldHost\(storage,partyWorldProject,theme,/);
+ assert.match(boot,/:FRAMEWORK_PARTY_WORLD_FIXTURE;/);
  assert.match(boot,/createBearframeRuntimePanels\(/);
  assert.match(boot,/createBearframePartyCommandPanel\(/);
  assert.match(boot,/partyWorld\.verifySave\(\)/);
