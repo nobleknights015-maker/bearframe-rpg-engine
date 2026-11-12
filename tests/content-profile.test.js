@@ -100,7 +100,7 @@ test('Android WebView loads authored content before boot and all v2 UI panels sh
   assert.match(build,/scripts\/build_content_profile\.js/);
   const workflow=read('.github/workflows/engine-ci.yml');
   assert.match(workflow,/export BF_CONTENT_PROFILE_JSON=/);
-  assert.match(workflow,/authored\\.id='ci-external-content'/);
+  assert.match(workflow,/authored\.id='ci-external-content'/);
   const android=read('android/test/RouteRunner.java');
-  assert.match(android,/"ci-external-content"\\.equals\\(content\\.getString\\("id"\\)\\)/);
+  assert.match(android,/"ci-external-content"\.equals\(content\.getString\("id"\)\)/);
 });
