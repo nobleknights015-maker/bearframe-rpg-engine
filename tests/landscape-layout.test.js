@@ -20,7 +20,7 @@ function layoutHarness(){
 }
 test('Engine v1 landscape transform letterboxes every aspect and safe-area profile',()=>{
  const h=layoutHarness();
- for(const [w,height] of [[917,411],[640,360],[742,360],[1920,1080],[1024,768],[390,844]]){
+ for(const [w,height] of [[917,411],[640,360],[742,360],[1920,1080],[1024,768],[390,844],[3200,900],[900,1600]]){
   const fit=h.layout.fit(w,height,{left:22,right:18,top:12,bottom:8});
   assert.ok(fit.scale>0);
   assert.ok(fit.offsetX>=22-1e-6);
@@ -36,6 +36,10 @@ test('Engine v1 landscape transform letterboxes every aspect and safe-area profi
       'landscape stage uses full usable height');
   }
  }
+ assert.ok(h.layout.fit(3200,900,{left:0,right:0,top:0,bottom:0}).stageWidth>1280,
+   'ultrawide devices must not hit an artificial logical-width cap');
+ assert.ok(h.layout.fit(900,1600,{left:0,right:0,top:0,bottom:0}).stageHeight>720,
+   'narrow viewports must not hit an artificial logical-height cap');
  assert.equal(h.layout.snapshot().width,917);
  assert.ok(h.layout.snapshot().stageWidth>800,
    'ultrawide screen expands the logical stage instead of wasting side margins');
