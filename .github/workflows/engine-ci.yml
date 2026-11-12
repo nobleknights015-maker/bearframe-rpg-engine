@@ -129,7 +129,8 @@ jobs:
           export TYPESCRIPT_PATH="$GITHUB_WORKSPACE/node_modules/typescript/lib/typescript.js"
           export SIGNING_KEY="$RUNNER_TEMP/ci-only.p12"
           export BF_ASSET_PACK_DIR="$RUNNER_TEMP/bf-asset-pack"
-          node - "$BF_ASSET_PACK_DIR" <<'NODE'
+          export BF_CONTENT_PROFILE_JSON="$RUNNER_TEMP/ci-content-profile.json"
+          node - "$BF_ASSET_PACK_DIR" "$BF_CONTENT_PROFILE_JSON" <<'NODE'
           const fs=require('node:fs'),path=require('node:path');
           const pack=process.argv[2],input=JSON.parse(fs.readFileSync(path.join(pack,'asset-manifest.json'),'utf8'));
           const atlas=input.assets.test;
@@ -149,10 +150,15 @@ jobs:
               eventSprites:{supply:'eventMarker',mechanic:'eventMarker',scout:'eventMarker'}},
             requiredImages:['test']};
           fs.writeFileSync(path.join(path.dirname(pack),'art-profile.json'),JSON.stringify(profile));
+          const authored=JSON.parse(JSON.stringify(require('./fixtures/party-world-project.js')));
+          authored.id='ci-external-content';authored.contentRevision='ci_content_1';
+          fs.writeFileSync(process.argv[3],JSON.stringify({version:1,project:authored}));
           NODE
           bash android/build.sh "$RUNNER_TEMP/bearframe-owner-art-ci.apk"
           unzip -p "$RUNNER_TEMP/bearframe-owner-art-ci.apk" assets/enginehost/art-profile.js |
             grep -q 'var BEARFRAME_OWNER_ART_PROFILE ='
+          unzip -p "$RUNNER_TEMP/bearframe-owner-art-ci.apk" assets/enginehost/content-profile.js |
+            grep -q 'ci-external-content'
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$RUNNER_TEMP/bearframe-owner-art-ci.apk"
       - name: Enable KVM for Android emulator
         run: |

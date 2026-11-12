@@ -2,13 +2,19 @@
  * events, inventory, equipment, party turns, XP and restarts.
  * Never uses the v1, historical Rhino or independent party-probe namespace.
  */
-function createBearframePartyWorldHost(storage,project,theme){
+function createBearframePartyWorldHost(storage,project,theme,options){
   var node=(typeof module!=='undefined'&&module.exports);
   var factory=node?require('../framework/session.js'):createBearframeSession;
   if(!project||!project.partyCombat||!project.partyCombat.progression)
     throw new TypeError('Opt-in v2 world progression project required');
-  var session=factory(project,storage,theme||null,
-    {slotPrefix:'bf:framework-party-world-test:v2:diagnostics'});
+  options=options||{};
+  // Existing diagnostic saves keep their exact historical namespace. An
+  // authored content project is isolated by its stable validated project ID.
+  var slotPrefix=options.slotPrefix===undefined?
+    'bf:framework-party-world-test:v2:diagnostics':options.slotPrefix;
+  if(typeof slotPrefix!=='string'||!/^bf:[a-z][a-z0-9_-]{0,63}:v2:(diagnostics|runtime)$/.test(slotPrefix))
+    throw new TypeError('Invalid v2 content save namespace');
+  var session=factory(project,storage,theme||null,{slotPrefix:slotPrefix});
   var startup=session.resume();
   if(!startup.ok&&startup.reason==='no-save')
     startup=session.start('World integration test',2718);
