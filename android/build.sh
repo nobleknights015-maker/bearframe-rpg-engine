@@ -36,11 +36,11 @@ if [[ -n "${BF_ASSET_PACK_DIR:-}" ]]; then
     "$work/assets/enginehost/packs/active"
   # Scene roles are data-only. Validate every owner image ID and descriptor
   # before synthesizing the sole CSP-local script; never execute source ZIP code.
-  if [[ -f "$BF_ASSET_PACK_DIR/art-profile.json" ]]; then
+  if [[ -f "$(dirname "$BF_ASSET_PACK_DIR")/art-profile.json" ]]; then
     python3 - "$BF_ASSET_PACK_DIR" "$work/assets/enginehost/art-profile.js" <<'BF_OWNER_ART_PY'
 import json, pathlib, sys
 pack=pathlib.Path(sys.argv[1])
-src=pack/"art-profile.json"
+src=pack.parent/"art-profile.json"
 if src.stat().st_size>4000000:
     raise SystemExit("Owner art profile exceeds build input limit")
 profile=json.loads(src.read_text(encoding="utf-8"))
