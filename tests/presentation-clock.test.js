@@ -187,3 +187,28 @@ test('stale RAF callback after stop/restart cannot paint or schedule a competing
  assert.equal(pending.size,1);
  clock.stop();
 });
+
+test('paint-triggered stop and restart does not schedule a second RAF loop',()=>{
+ let id=0,callbacks=new Map(),pending=new Set(),clock,paints=0;
+ const requestFrame=fn=>{const next=++id;callbacks.set(next,fn);pending.add(next);return next;};
+ const cancelFrame=handle=>pending.delete(handle);
+ clock=makeClock({requestFrame,cancelFrame,paint:()=>{
+  paints++;
+  if(paints===1){assert.equal(clock.stop(),true);assert.equal(clock.start(),true);}
+ }});
+ clock.start();
+ function fire(time){
+  const handle=[...pending][0];assert.ok(handle);
+  pending.delete(handle);callbacks.get(handle)(time);
+ }
+ fire(0);fire(50);
+ assert.equal(paints,1);
+ assert.equal(pending.size,1,'restarted loop must own exactly one callback');
+ fire(100);
+ assert.equal(pending.size,1,'new lifecycle establishes a fresh baseline');
+ fire(150);
+ assert.equal(paints,2);
+ assert.equal(pending.size,1);
+ clock.stop();
+ assert.equal(pending.size,0);
+});
