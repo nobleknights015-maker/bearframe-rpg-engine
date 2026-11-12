@@ -285,3 +285,21 @@ test('unsafe elapsed timestamp cannot corrupt animation tick or schedule another
  assert.deepEqual(paints,[1]);
  clock.stop();
 });
+
+test('large safe elapsed interval wraps presentation tick without precision loss',()=>{
+ const raf=scheduler(),paints=[];
+ const clock=makeClock({intervalMs:50,requestFrame:raf.requestFrame,
+  cancelFrame:raf.cancelFrame,paint:tick=>paints.push(tick)});
+ clock.start();
+ raf.fire(0);
+ raf.fire(50);
+ const elapsed=2**52;
+ raf.fire(50+elapsed*50);
+ const modulus=2147483647n;
+ const expected=Number((1n+BigInt(elapsed))%modulus);
+ assert.deepEqual(paints,[1,expected]);
+ assert.equal(clock.snapshot().tick,expected);
+ assert.equal(clock.snapshot().failures,0);
+ assert.equal(clock.snapshot().running,true);
+ clock.stop();
+});
