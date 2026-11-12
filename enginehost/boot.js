@@ -495,14 +495,14 @@
     window.addEventListener('pagehide',function(){partyWorldClock.stop();});
     window.addEventListener('blur',function(){partyWorldClock.stop();});
     window.addEventListener('focus',function(){syncPresentationClock();});
-    partyWorldButtons.forEach(function(button){
-      button.addEventListener('click',function(){
-        var direction=button.getAttribute('data-party-world-dir');
-        var result=partyWorldInteractive()?partyWorld.navigate(direction):
-          {ok:false,reason:'assets-restoring'};
-        if(result.ok)renderPartyWorld();
-        else partyWorldStatus.textContent='Party movement refused: '+result.reason;
-      });
+    var partyWorldTouchPad=createBearframeTouchPad(partyWorldButtons,function(direction){
+      // All touch presses and held repeats go through the exact same durable
+      // command path as controller navigation. Only successful actions redraw.
+      var result=partyWorldInteractive()?partyWorld.navigate(direction):
+        {ok:false,reason:'assets-restoring'};
+      if(result.ok)renderPartyWorld();
+      else partyWorldStatus.textContent='Party movement refused: '+result.reason;
+      return result;
     });
     document.getElementById('party-world-verify').addEventListener('click',function(){
       var result=partyWorld.verifySave();
@@ -678,11 +678,10 @@
         return snapshot();
       }
     });
-    Array.from(document.querySelectorAll('[data-dir]')).forEach(function(button){
-      button.addEventListener('click',function(){
-        window.BearframeHost.navigate(button.getAttribute('data-dir'));
+    var diagnosticTouchPad=createBearframeTouchPad(
+      Array.from(document.querySelectorAll('[data-dir]')),function(direction){
+        return window.BearframeHost.navigate(direction);
       });
-    });
     show();renderPartyWorld();
     }).catch(function(error){
       status.textContent='Asset loading failed: '+error.message;

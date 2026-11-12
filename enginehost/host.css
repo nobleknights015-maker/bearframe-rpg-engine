@@ -170,3 +170,10 @@ body.landscape-gameplay #engine-diagnostics{
 body.landscape-gameplay #engine-landscape-stage{pointer-events:auto}
 html.landscape-debug,body.landscape-debug{overflow:auto!important}
 body.landscape-debug #engine-diagnostics{position:relative;height:auto;max-height:none;overflow:visible}
+
+/* Prevent browser gestures/text selection from stealing a held game input. */
+.pad button[data-dir], .pad button[data-party-world-dir] {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
