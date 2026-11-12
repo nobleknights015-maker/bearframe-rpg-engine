@@ -103,6 +103,32 @@ function createBearframeSceneComposer(project,theme){
   var sheetRenderers={};
   Object.keys(theme.sprites).forEach(function(id){
     var a=theme.sprites[id];
+    if(a&&a.directions){
+      // Explicit authored directional frames can live on different original
+      // atlases (idle sheet vs walk sheet), with arbitrary row order.
+      // Never assume a third-party source follows our 3x4 sheet convention.
+      if(a.frames!==undefined||a.sheet!==undefined||
+         !integer(a.ticksPerFrame,1,1000)||
+         !a.directions||typeof a.directions!=='object'||Array.isArray(a.directions))
+        throw new TypeError('Invalid directional animation '+id);
+      var cardinal=['down','left','right','up'];
+      var available=Object.keys(a.directions);
+      if(available.length!==4||available.some(function(k){
+        return cardinal.indexOf(k)<0;
+      }))throw new TypeError('Four directional poses required '+id);
+      cardinal.forEach(function(dir){
+        var pose=a.directions[dir];
+        if(!pose||typeof pose!=='object'||Array.isArray(pose)||
+           Object.keys(pose).length!==2||!has(pose,'idle')||
+           !Array.isArray(pose.walk)||!pose.walk.length||pose.walk.length>32)
+          throw new TypeError('Invalid directional pose '+id+' '+dir);
+        verifyFrame(pose.idle,id+'.'+dir+'.idle');
+        pose.walk.forEach(function(f,i){
+          verifyFrame(f,id+'.'+dir+'.walk['+i+']');
+        });
+      });
+      return;
+    }
     if(a&&a.sheet){
       if(a.frames!==undefined)throw new TypeError('Choose frames or sheet '+id);
       var render=charFactory(a.sheet);
@@ -122,6 +148,11 @@ function createBearframeSceneComposer(project,theme){
   function frameFor(name,tick,direction,moving,pattern){
     var spec=theme.sprites[name];
     if(!spec)throw new TypeError('Unknown sprite '+name);
+    if(spec.directions){
+      var pose=spec.directions[has(spec.directions,direction)?direction:'down'];
+      return moving?pose.walk[Math.floor(tick/spec.ticksPerFrame)%pose.walk.length]:
+        pose.idle;
+    }
     if(sheetRenderers[name]){
       // Scene ticks are deterministic; a host may supply a presentation
       // clock, but renderer state is never written to the save journal.
