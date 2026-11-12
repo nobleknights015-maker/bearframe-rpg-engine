@@ -66,7 +66,7 @@ function createBearframePresentationClock(options){
       }
       previous+=elapsed*interval;
       // The portable scene's integer tick contract caps at 2^31-1.
-      tick=(tick+elapsed)%2147483647;
+      tick=(tick+(elapsed%2147483647))%2147483647;
       try{
         if(options.paint(tick)!==false)paints++;
       }catch(error){
