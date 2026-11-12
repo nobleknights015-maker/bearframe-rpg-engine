@@ -1,0 +1,67 @@
+name: Bearframe offline local original-art build kit
+on:
+  push:
+    branches: [engine/offline-private-art-buildkit-20261112]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-offline-kit:
+    name: Export source and offline Android toolchain (NO owner art)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: 'false'
+      - name: Install the pinned Android SDK and JavaScript compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          npm install --no-save --ignore-scripts --no-audit --no-fund typescript@5.9.3
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/mozilla/rhino/1.7.15/rhino-1.7.15.jar -o "$RUNNER_TEMP/rhino.jar"
+          echo '2427fdcbc149ca0a25ccfbb7c71b01f39ad42708773a47816cd2342861766b63  '"$RUNNER_TEMP/rhino.jar" | sha256sum -c -
+      - name: Bundle reproducible offline build sources and Android tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          kit="$RUNNER_TEMP/bearframe-offline-kit"
+          mkdir -p "$kit/source" "$kit/sdk/build-tools" "$kit/sdk/platforms/android-35" "$kit/deps"
+          # This branch contains only existing public code. Owner ZIPs are
+          # intentionally absent from GitHub and from this toolchain artifact.
+          git archive --format=tar HEAD | tar -x -C "$kit/source"
+          cp -a "$ANDROID_HOME/build-tools/35.0.0" "$kit/sdk/build-tools/"
+          cp "$ANDROID_HOME/platforms/android-35/android.jar" "$kit/sdk/platforms/android-35/android.jar"
+          cp "$RUNNER_TEMP/rhino.jar" "$kit/deps/rhino.jar"
+          cp "$GITHUB_WORKSPACE/node_modules/typescript/lib/typescript.js" "$kit/deps/typescript.js"
+          cat > "$kit/LOCAL_BUILD.txt" <<'DOC'
+          The Bearframe offline Android build kit contains ONLY public source and
+          SDK/compiler binaries. It contains NO owner-created or purchased art.
+          Keep your private owner import on the local machine and run:
+          ANDROID_HOME=<kit>/sdk RHINO_JAR=<kit>/deps/rhino.jar
+          TYPESCRIPT_PATH=<kit>/deps/typescript.js
+          SIGNING_KEY=<local-self-generated-keystore> BF_KEY_PASS=<local-pass>
+          BF_ASSET_PACK_DIR=<private-owner-import>/runtime-pack BF_ENGINE_PREVIEW=1
+          bash <kit>/source/android/build.sh <local-output.apk>
+          DOC
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/bearframe-offline-buildkit.tar.gz" bearframe-offline-kit
+          tar -tzf "$RUNNER_TEMP/bearframe-offline-buildkit.tar.gz" | grep -F 'source/android/build.sh'
+          test -s "$RUNNER_TEMP/bearframe-offline-buildkit.tar.gz"
+          sha256sum "$RUNNER_TEMP/bearframe-offline-buildkit.tar.gz"
+          du -h "$RUNNER_TEMP/bearframe-offline-buildkit.tar.gz"
+      - name: Upload short-lived local build kit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bearframe-local-owner-art-buildkit
+          path: ${{ runner.temp }}/bearframe-offline-buildkit.tar.gz
+          retention-days: 1
+          if-no-files-found: error
