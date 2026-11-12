@@ -105,7 +105,13 @@ function createBearframeWorldInput(screens,view,navigate,roots,menu){
     var blocked=!!v.prompt||!!v.partyBattle||!!v.battle;
     if(event.type==='navigate'){
       var direction=event.direction;
-      if(['up','down','left','right'].indexOf(direction)<0)return false;
+      var diagonal=['up-left','up-right','down-left','down-right']
+        .indexOf(direction)>=0;
+      if(diagonal&&(v.movementMode!=='free'||mode!=='world'||blocked))
+        direction=direction.split('-')[0];
+      if(['up','down','left','right'].indexOf(direction)<0&&
+         !(diagonal&&v.movementMode==='free'&&mode==='world'&&!blocked))
+        return false;
       if(mode!=='world'){
         if(direction==='left')return turnTab(-1);
         if(direction==='right')return turnTab(1);
