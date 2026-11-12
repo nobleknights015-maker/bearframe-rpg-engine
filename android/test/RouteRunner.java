@@ -377,6 +377,14 @@ public final class RouteRunner extends Instrumentation {
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         screen=startActivitySync(launch);
         JSONObject before=unifiedSnapshot();
+        // The same installed owner-art route must also prove that the
+        // authored JSON project replaced the synthetic v2 default and
+        // selected a distinct durable project namespace.
+        String authored=evalHost("(function(){return JSON.stringify({id:" +
+            "BearframeHost.partyWorld.snapshot().project});})()");
+        JSONObject content=new JSONObject((String)new JSONTokener(authored).nextValue());
+        if(!"ci-external-content".equals(content.getString("id")))
+            throw new AssertionError("External content project not booted: "+content);
         if(!before.optBoolean("ownerArtActive") || before.getInt("assetsLoaded")!=1 ||
            before.getInt("sequence")!=before.getInt("savedRevision"))
             throw new AssertionError("Opt-in owner art scene did not load: "+before);
