@@ -185,3 +185,33 @@ test('explicit audio voice limits fail closed instead of silently falling back t
  assert.equal(bounded.backend.status().activeSfx,1);
  assert.equal(bounded.elements[0].src,'');
 });
+
+test('queued audio batches snapshot commands against caller mutation',async()=>{
+ let release;
+ const gate=new Promise(resolve=>{release=resolve;});
+ const elements=[];
+ const backend=create(()=>{
+   const e={src:'',volume:1,loop:false,currentTime:0,
+     play(){return elements.length===1?gate:Promise.resolve();},
+     pause(){},load(){},removeAttribute(){this.src='';}};
+   elements.push(e);return e;
+ });
+ const first=backend.execute([music()]);
+ const queuedCommand=sfx('original');
+ const queuedBatch=[queuedCommand];
+ const second=backend.execute(queuedBatch);
+ queuedCommand.id='redirected';
+ queuedCommand.path='https://attacker.example/evil.mp3';
+ queuedCommand.bus='music';
+ queuedBatch[0]=music('replaced');
+ await Promise.resolve();await Promise.resolve();
+ assert.equal(elements.length,1);
+ release();
+ assert.deepEqual(await first,[{ok:true}]);
+ assert.deepEqual(await second,[{ok:true}]);
+ assert.equal(elements.length,2);
+ assert.equal(elements[1].src,'audio/sfx/impact.wav');
+ assert.equal(backend.status().music,'theme');
+ assert.equal(backend.status().activeSfx,1);
+ backend.dispose();
+});
