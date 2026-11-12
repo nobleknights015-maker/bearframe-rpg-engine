@@ -34,6 +34,7 @@ function createBearframePresentationClock(options){
     return wasActive;
   }
   function frame(timestamp){
+    var frameGeneration=generation;
     handle=null;
     if(!active)return;
     if(!Number.isFinite(timestamp)){
@@ -57,7 +58,7 @@ function createBearframePresentationClock(options){
         return;
       }
     }
-    if(active){
+    if(active&&frameGeneration===generation){
       try{handle=schedule();}
       catch(error){
         failures++;stop();
