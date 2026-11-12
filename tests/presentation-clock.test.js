@@ -101,3 +101,19 @@ test('offline WebView embeds and runs live presentation clock with lifecycle gat
  assert.match(java,/checkUnifiedPresentationClock\(\)/);
  assert.match(java,/presentationClock\.snapshot\(\)/);
 });
+
+test('failed initial animation scheduling leaves clock restartable without phantom loop',()=>{
+ let attempts=0,scheduled=null;
+ const clock=makeClock({requestFrame:fn=>{
+  attempts++;
+  if(attempts===1)throw Error('RAF unavailable');
+  scheduled=fn;return 7;
+ },cancelFrame:()=>{},paint:()=>{}});
+ assert.throws(()=>clock.start(),/RAF unavailable/);
+ assert.equal(clock.snapshot().running,false);
+ assert.equal(clock.start(),true);
+ assert.equal(clock.snapshot().running,true);
+ scheduled(0);
+ assert.equal(clock.snapshot().paints,0);
+ clock.stop();
+});
