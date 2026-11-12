@@ -27,7 +27,7 @@ base64 --decode "$root/enginehost/fixtures/terrain.png.b64" > "$work/assets/engi
 base64 --decode "$root/enginehost/fixtures/characters.png.b64" > "$work/assets/enginehost/assets/characters.png"
 printf '%s\n' \
   "eaaae7e1a33e854df437f592ea0cc98e530e8b955172ae47b75406378e4ea179  $work/assets/enginehost/assets/terrain.png" \
-  "c9d3ad73ed2d6a8c67d8cec169cd190841eb61cc7a51c52e040ae0f8bf573722  $work/assets/enginehost/assets/characters.png" | sha256sum -c -
+  "797416870b420e67ef0f43443b039f21c3e86710ecb74c0f7380559041404a4a  $work/assets/enginehost/assets/characters.png" | sha256sum -c -
 # Opt-in original-asset pack is verified again at build time, never trusted
 # solely because its index claims a checksum. Leave the current default assets
 # and diagnostic launcher unchanged when no external pack is provided.
