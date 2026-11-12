@@ -443,3 +443,20 @@ test('audio descriptors require positive byte budgets to prevent unaccounted cac
  assert.equal(cache.release('theme'),true);
  assert.equal(cache.snapshot().memoryBytes,1000);
 });
+
+
+test('audio loaders cannot cache primitive success sentinels',async()=>{
+ for(const invalid of [true,1,'ready',false]){
+  let calls=0;
+  const cache=create(manifest,async()=>{calls++;return invalid;});
+  await assert.rejects(cache.load('theme'),/Invalid audio resource theme/);
+  assert.equal(calls,1);
+  assert.equal(cache.get('theme'),null);
+  assert.equal(cache.snapshot().memoryBytes,0);
+  assert.deepEqual(cache.snapshot().inflight,[]);
+ }
+ const handle={play(){}};
+ const cache=create(manifest,async()=>handle);
+ assert.strictEqual(await cache.load('theme'),handle);
+ assert.equal(cache.snapshot().memoryBytes,2000);
+});
