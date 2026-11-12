@@ -57,8 +57,29 @@ def build(folder, role_path):
     scene_tiles={name:frame(ref,"tiles."+name,True) for name,ref in tiles.items()}
     scene_sprites={}
     for name,animation in sprites.items():
-        if not valid_name(name) or not isinstance(animation,dict) or set(animation)!={"ticksPerFrame","frames"}:
+        if not valid_name(name) or not isinstance(animation,dict):
             raise ValueError("Invalid sprite role "+str(name))
+        if "directions" in animation:
+            if set(animation)!={"ticksPerFrame","directions"}:
+                raise ValueError("Invalid directional sprite metadata "+name)
+            ticks=animation["ticksPerFrame"]
+            poses=animation["directions"]
+            cardinal=("down","left","right","up")
+            if type(ticks) is not int or not 1<=ticks<=1000 or not isinstance(poses,dict) or set(poses)!=set(cardinal):
+                raise ValueError("Four directional poses required "+name)
+            resolved={}
+            for direction in cardinal:
+                pose=poses[direction]
+                if not isinstance(pose,dict) or set(pose)!={"idle","walk"} or not isinstance(pose["walk"],list) or not 1<=len(pose["walk"])<=32:
+                    raise ValueError("Invalid idle/walk pose "+name+"."+direction)
+                resolved[direction]={
+                    "idle":frame(pose["idle"],"sprite."+name+"."+direction+".idle"),
+                    "walk":[frame(ref,"sprite."+name+"."+direction+".walk")
+                            for ref in pose["walk"]]}
+            scene_sprites[name]={"ticksPerFrame":ticks,"directions":resolved}
+            continue
+        if set(animation)!={"ticksPerFrame","frames"}:
+            raise ValueError("Sprite role requires flat frames or four directions "+name)
         ticks,frames=animation["ticksPerFrame"],animation["frames"]
         if type(ticks) is not int or not 1<=ticks<=1000 or not isinstance(frames,list) or not 1<=len(frames)<=128:
             raise ValueError("Invalid animation timing "+name)
