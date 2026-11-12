@@ -18,9 +18,9 @@ test('Android installed engine must render two source frames, react to actual co
   const block=java.slice(start,end);
   for(const symbol of [
     "pose('left',false,0)","pose('left',true,0)","pose('left',true,2)",
-    "pose('up',false,0)","BearframeHost.input({type:'navigate',direction:'right'})",
+    "pose('up',false,0)","BearframeHost.input({type:'navigate',direction:'down'})",
     "cv.getContext('2d').getImageData","changed","host.verifySave().ok",
-    'partyRevision','h.verifySave().ok','Owner art rehydration failed'
+    'partyRevision','h.verifySave().ok','movement.getInt("atY")!=2','Owner art rehydration failed'
   ])assert.ok(block.includes(symbol),'Missing Android directional acceptance: '+symbol);
   assert.match(block,/movement\.getInt\("to"\)!=movement\.getInt\("from"\)\+1/);
   assert.match(block,/rehydrated\.getInt\("sequence"\)!=partyRevision/);
