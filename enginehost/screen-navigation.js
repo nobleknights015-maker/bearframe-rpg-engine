@@ -2,8 +2,10 @@
  * Never reads/writes project state, never dispatches gameplay commands.
  * Active tab is intentionally ephemeral and does not enter the save journal.
  */
-function createBearframeScreenNavigator(navRoot,panels){
+function createBearframeScreenNavigator(navRoot,panels,onSelect){
   if(!navRoot||!panels)throw new TypeError('Screen tabs and panels required');
+  if(onSelect!==undefined&&typeof onSelect!=='function')
+    throw new TypeError('Screen selection callback must be a function');
   var names=['world','party','save'],tabs={},selected='world',mode=null;
   names.forEach(function(id){
     var tab=navRoot.querySelector('[data-party-world-tab="'+id+'"]');
@@ -22,6 +24,7 @@ function createBearframeScreenNavigator(navRoot,panels){
       tabs[key].tabIndex=yes?0:-1;
     });
     if(focus)tabs[id].focus();
+    if(onSelect)onSelect(id);
     return id;
   }
   names.forEach(function(id,index){
