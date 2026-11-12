@@ -148,7 +148,7 @@ def build(sources, output):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         raise SystemExit(
             "Usage: python3 scripts/import_owner_asset_archives.py "
             "NEW_OUTPUT_DIR INPUT.zip [MORE_INPUT.zip ...]"
