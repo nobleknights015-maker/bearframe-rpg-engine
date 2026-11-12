@@ -34,6 +34,11 @@ function createBearframeAssetCache(manifest,loader,options){
   }
   function validateLoaded(d,value,id){
     if(value==null)throw new TypeError('Asset loader returned no resource '+id);
+    // Audio adapters must return a resource handle, not a primitive success
+    // sentinel. Otherwise a broken decode can be cached as playable audio.
+    if((d.type==='music'||d.type==='sfx')&&
+       (typeof value!=='object'&&typeof value!=='function'))
+      throw new TypeError('Invalid audio resource '+id);
     if(d.type==='atlas'||d.type==='image'){
       var width=Number.isInteger(value.naturalWidth)?value.naturalWidth:value.width;
       var height=Number.isInteger(value.naturalHeight)?value.naturalHeight:value.height;
