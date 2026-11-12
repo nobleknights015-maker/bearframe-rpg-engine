@@ -13,6 +13,9 @@ function createBearframePartyWorldHost(storage,project,theme){
   if(!startup.ok&&startup.reason==='no-save')
     startup=session.start('World integration test',2718);
   var startupError=startup.ok?null:startup.reason;
+  // Facing is an ephemeral rendering hint, not part of the world journal.
+  // The caller's durable movement action still decides whether position moves.
+  var lastFacing='down';
   function snapshot(){return session.snapshot();}
   function view(){return snapshot().view;}
   function dispatch(command){
@@ -31,10 +34,15 @@ function createBearframePartyWorldHost(storage,project,theme){
   function navigate(dir){
     if(['up','down','left','right'].indexOf(dir)===-1)
       return {ok:false,reason:'invalid-direction'};
-    return dispatch({type:'move',dir:dir});
+    var result=dispatch({type:'move',dir:dir});
+    // Facing into a wall is visually meaningful; failed storage commits
+    // must not change presentation or imply the move succeeded.
+    if(result.ok||result.reason==='no-change')lastFacing=dir;
+    return result;
   }
   return Object.freeze({snapshot:snapshot,view:view,battle:battle,
     submit:submit,dispatch:dispatch,navigate:navigate,
+    facing:function(){return lastFacing;},
     // Scene composition is read-only. The canonical session remains the
     // single source of geometry and journal state across Android restarts.
     compose:function(options){return session.compose(options);},
