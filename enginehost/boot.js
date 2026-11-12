@@ -202,7 +202,7 @@
     var partyWorld=createBearframePartyWorldHost(storage,FRAMEWORK_PARTY_WORLD_FIXTURE,theme);
     var partyWorldStatus=document.getElementById('party-world-status');
     var partyWorldSurface=document.getElementById('party-world-surface');
-    var partyWorldSceneReady=false;
+    var partyWorldSceneReady=false,partyWorldClock=null;
     function partyWorldInteractive(){
       return partyWorldSceneReady&&!restoring&&
         !!assets.get('terrain')&&!!assets.get('characters');
@@ -214,7 +214,7 @@
         world:document.getElementById('pw-screen-world'),
         party:document.getElementById('pw-screen-party'),
         save:document.getElementById('pw-screen-save')
-      });
+      },function(){syncPresentationClock();});
     var partyWorldInput=createBearframeWorldInput(
       partyWorldScreens,function(){return partyWorld.view();},
       function(dir){
@@ -264,27 +264,35 @@
       battle:document.getElementById('party-world-battle')
     });
     var previousPartyPhase=null;
+    // Tick is a purely visual clock, independent of all persisted revisions.
+    function paintPartyWorldFrame(tick){
+      var terrain=assets.get('terrain'),characters=assets.get('characters');
+      if(!terrain||!characters||restoring)
+        throw new Error('Scene atlas loading or recovery in progress');
+      var frame=partyWorld.compose({
+        width:partyWorldSurface.width,height:partyWorldSurface.height,tick:tick
+      });
+      drawBearframeSceneCanvas(partyWorldSurface,frame,
+        {terrain:terrain,characters:characters});
+    }
+    function syncPresentationClock(){
+      if(!partyWorldClock)return;
+      if(!document.hidden&&!restoring&&partyWorldSceneReady&&
+         partyWorldScreens.current()==='world')partyWorldClock.start();
+      else partyWorldClock.stop();
+    }
     function renderPartyWorld(){
       var snap=partyWorld.snapshot(),v=snap.view;
       if(!v){
         partyWorldSceneReady=false;
+        syncPresentationClock();
         partyWorldStatus.textContent='Party world unavailable: '+snap.error;
         partyWorldButtons.forEach(function(b){b.disabled=true;});
         return;
       }
-      var terrain=assets.get('terrain'),characters=assets.get('characters');
       var sceneError=null;
       try {
-        if(!terrain||!characters||restoring)
-          throw new Error('Scene atlas loading or recovery in progress');
-        // Compose directly from the same canonical v2 state that controls
-        // movement, inventory and party combat. Rendering never commits data.
-        var frame=partyWorld.compose({
-          width:partyWorldSurface.width,height:partyWorldSurface.height,
-          tick:v.sequence%100
-        });
-        drawBearframeSceneCanvas(partyWorldSurface,frame,
-          {terrain:terrain,characters:characters});
+        paintPartyWorldFrame(partyWorldClock?partyWorldClock.tick():0);
         partyWorldSceneReady=true;
       }catch(error){
         partyWorldSceneReady=false;
@@ -314,6 +322,7 @@
         'Party world has not verified durable storage.';
       partyWorldScreens.sync(v.prompt?'event':
         v.partyBattle||v.battle?'battle':'explore',partyWorldSceneReady);
+      syncPresentationClock();
     }
     // Renderer-only health check for Android instrumentation and the
     // diagnostic screen. Proves that *visible event actors* produce real
@@ -430,6 +439,27 @@
         firstFrame:start,secondFrame:end,changedPixels:changed,
         revisionBefore:before.sequence,revisionAfter:after.sequence};
     }
+    partyWorldClock=createBearframePresentationClock({
+      intervalMs:50,
+      paint:function(tick){
+        if(document.hidden||restoring||!partyWorldSceneReady||
+           partyWorldScreens.current()!=='world')return false;
+        paintPartyWorldFrame(tick);
+        return true;
+      },
+      onError:function(error){
+        partyWorldSceneReady=false;
+        partyWorldStatus.textContent='Visual animation paused: '+error.message;
+      }
+    });
+    // Stop idle redraws offscreen and after Activity lifecycle transitions.
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden)partyWorldClock.stop();
+      else{renderPartyWorld();syncPresentationClock();}
+    });
+    window.addEventListener('pagehide',function(){partyWorldClock.stop();});
+    window.addEventListener('blur',function(){partyWorldClock.stop();});
+    window.addEventListener('focus',function(){syncPresentationClock();});
     partyWorldButtons.forEach(function(button){
       button.addEventListener('click',function(){
         var direction=button.getAttribute('data-party-world-dir');
@@ -596,17 +626,20 @@
       sceneVisibilityAudit:sceneVisibilityAudit,
       sceneryLayerAudit:sceneryLayerAudit,
       animatedTileAudit:animatedTileAudit,
+      presentationClock:partyWorldClock,
       partyWorldScreens:partyWorldScreens,
       input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});
       },
-      suspend:function(){audioProbe.suspend();return snapshot();},
+      suspend:function(){
+        partyWorldClock.stop();audioProbe.suspend();return snapshot();
+      },
       resume:function(){
         audioProbe.resume();
         if(restoring)return snapshot();
-        show();renderPartyWorld();
+        show();renderPartyWorld();syncPresentationClock();
         return snapshot();
       }
     });

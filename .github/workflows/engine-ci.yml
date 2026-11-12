@@ -20,7 +20,7 @@ jobs:
       - name: Verify source syntax
         run: |
           set -euo pipefail
-          for file in game/*.js android/*.js tests/*.js; do node --check "$file"; done
+          for file in game/*.js android/*.js enginehost/*.js tests/*.js; do node --check "$file"; done
       - name: Run engine regressions and validate content
         run: node --test tests/*.test.js
   android-build:
