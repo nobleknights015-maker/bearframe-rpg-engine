@@ -272,6 +272,14 @@
         party:document.getElementById('pw-screen-party'),
         save:document.getElementById('pw-screen-save')
       },function(){syncPresentationClock();});
+    var jrpgMenu=createBearframeJRPGMenu(
+      document.getElementById('jrpg-menu'),
+      document.getElementById('jrpg-menu-open'),{
+        view:function(){return partyWorld.view();},project:partyWorldProject,
+        dispatch:function(command){return partyWorldAction(command);},
+        verifySave:function(){return partyWorld.verifySave();},
+        onVisibility:function(){syncPresentationClock();renderPartyWorld();}
+      });
     var partyWorldInput=createBearframeWorldInput(
       partyWorldScreens,function(){return partyWorld.view();},
       function(dir){
@@ -285,7 +293,7 @@
         world:document.getElementById('pw-screen-world'),
         party:document.getElementById('pw-screen-party'),
         save:document.getElementById('pw-screen-save')
-      });
+      },jrpgMenu);
     function partyWorldAction(command){
       if(!partyWorldInteractive()){
         partyWorldStatus.textContent='Party scene unavailable; controls are paused.';
@@ -343,7 +351,7 @@
     function syncPresentationClock(){
       if(!partyWorldClock)return;
       if(!document.hidden&&!restoring&&partyWorldSceneReady&&
-         partyWorldScreens.current()==='world')partyWorldClock.start();
+         partyWorldScreens.current()==='world'&&!jrpgMenu.isOpen())partyWorldClock.start();
       else partyWorldClock.stop();
     }
     // Installed-Android comparison needs the *same* presentation phase
@@ -375,16 +383,20 @@
         partyWorldSceneReady=false;
         sceneError=error.message;
       }
+      if((v.prompt||v.partyBattle||v.battle)&&jrpgMenu.isOpen())jrpgMenu.close();
       var locked=!!v.prompt||!!v.partyBattle||!!v.battle||!partyWorldSceneReady;
+      var menuButton=document.getElementById('jrpg-menu-open');
+      menuButton.disabled=locked;
+      document.getElementById('jrpg-world-location').textContent=v.mapName||v.map;
       document.getElementById('engine-landscape-stage').setAttribute('data-phase',
         v.prompt?'event':v.partyBattle||v.battle?'battle':'explore');
       partyWorldStatus.textContent=sceneError?
         'Party scene paused: '+sceneError+' · saved revision '+v.sequence:
-        'v2 '+v.mapName+' ('+v.x+','+v.y+
-        ') · revision '+v.sequence+' · '+(v.prompt?'Event choice':
-        v.partyBattle?'Party combat':'Explore')+' · '+v.message;
-      partyWorldButtons.forEach(function(button){button.disabled=locked;});
+        (v.prompt?'Conversation · ':v.partyBattle||v.battle?'Battle · ':'')+
+        (v.message||'Exploring '+(v.mapName||v.map));
+      partyWorldButtons.forEach(function(button){button.disabled=locked||jrpgMenu.isOpen();});
       partyWorldPanels.render();partyWorldBattlePanel.render();
+      jrpgMenu.refresh();
       var phase=v.prompt?'event':v.partyBattle||v.battle?'battle':'explore';
       landscapePages.all(previousPartyPhase!==phase);
       previousPartyPhase=phase;
@@ -705,6 +717,7 @@
       renderVisualTickForAudit:renderVisualTickForAudit,
       presentationClock:partyWorldClock,
       partyWorldScreens:partyWorldScreens,
+      jrpgMenu:jrpgMenu,
       input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
