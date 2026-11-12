@@ -26,7 +26,8 @@ public final class ControllerInputRouter {
     private String axisDirection;
     private String keyDirection;
     private String activeDirection;
-    private int keyCodeHeld = -1;
+    // Separate held directions allow simultaneous physical D-pad diagonals.
+    private boolean upHeld,downHeld,leftHeld,rightHeld;
     private long generation = 0;
     private boolean enabled = true;
     private static final int FIRST_REPEAT_MS = 260;
@@ -54,6 +55,19 @@ public final class ControllerInputRouter {
         }
     }
 
+    private static String combine(float x,float y,float threshold) {
+        String vertical = Math.abs(y)>=threshold ? (y>0 ? "down" : "up") : null;
+        String horizontal = Math.abs(x)>=threshold ? (x>0 ? "right" : "left") : null;
+        if (vertical!=null && horizontal!=null) return vertical+"-"+horizontal;
+        return vertical!=null ? vertical : horizontal;
+    }
+
+    private String heldDirection() {
+        float x=rightHeld==leftHeld ? 0 : (rightHeld ? 1 : -1);
+        float y=downHeld==upHeld ? 0 : (downHeld ? 1 : -1);
+        return combine(x,y,0.5f);
+    }
+
     public void setEnabled(boolean value) {
         if (enabled == value) return;
         enabled = value;
@@ -63,7 +77,7 @@ public final class ControllerInputRouter {
     public void clear() {
         generation++;
         handler.removeCallbacksAndMessages(null);
-        keyCodeHeld = -1;
+        upHeld=downHeld=leftHeld=rightHeld=false;
         keyDirection = null;
         axisDirection = null;
         activeDirection = null;
@@ -98,14 +112,22 @@ public final class ControllerInputRouter {
         String direction = directionKey(code);
         if (direction != null) {
             if (action == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
-                keyCodeHeld = code;
-                keyDirection = direction;
-                updateDirection();
-            } else if (action == KeyEvent.ACTION_UP && keyCodeHeld == code) {
-                keyCodeHeld = -1;
-                keyDirection = null;
-                updateDirection();
+                switch (code) {
+                    case KeyEvent.KEYCODE_DPAD_UP: upHeld=true;break;
+                    case KeyEvent.KEYCODE_DPAD_DOWN: downHeld=true;break;
+                    case KeyEvent.KEYCODE_DPAD_LEFT: leftHeld=true;break;
+                    case KeyEvent.KEYCODE_DPAD_RIGHT: rightHeld=true;break;
+                }
+            } else if (action == KeyEvent.ACTION_UP) {
+                switch (code) {
+                    case KeyEvent.KEYCODE_DPAD_UP: upHeld=false;break;
+                    case KeyEvent.KEYCODE_DPAD_DOWN: downHeld=false;break;
+                    case KeyEvent.KEYCODE_DPAD_LEFT: leftHeld=false;break;
+                    case KeyEvent.KEYCODE_DPAD_RIGHT: rightHeld=false;break;
+                }
             }
+            keyDirection=heldDirection();
+            updateDirection();
             return true;
         }
 
@@ -152,11 +174,9 @@ public final class ControllerInputRouter {
         float threshold = axisDirection == null ? 0.48f : 0.30f;
         String direction = null;
         if (Math.abs(hx) >= 0.5f || Math.abs(hy) >= 0.5f) {
-            if (Math.abs(hx) > Math.abs(hy)) direction = hx > 0 ? "right" : "left";
-            else direction = hy > 0 ? "down" : "up";
-        } else if (Math.abs(x) >= threshold || Math.abs(y) >= threshold) {
-            if (Math.abs(x) > Math.abs(y)) direction = x > 0 ? "right" : "left";
-            else direction = y > 0 ? "down" : "up";
+            direction=combine(hx,hy,0.5f);
+        } else {
+            direction=combine(x,y,threshold);
         }
         axisDirection = direction;
         updateDirection();
