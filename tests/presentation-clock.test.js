@@ -239,3 +239,30 @@ test('throwing diagnostic observer cannot strand clock after frame failure or ca
  assert.equal(clock.start(),true);
  assert.doesNotThrow(()=>clock.stop());
 });
+
+test('duplicate scheduler callback delivery cannot advance or fork the animation loop',()=>{
+ let next=0,callbacks=new Map(),pending=new Set(),paints=[];
+ const clock=makeClock({
+  requestFrame:fn=>{const id=++next;callbacks.set(id,fn);pending.add(id);return id;},
+  cancelFrame:id=>pending.delete(id),
+  paint:tick=>{paints.push(tick);}
+ });
+ clock.start();
+ function fire(id,time){pending.delete(id);callbacks.get(id)(time);}
+ fire(1,0);
+ assert.equal(pending.size,1);
+ const second=[...pending][0];
+ fire(second,50);
+ assert.deepEqual(paints,[1]);
+ assert.equal(pending.size,1);
+ const remaining=[...pending][0];
+ callbacks.get(second)(100);
+ callbacks.get(1)(100);
+ assert.deepEqual(paints,[1],'duplicate callbacks must never repaint');
+ assert.deepEqual([...pending],[remaining],'duplicates must not enqueue new frames');
+ fire(remaining,100);
+ assert.deepEqual(paints,[1,2]);
+ assert.equal(pending.size,1);
+ clock.stop();
+ assert.equal(pending.size,0);
+});
