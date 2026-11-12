@@ -2,6 +2,19 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const makeClock=require('../enginehost/presentation-clock');
 const makeHost=require('../enginehost/party-world-host');
 const project=require('../fixtures/party-world-project');
+const theme={tileSize:32,clearColor:'#101018',
+ atlases:{terrain:{width:64,height:32},characters:{width:64,height:48}},
+ tiles:{floor:{atlas:'terrain',x:0,y:0,w:32,h:32},
+  wall:{atlas:'terrain',x:32,y:0,w:32,h:32}},
+ sprites:{
+  player:{ticksPerFrame:5,frames:[
+   {atlas:'characters',x:0,y:0,w:32,h:48},
+   {atlas:'characters',x:32,y:0,w:32,h:48}]},
+  eventMarker:{ticksPerFrame:1,frames:[
+   {atlas:'characters',x:32,y:0,w:32,h:48}]}
+ },
+ eventSprites:{supply:'eventMarker',mechanic:'eventMarker',scout:'eventMarker'}
+};
 function scheduler(){
  let nextId=0,queue=new Map(),cancelled=0;
  return {requestFrame(fn){const id=++nextId;queue.set(id,fn);return id;},
@@ -18,7 +31,7 @@ function disk(){
   writes:()=>writes};
 }
 test('idle scene clock advances visual pose without touching v2 saved state',()=>{
- const io=disk(),world=makeHost(io,project);
+ const io=disk(),world=makeHost(io,project,theme);
  const before=world.snapshot(),writes=io.writes();
  const p=[];
  const raf=scheduler(),clock=makeClock({
