@@ -51,7 +51,8 @@ function createBearframePresentationClock(options){
   function start(){
     if(active)return false;
     active=true;previous=null;
-    handle=request(frame);
+    try{handle=request(frame);}
+    catch(error){active=false;previous=null;throw error;}
     return true;
   }
   return Object.freeze({
