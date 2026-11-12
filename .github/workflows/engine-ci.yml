@@ -140,7 +140,11 @@ jobs:
             theme:{tileSize:32,clearColor:'#101018',
               atlases:{test:{width:64,height:32}},
               tiles:{floor:frame(32),wall:frame(0)},
-              sprites:{player:{ticksPerFrame:2,frames:[frame(0)]},
+              sprites:{player:{ticksPerFrame:2,directions:{
+                down:{idle:frame(0),walk:[frame(32),frame(0)]},
+                left:{idle:frame(32),walk:[frame(0),frame(32)]},
+                right:{idle:frame(0),walk:[frame(32),frame(0)]},
+                up:{idle:frame(32),walk:[frame(0),frame(32)]}}},
                 eventMarker:{ticksPerFrame:1,frames:[frame(0)]}},
               eventSprites:{supply:'eventMarker',mechanic:'eventMarker',scout:'eventMarker'}},
             requiredImages:['test']};
