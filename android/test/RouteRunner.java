@@ -914,18 +914,22 @@ public final class RouteRunner extends Instrumentation {
                chosen.getInt("x")!=1||chosen.getInt("y")!=1)
                 throw new AssertionError("Controller confirm did not commit event: "+chosen);
             gamepadKey(KeyEvent.KEYCODE_BUTTON_X);
-            if(!"\"party\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
-                throw new AssertionError("Controller menu did not open Party");
+            if(!"true".equals(evalHost("BearframeHost.jrpgMenu.isOpen()")))
+                throw new AssertionError("Controller menu did not open JRPG commands");
             gamepadKey(KeyEvent.KEYCODE_BUTTON_R1);
-            if(!"\"save\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
-                throw new AssertionError("Shoulder did not move to Save screen");
+            if(!"true".equals(evalHost(
+                "document.querySelector('[data-jrpg-command=techniques]').getAttribute('data-jrpg-selected')==='true'")))
+                throw new AssertionError("Shoulder did not select next JRPG command");
             gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
-            if(!"\"world\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
+            if(!"false".equals(evalHost("BearframeHost.jrpgMenu.isOpen()"))||
+               !"\"world\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
                 throw new AssertionError("Controller cancel did not return to World");
         }else{
             gamepadKey(KeyEvent.KEYCODE_BUTTON_L1);
-            if(!"\"save\"".equals(evalHost("BearframeHost.partyWorldScreens.current()")))
-                throw new AssertionError("Left shoulder did not wrap to Save");
+            if(!"true".equals(evalHost("BearframeHost.jrpgMenu.isOpen()"))||
+               !"true".equals(evalHost(
+                   "document.querySelector('[data-jrpg-command=options]').getAttribute('data-jrpg-selected')==='true'")))
+                throw new AssertionError("Left shoulder did not wrap to Options menu");
             gamepadKey(KeyEvent.KEYCODE_BUTTON_B);
             gamepadKey(KeyEvent.KEYCODE_DPAD_DOWN);
             JSONObject walked=new JSONObject((String)new JSONTokener(
