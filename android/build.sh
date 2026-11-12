@@ -67,6 +67,14 @@ pathlib.Path(sys.argv[2]).write_text("var BEARFRAME_OWNER_ART_PROFILE = "+
 BF_OWNER_ART_PY
   fi
 fi
+# Optional reusable authored game-data project. This is JSON data, never
+# arbitrary JS loaded from ZIPs. The compiler validates project geometry,
+# party progression and an initial serializable state before replacing the
+# default diagnostic content-profile.js in this APK build only.
+if [[ -n "${BF_CONTENT_PROFILE_JSON:-}" ]]; then
+  node "$root/scripts/build_content_profile.js" "$BF_CONTENT_PROFILE_JSON" \
+    "$work/assets/enginehost/content-profile.js"
+fi
 # A generated, original silent WAV proves local audio packaging without game media.
 node "$root/scripts/generate_audio_fixture.js" "$work/assets/enginehost/audio/diagnostics/silence.wav"
 unzip -p "$RHINO_JAR" META-INF/LICENSE.txt > "$work/assets/Rhino-LICENSE.txt"
