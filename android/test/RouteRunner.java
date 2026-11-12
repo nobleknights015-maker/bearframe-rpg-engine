@@ -409,6 +409,7 @@ public final class RouteRunner extends Instrumentation {
               "0,0,cv.width,cv.height).data);" +
             "var revision=host.view().sequence;" +
             "var accepted=BearframeHost.input({type:'navigate',direction:'right'});" +
+            "var repainted=BearframeHost.renderVisualTickForAudit(0);" +
             "var latest=cv.getContext('2d').getImageData(" +
               "0,0,cv.width,cv.height).data,changed=0;" +
             "for(var i=0;i<latest.length;i+=4){" +
@@ -416,13 +417,15 @@ public final class RouteRunner extends Instrumentation {
                  "original[i+2]!==latest[i+2]||original[i+3]!==latest[i+3])changed++;}" +
             "return JSON.stringify({idle:idle.source.x,step:step.source.x," +
               "next:next.source.x,up:up.source.x,img:step.imageId," +
-              "accepted:accepted,from:revision,to:host.view().sequence," +
-              "facing:host.facing(),saved:host.verifySave().ok,changed:changed});})()");
+              "accepted:accepted,repainted:repainted,from:revision,to:host.view().sequence," +
+              "facing:host.facing(),saved:host.verifySave().ok,changed:changed," +
+              "status:document.getElementById('party-world-status').textContent});})()");
         JSONObject movement=new JSONObject((String)new JSONTokener(visual).nextValue());
         if(movement.getInt("idle")!=32||movement.getInt("step")!=0||
            movement.getInt("next")!=32||movement.getInt("up")!=32||
            !"test".equals(movement.getString("img"))||
            !movement.getBoolean("accepted")||
+           !movement.getJSONObject("repainted").getBoolean("ok")||
            movement.getInt("to")!=movement.getInt("from")+1||
            !"right".equals(movement.getString("facing"))||
            !movement.getBoolean("saved")||movement.getInt("changed")<16)
