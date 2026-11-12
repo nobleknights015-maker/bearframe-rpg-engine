@@ -16,6 +16,13 @@ function createBearframePresentationClock(options){
   if(typeof request!=='function'||typeof cancel!=='function')
     throw new TypeError('Animation frame scheduler required');
   var active=false,handle=null,previous=null,tick=0,paints=0,failures=0,generation=0;
+  function report(error){
+    if(typeof options.onError==='function'){
+      try{options.onError(error);}catch(ignored){
+        // Diagnostics must not prevent shutdown or a subsequent restart.
+      }
+    }
+  }
   function schedule(){
     var token=generation;
     return request(function(timestamp){if(token===generation)frame(timestamp);});
@@ -28,7 +35,7 @@ function createBearframePresentationClock(options){
       handle=null;
       try{cancel(pending);}catch(error){
         failures++;
-        if(typeof options.onError==='function')options.onError(error);
+        report(error);
       }
     }
     return wasActive;
@@ -39,8 +46,7 @@ function createBearframePresentationClock(options){
     if(!active)return;
     if(!Number.isFinite(timestamp)){
       failures++;stop();
-      if(typeof options.onError==='function')
-        options.onError(new TypeError('Invalid animation timestamp'));
+      report(new TypeError('Invalid animation timestamp'));
       return;
     }
     if(previous===null)previous=timestamp;
@@ -54,7 +60,7 @@ function createBearframePresentationClock(options){
         if(options.paint(tick)!==false)paints++;
       }catch(error){
         failures++;stop();
-        if(typeof options.onError==='function')options.onError(error);
+        report(error);
         return;
       }
     }
@@ -62,7 +68,7 @@ function createBearframePresentationClock(options){
       try{handle=schedule();}
       catch(error){
         failures++;stop();
-        if(typeof options.onError==='function')options.onError(error);
+        report(error);
       }
     }
   }
