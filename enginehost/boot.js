@@ -224,7 +224,23 @@
     // End-to-end opt-in v2 world: visible navigation, scripted choices,
     // shared gear, party turns and XP all use a single separate native journal.
     // The old launcher, v1 diagnostics and historical saves remain untouched.
-    var partyWorld=createBearframePartyWorldHost(storage,FRAMEWORK_PARTY_WORLD_FIXTURE,theme);
+    // A validated, data-only authored project can reuse this entire engine
+    // without modifying simulation or UI JavaScript. Invalid content must
+    // fail closed before opening any save slot.
+    var authoredContent=BEARFRAME_CONTENT_PROFILE;
+    if(authoredContent!==null){
+      if(!authoredContent||authoredContent.version!==1||
+         !authoredContent.project||!authoredContent.project.partyCombat||
+         !authoredContent.project.partyCombat.progression)
+        throw new TypeError('Invalid authored engine content profile');
+      validateEngineProject(authoredContent.project);
+    }
+    var partyWorldProject=authoredContent?
+      authoredContent.project:FRAMEWORK_PARTY_WORLD_FIXTURE;
+    var partyWorldSaveNamespace=authoredContent?
+      'bf:'+partyWorldProject.id+':v2:runtime':undefined;
+    var partyWorld=createBearframePartyWorldHost(storage,partyWorldProject,theme,
+      {slotPrefix:partyWorldSaveNamespace});
     var partyWorldStatus=document.getElementById('party-world-status');
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
@@ -269,7 +285,7 @@
     var partyWorldPanels=createBearframeRuntimePanels(
       document.getElementById('party-world-events'),
       document.getElementById('party-world-inventory'),
-      partyWorldStatus,FRAMEWORK_PARTY_WORLD_FIXTURE,
+      partyWorldStatus,partyWorldProject,
       function(){return partyWorld.view();},partyWorldAction);
     var partyWorldBattlePanel=createBearframePartyCommandPanel(
       document.getElementById('party-world-battle'),{
@@ -278,7 +294,7 @@
           return partyWorldInteractive()?partyWorld.submit(orders):
             {ok:false,reason:'assets-restoring'};
         }
-      },FRAMEWORK_PARTY_WORLD_FIXTURE.partyCombat.skills,function(outcome){
+      },partyWorldProject.partyCombat.skills,function(outcome){
         if(outcome.ok)renderPartyWorld();
         else partyWorldStatus.textContent='Party order refused: '+outcome.reason;
         // The host owns repaint/paging after a successful turn; on failure
