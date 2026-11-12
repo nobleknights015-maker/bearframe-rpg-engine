@@ -228,6 +228,8 @@
     var partyWorldStatus=document.getElementById('party-world-status');
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
+    // Presentation-only step window; never stored in the durable journal.
+    var lastDrawnPlayer=null,playerWalkUntilTick=-1;
     function partyWorldInteractive(){
       return partyWorldSceneReady&&!restoring&&
         sceneReady();
@@ -293,8 +295,17 @@
     function paintPartyWorldFrame(tick){
       if(!sceneReady()||restoring)
         throw new Error('Scene atlas loading or recovery in progress');
+      var current=partyWorld.view();
+      if(current){
+        if(lastDrawnPlayer&&current.map===lastDrawnPlayer.map&&
+           (current.x!==lastDrawnPlayer.x||current.y!==lastDrawnPlayer.y))
+          playerWalkUntilTick=tick+5;
+        lastDrawnPlayer={map:current.map,x:current.x,y:current.y};
+      }
       var frame=partyWorld.compose({
-        width:partyWorldSurface.width,height:partyWorldSurface.height,tick:tick
+        width:partyWorldSurface.width,height:partyWorldSurface.height,tick:tick,
+        playerDirection:partyWorld.facing(),
+        playerMoving:tick<playerWalkUntilTick
       });
       drawBearframeSceneCanvas(partyWorldSurface,frame,
         sceneImages());
