@@ -244,13 +244,13 @@ function createBearframeEngine(project) {
       }
       p.x=pos.x;p.y=pos.y;p.px=pos.px;p.py=pos.py;
       moved=true;
-      if(crossed&&has(map.encounters,at)&&
-         !s.flags['encounter:'+map.name+':'+at]){
-        // Keep the same canonical encounter origin as tile movement.
-        var origin=map===project.maps[p.map]?p.map+':'+at:'';
-        if(!s.flags['encounter:'+origin])
+      if(crossed&&has(map.encounters,at)){
+        // Exactly the same one-time origin key used by tile movement.
+        var origin=p.map+':'+at;
+        if(!s.flags['encounter:'+origin]){
           beginBattle(s,map.encounters[at],'encounter:'+origin);
-        return true;
+          return true;
+        }
       }
     }
     return moved;
