@@ -18,6 +18,14 @@ function createBearframeAudioDirector(catalog){
     if(c.type==='sfx'&&c.loop===true)
       throw new TypeError('Sound effects cannot loop '+id);
   });
+  // Retain only validated scalar fields. Callers may mutate their manifest after
+  // initialization; that must never turn a local clip into an untrusted URL.
+  var clips=Object.create(null);
+  Object.keys(catalog).forEach(function(id){
+    var c=catalog[id];
+    clips[id]={type:c.type,path:c.path,loop:c.loop};
+  });
+  catalog=clips;
   function fresh(){return {version:1,sequence:0,paused:false,muted:false,
     volumes:{master:100,music:80,sfx:100},music:null,musicStarted:false};}
   function gain(s,bus){return s.muted?0:Math.floor(s.volumes.master*s.volumes[bus]/100);}
