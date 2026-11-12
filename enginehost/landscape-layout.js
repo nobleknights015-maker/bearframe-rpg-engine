@@ -22,8 +22,8 @@ function createBearframeLandscapeLayout(stage,win){
     var original=viewport.fit(width,height,insets||{}),safeArea=original.safeArea;
     var ratio=safeArea.width/safeArea.height;
     var lw=800,lh=450;
-    if(ratio>800/450)lw=Math.min(1280,450*ratio);
-    else if(ratio<800/450)lh=Math.min(720,800/ratio);
+    if(ratio>800/450)lw=450*ratio;
+    else if(ratio<800/450)lh=800/ratio;
     // Adapt the logical stage, not its child pixels: gameplay controls
     // remain correctly proportioned without stretching or scrolling.
     var adapted=create(lw,lh).fit(width,height,insets||{});
