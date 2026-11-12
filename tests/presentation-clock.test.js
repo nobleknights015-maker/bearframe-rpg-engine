@@ -266,3 +266,22 @@ test('duplicate scheduler callback delivery cannot advance or fork the animation
  clock.stop();
  assert.equal(pending.size,0);
 });
+
+test('unsafe elapsed timestamp cannot corrupt animation tick or schedule another frame',()=>{
+ const raf=scheduler(),errors=[],paints=[];
+ const clock=makeClock({requestFrame:raf.requestFrame,cancelFrame:raf.cancelFrame,
+  paint:tick=>paints.push(tick),onError:error=>errors.push(error.message)});
+ assert.equal(clock.start(),true);
+ raf.fire(0);
+ raf.fire(Number.MAX_VALUE);
+ assert.equal(clock.snapshot().running,false);
+ assert.equal(clock.snapshot().tick,0);
+ assert.equal(clock.snapshot().failures,1);
+ assert.equal(raf.pending(),0);
+ assert.deepEqual(paints,[]);
+ assert.match(errors[0],/safe integer/);
+ assert.equal(clock.start(),true,'clock can restart after rejecting corrupt timing');
+ raf.fire(0);raf.fire(50);
+ assert.deepEqual(paints,[1]);
+ clock.stop();
+});
