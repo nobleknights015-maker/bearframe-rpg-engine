@@ -84,7 +84,7 @@ def build(folder, role_path):
     output={"version":1,"manifest":{"version":1,"assets":registered},
             "theme":theme,"requiredImages":sorted(required)}
     # Refuse overwrite; a rejected mapping must never rewrite working art data.
-    with (pack/"art-profile.json").open("x",encoding="utf-8") as f:
+    with (root/"art-profile.json").open("x",encoding="utf-8") as f:
         json.dump(output,f,ensure_ascii=True,separators=(",",":"))
         f.write("\n")
     return {"totalImages":len(registered),"sceneImages":len(required)}
