@@ -150,8 +150,10 @@ test('host low-memory callback blocks input until scene atlases reload, without 
  assert.match(native,/BearframeHost\.memoryPressure/);
  assert.match(boot,/memoryPressure:memoryPressure/);
  assert.match(boot,/assets\.trimTo\(target\)/);
- assert.match(boot,/assets\.preload\(\['terrain','characters'\]\)/);
- assert.match(boot,/if\(restoring\|\|!assets\.get\('terrain'\)\|\|!assets\.get\('characters'\)\)/);
+ assert.match(boot,/var requiredImages=artProfile\?artProfile\.requiredImages:\['terrain','characters'\]/);
+ assert.match(boot,/assets\.preload\(requiredImages\)/);
+ assert.match(boot,/function sceneReady\(\)/);
+ assert.match(boot,/if\(restoring\|\|!sceneReady\(\)\)/);
  assert.match(boot,/reason:'assets-restoring'/);
  assert.match(boot,/Scene restoration failed/);
 });
@@ -200,7 +202,7 @@ test('failed renderer asset recovery exposes explicit user retry without advanci
  assert.match(boot,/retryAssets\.addEventListener\('click',function\(\)\{[\s\S]*?memoryPressure\(80\)/);
  assert.match(boot,/Scene restoration failed:[\s\S]*?retryAssets\.disabled=false;retryAssets\.hidden=false/);
  assert.match(boot,/Asset loading failed:[\s\S]*?location\.reload\(\)/);
- assert.match(boot,/if\(restoring\|\|!assets\.get\('terrain'\)\|\|!assets\.get\('characters'\)\)/);
+ assert.match(boot,/if\(restoring\|\|!sceneReady\(\)\)/);
 });
 
 
