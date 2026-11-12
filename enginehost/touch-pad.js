@@ -13,7 +13,8 @@ function createBearframeTouchPad(buttons,dispatch,win){
   if(!win||typeof win.addEventListener!=='function'||
      typeof win.setTimeout!=='function'||typeof win.clearTimeout!=='function')
     throw new TypeError('Touch pad needs a timer-capable window');
-  var directions=['up','down','left','right'];
+  var directions=['up','down','left','right',
+    'up-left','up-right','down-left','down-right'];
   var listeners=[],pointer=null,held=null,timer=null,disposed=false;
   var justPressed=null,lastPressTime=-Infinity;
   var firstDelay=270,repeatDelay=125;
@@ -28,7 +29,7 @@ function createBearframeTouchPad(buttons,dispatch,win){
     clearTimer();pointer=null;held=null;
   }
   function activate(button){
-    if(disposed||!button||button.disabled||doc.hidden)return false;
+    if(disposed||!button||button.disabled||button.hidden||doc.hidden)return false;
     var direction=button.getAttribute('data-party-world-dir')||
       button.getAttribute('data-dir');
     if(directions.indexOf(direction)<0)return false;
