@@ -59,6 +59,11 @@ function createBearframePresentationClock(options){
     else if(timestamp<previous)previous=timestamp;
     else if(timestamp-previous>=interval){
       var elapsed=Math.floor((timestamp-previous)/interval);
+      if(!Number.isSafeInteger(elapsed)){
+        failures++;stop();
+        report(new RangeError('Animation elapsed tick count exceeds safe integer range'));
+        return;
+      }
       previous+=elapsed*interval;
       // The portable scene's integer tick contract caps at 2^31-1.
       tick=(tick+elapsed)%2147483647;
