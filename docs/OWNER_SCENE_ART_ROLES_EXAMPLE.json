@@ -12,6 +12,16 @@
       "source_archive": "Bearframe assets.zip",
       "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
       "original_path": "SciFi_Station_Mega_Kit/02_Station_Walls/sprites/01_horizontal_wall_top.png"
+    },
+    "fieldFloor": {
+      "source_archive": "Bearframe assets.zip",
+      "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+      "original_path": "SciFi_Station_Mega_Kit/01_Floor/sprites/03_metal_grate.png"
+    },
+    "fieldWall": {
+      "source_archive": "Bearframe assets.zip",
+      "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+      "original_path": "SciFi_Station_Mega_Kit/02_Station_Walls/sprites/26_rusty_wall_top.png"
     }
   },
   "sprites": {
@@ -231,5 +241,23 @@
     "supply": "eventMarker",
     "mechanic": "eventMarker",
     "scout": "eventMarker"
+  },
+  "mapTiles": {
+    "field": {
+      "floor": "fieldFloor",
+      "wall": "fieldWall"
+    }
+  },
+  "portals": {
+    "hub": {
+      "source_archive": "Bearframe assets.zip",
+      "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+      "original_path": "SciFi_Station_Mega_Kit/03_Doors_Airlocks/sprites/03_service_door_closed.png"
+    },
+    "field": {
+      "source_archive": "Bearframe assets.zip",
+      "nested_zip": "SciFi_Station_Mega_Kit_v1.0.zip",
+      "original_path": "SciFi_Station_Mega_Kit/03_Doors_Airlocks/sprites/04_service_door_open.png"
+    }
   }
 }
