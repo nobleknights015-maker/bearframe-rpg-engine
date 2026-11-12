@@ -281,6 +281,17 @@
          partyWorldScreens.current()==='world')partyWorldClock.start();
       else partyWorldClock.stop();
     }
+    // Installed-Android comparison needs the *same* presentation phase
+    // before/after atlas eviction. The live RAF clock otherwise legitimately
+    // changes pixels even when the durable world state is unchanged.
+    function renderVisualTickForAudit(tick){
+      if(!Number.isInteger(tick)||tick<0||tick>2147483647)
+        return {ok:false,reason:'invalid-tick'};
+      if(!partyWorldInteractive())return {ok:false,reason:'scene-not-ready'};
+      partyWorldClock.stop();
+      paintPartyWorldFrame(tick);
+      return {ok:true,tick:tick,revision:partyWorld.view().sequence};
+    }
     function renderPartyWorld(){
       var snap=partyWorld.snapshot(),v=snap.view;
       if(!v){
@@ -626,6 +637,7 @@
       sceneVisibilityAudit:sceneVisibilityAudit,
       sceneryLayerAudit:sceneryLayerAudit,
       animatedTileAudit:animatedTileAudit,
+      renderVisualTickForAudit:renderVisualTickForAudit,
       presentationClock:partyWorldClock,
       partyWorldScreens:partyWorldScreens,
       input:function(action){return partyWorldInput.handle(action);},

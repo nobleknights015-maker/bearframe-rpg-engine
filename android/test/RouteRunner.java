@@ -669,6 +669,10 @@ public final class RouteRunner extends Instrumentation {
             "n=Math.imul(n^data[i+2],16777619)>>>0;}return n;})()";
         // WebView returns JS unsigned 32-bit hashes as JSON numbers, sometimes
         // with a trailing .0; parse as finite numeric values, not long literals.
+        String frozen=evalHost("JSON.stringify(BearframeHost.renderVisualTickForAudit(0))");
+        JSONObject freeze=new JSONObject((String)new JSONTokener(frozen).nextValue());
+        if(!freeze.getBoolean("ok")||freeze.getInt("revision")!=0)
+            throw new AssertionError("Unable to freeze pre-trim visual tick: "+frozen);
         long original=(long)Double.parseDouble(evalHost(hashScript));
         AtomicReference<Throwable> failure=new AtomicReference<>();
         runOnMainSync(()->{
@@ -694,9 +698,19 @@ public final class RouteRunner extends Instrumentation {
             Thread.sleep(200);
         }
         if(!restored)throw new AssertionError("V2 atlases did not rehydrate");
+        // The live world clock keeps running while standing still. Repaint
+        // the restored real canvas at the exact pre-trim tick before hashing.
+        String restoredPaint=evalHost(
+            "JSON.stringify(BearframeHost.renderVisualTickForAudit(0))");
+        JSONObject restoredTick=new JSONObject(
+            (String)new JSONTokener(restoredPaint).nextValue());
+        if(!restoredTick.getBoolean("ok")||restoredTick.getInt("revision")!=0)
+            throw new AssertionError("Rehydrated scene cannot repaint same tick: "+restoredPaint);
         long rehydrated=(long)Double.parseDouble(evalHost(hashScript));
         if(rehydrated!=original)
             throw new AssertionError("Rehydrated v2 canvas pixels differ");
+        if(!"true".equals(evalHost("BearframeHost.presentationClock.start()")))
+            throw new AssertionError("Live world presentation clock did not restart");
         if(!"false".equals(evalHost(
             "document.querySelector('[data-party-world-dir=down]').disabled")))
             throw new AssertionError("V2 movement remained disabled after atlas recovery");
