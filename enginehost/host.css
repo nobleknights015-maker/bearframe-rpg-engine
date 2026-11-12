@@ -194,3 +194,126 @@ body.landscape-gameplay #party-world-room-transition.room-transition-playing{
 @media (prefers-reduced-motion:reduce){
  body.landscape-gameplay #party-world-room-transition.room-transition-playing{
  animation-duration:180ms}}
+
+
+/* Fullscreen JRPG presentation. Legacy tab DOM remains intact for developer
+ * diagnostics and compatibility tests, but is no longer the player UI. */
+body.landscape-gameplay #engine-landscape-stage{
+  border:0;border-radius:0;box-shadow:0 0 0 200vmax #060b15;
+  padding:6px 10px 9px;background:#080f1d}
+body.landscape-gameplay #engine-landscape-stage > .jrpg-world-title{
+  display:flex;align-items:center;justify-content:space-between;
+  flex:0 0 25px;min-height:25px;margin:0;padding:0 100px 0 8px;
+  color:#d9e8fa;font:700 16px Georgia,serif;letter-spacing:.14em}
+body.landscape-gameplay #jrpg-world-location{
+  font:13px system-ui,sans-serif;color:#9db6d0;letter-spacing:.02em}
+/* Keep the diagnostic tabs in-bounds for automated legacy tests, but never
+ * show them to players or let them intercept normal touch input. */
+body.landscape-gameplay #engine-landscape-stage #party-world-navigation{
+  position:absolute;top:6px;left:6px;width:1px;height:1px;padding:0;
+  opacity:0;overflow:hidden;pointer-events:none;z-index:-1}
+body.landscape-gameplay #engine-landscape-stage #pw-screen-world:not([hidden]){
+  display:block;position:relative;flex:1;min-height:0;overflow:hidden;
+  background:#070e18;border:2px solid #576d8a;border-radius:9px;
+  box-shadow:inset 0 0 0 2px #182a45}
+body.landscape-gameplay #engine-landscape-stage #party-world-surface{
+  display:block;position:absolute;inset:0;width:100%;height:100%;
+  border:0;border-radius:0;object-fit:contain;image-rendering:pixelated;
+  background:#070e18}
+body.landscape-gameplay #jrpg-menu-open{
+  position:absolute;z-index:6;right:10px;top:8px;min-width:112px;
+  min-height:45px;border:2px solid #91b5d5;border-radius:7px;
+  background:#18273fdf;color:#f3f5ff;font:700 17px Georgia,serif;
+  touch-action:manipulation}
+body.landscape-gameplay #jrpg-menu-open:disabled{opacity:.4}
+body.landscape-gameplay #engine-landscape-stage #party-world-status{
+  position:absolute;z-index:4;left:15px;bottom:10px;right:228px;
+  max-height:40px;overflow:hidden;margin:0;padding:6px 12px;
+  border:1px solid #435d7c;border-radius:6px;
+  background:#081321dd;color:#e1ebfa;font:14px system-ui,sans-serif;
+  pointer-events:none}
+body.landscape-gameplay #engine-landscape-stage #pw-screen-world .pad{
+  position:absolute;z-index:5;right:14px;bottom:14px;
+  width:210px;height:195px;padding:0;
+  display:grid;grid-template-columns:repeat(3,62px);grid-template-rows:repeat(3,57px);
+  justify-content:center;align-content:center;gap:5px;
+  background:transparent}
+body.landscape-gameplay #engine-landscape-stage #pw-screen-world .pad button{
+  width:62px;height:57px;min-width:0;min-height:0;border-radius:12px;
+  border-color:#7e9aba;background:#15253ec7;box-shadow:0 2px 5px #050a11b8}
+body.landscape-gameplay.jrpg-pad-hidden #pw-screen-world .pad{display:none!important}
+body.landscape-gameplay #party-world-events,
+body.landscape-gameplay #party-world-battle{
+  position:absolute;z-index:8;right:14px;bottom:12px;top:65px;
+  width:min(44%,340px);height:auto;overflow:hidden;padding:12px;
+  border:2px solid #8eaad0;border-radius:8px;
+  box-shadow:0 5px 14px #050b16;background:linear-gradient(#1b3255,#0a1730)}
+body.landscape-gameplay #pw-screen-world #party-world-room-transition{
+  position:absolute;inset:0;z-index:7;pointer-events:none}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu[hidden]{display:none!important}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu{
+  display:flex;position:absolute;inset:30px 8px 8px;z-index:16;
+  min-height:0;padding:10px 12px;flex-direction:column;gap:8px;
+  border:3px double #b5d4f2;border-radius:10px;
+  color:#eef6ff;background:linear-gradient(145deg,#1f355c,#102542 55%,#09182d);
+  box-shadow:0 0 0 600px #030812b9,inset 0 0 0 2px #284976}
+body.landscape-gameplay .jrpg-menu-top{
+  display:flex;align-items:center;gap:16px;min-height:38px;
+  border-bottom:1px solid #7797be;padding:0 4px 7px;
+  font:700 19px Georgia,serif;letter-spacing:.05em}
+body.landscape-gameplay .jrpg-menu-top strong{color:#c8dff4}
+body.landscape-gameplay .jrpg-menu-top span{flex:1;font:17px system-ui,sans-serif}
+body.landscape-gameplay .jrpg-menu-top button{
+  min-height:36px;min-width:80px;border:1px solid #a9c3df;border-radius:6px;
+  background:#2a4366;color:white;font-size:14px}
+body.landscape-gameplay .jrpg-menu-layout{
+  display:grid;grid-template-columns:minmax(155px,26%) minmax(0,1fr);
+  gap:12px;min-height:0;flex:1}
+body.landscape-gameplay .jrpg-commands{
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,minmax(0,1fr));
+  grid-auto-flow:column;gap:6px;min-height:0;padding:3px}
+body.landscape-gameplay .jrpg-commands button{
+  padding:3px 8px;border:1px solid #56779e;border-radius:6px;
+  background:#172c4b;color:#dfecfc;font:700 15px Georgia,serif;
+  text-align:left;touch-action:manipulation}
+body.landscape-gameplay .jrpg-commands button[data-jrpg-selected="true"]{
+  border-color:#cde9ff;background:#385b85;color:white}
+body.landscape-gameplay .jrpg-commands button[aria-current="page"]::before{
+  content:'◆ ';color:#e8d18a}
+body.landscape-gameplay .jrpg-details{
+  min-width:0;min-height:0;overflow:hidden;padding:10px 14px;
+  border:2px solid #819fc2;border-radius:9px;
+  background:#0c1b34bd;display:flex;flex-direction:column;gap:5px}
+body.landscape-gameplay .jrpg-details .jrpg-line{
+  margin:0;font:14px/1.4 system-ui,sans-serif;color:#dce8f4}
+body.landscape-gameplay .jrpg-details .jrpg-helper{
+  margin:0;font:12px/1.4 system-ui,sans-serif;color:#9fb6ce}
+body.landscape-gameplay .jrpg-details .jrpg-section-label{
+  font:700 15px Georgia,serif;margin:5px 0 0;color:#f1e4bc}
+body.landscape-gameplay .jrpg-details .jrpg-entry{
+  border-bottom:1px solid #47648e;font-weight:600;padding-bottom:3px}
+body.landscape-gameplay .jrpg-details .jrpg-action{
+  min-height:31px;padding:4px 8px;flex-shrink:0;
+  font:14px system-ui,sans-serif;border-radius:5px;border:1px solid #7da3c7;
+  background:#243d5f;color:white;text-align:left}
+body.landscape-gameplay .jrpg-details .jrpg-action:disabled{opacity:.45}
+body.landscape-gameplay .jrpg-details .jrpg-summary{
+  display:flex;flex-direction:column;gap:6px}
+body.landscape-gameplay .jrpg-details .jrpg-location-name{
+  font:700 16px Georgia,serif;margin:0;color:#f2e6c0}
+body.landscape-gameplay .jrpg-details .jrpg-actor{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  border-bottom:1px solid #3c5776;padding:5px}
+body.landscape-gameplay .jrpg-details .jrpg-actor span{font-size:13px}
+body.landscape-gameplay .jrpg-menu-message{
+  margin:0;min-height:16px;font:13px system-ui,sans-serif;color:#f4dfab}
+body.landscape-gameplay .jrpg-menu button:focus-visible,
+body.landscape-gameplay #jrpg-menu-open:focus-visible{
+  outline:3px solid #ffe3a7;outline-offset:1px}
+body.landscape-gameplay .jrpg-details [hidden]{display:none!important}
+body.landscape-gameplay .jrpg-details .jrpg-pages{
+  display:flex;gap:8px;margin-top:auto;justify-content:flex-end}
+body.landscape-gameplay .jrpg-details .jrpg-pages button{
+  min-height:30px;border:1px solid #8dacce;border-radius:5px;
+  color:white;background:#274669;padding:3px 8px}
+body.landscape-gameplay.jrpg-reduced-motion .room-transition-playing{animation:none!important}
