@@ -137,3 +137,28 @@ test('subsequent RAF scheduling failure stops clock and permits recovery',()=>{
  assert.equal(clock.snapshot().running,true);
  clock.stop();
 });
+
+test('RAF cancellation failure cannot strand active clock or block restart',()=>{
+ let next=0,queued=new Map(),errors=[];
+ const clock=makeClock({
+  requestFrame:fn=>{const id=++next;queued.set(id,fn);return id;},
+  cancelFrame:id=>{queued.delete(id);throw Error('RAF cancel failed');},
+  paint:()=>{},
+  onError:error=>errors.push(error.message)
+ });
+ assert.equal(clock.start(),true);
+ assert.equal(clock.stop(),true);
+ assert.equal(clock.snapshot().running,false);
+ assert.deepEqual(errors,['RAF cancel failed']);
+ assert.equal(clock.snapshot().failures,1);
+ assert.equal(clock.stop(),false);
+ assert.equal(errors.length,1,'failed cancellation must not be retried');
+ assert.equal(clock.start(),true);
+ assert.equal(queued.size,1);
+ const [id,fn]=queued.entries().next().value;
+ queued.delete(id);fn(0);
+ assert.equal(clock.snapshot().running,true);
+ assert.equal(clock.stop(),true);
+ assert.equal(clock.snapshot().running,false);
+ assert.equal(clock.snapshot().failures,2);
+});
