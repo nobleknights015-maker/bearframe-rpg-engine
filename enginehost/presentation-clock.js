@@ -25,7 +25,13 @@ function createBearframePresentationClock(options){
   }
   function schedule(){
     var token=generation;
-    return request(function(timestamp){if(token===generation)frame(timestamp);});
+    var delivered=false;
+    return request(function(timestamp){
+      // A misbehaving scheduler must not dispatch one callback twice.
+      if(delivered||token!==generation)return;
+      delivered=true;
+      frame(timestamp);
+    });
   }
   function stop(){
     var wasActive=active;
