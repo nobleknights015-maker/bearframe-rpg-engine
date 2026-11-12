@@ -248,7 +248,7 @@
         if(!partyWorldInteractive())
           return {ok:false,reason:'assets-restoring'};
         var result=partyWorld.navigate(dir);
-        if(result.ok)renderPartyWorld();
+        if(result.ok||result.reason==='no-change')renderPartyWorld();
         else partyWorldStatus.textContent='Party movement refused: '+result.reason;
         return result;
       },{
@@ -511,7 +511,7 @@
       // command path as controller navigation. Only successful actions redraw.
       var result=partyWorldInteractive()?partyWorld.navigate(direction):
         {ok:false,reason:'assets-restoring'};
-      if(result.ok)renderPartyWorld();
+      if(result.ok||result.reason==='no-change')renderPartyWorld();
       else partyWorldStatus.textContent='Party movement refused: '+result.reason;
       return result;
     });

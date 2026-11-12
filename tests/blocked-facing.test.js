@@ -1,0 +1,33 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
+const makeWorld=require('../enginehost/party-world-host');
+const project=require('../fixtures/party-world-project');
+test('turning into a wall updates facing for idle art without committing fake movement',()=>{
+  const data=Object.create(null);let writes=0;
+  const store={read:k=>data[k]||null,write:(k,v)=>{data[k]=v;writes++;return true;}};
+  const host=makeWorld(store,JSON.parse(JSON.stringify(project)));
+  const before=host.view(),count=writes;
+  assert.equal(host.facing(),'down');
+  const blocked=host.navigate('up');
+  assert.equal(blocked.ok,false);
+  assert.equal(blocked.reason,'no-change');
+  assert.equal(host.facing(),'up');
+  assert.deepEqual(host.view(),before);
+  assert.equal(writes,count,'blocked movement must not write a save revision');
+  assert.equal(host.verifySave().ok,true);
+  assert.equal(host.navigate('invalid').reason,'invalid-direction');
+  assert.equal(host.facing(),'up','invalid input cannot change facing');
+  assert.equal(host.navigate('right').ok,true);
+  assert.equal(host.facing(),'right');
+  assert.equal(host.view().sequence,before.sequence+1);
+  assert.equal(host.verifySave().ok,true);
+});
+test('both touch and controller world adapters repaint blocked-facing without accepting a move',()=>{
+  const boot=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
+  const matches=boot.match(/if\(result\.ok\|\|result\.reason==='no-change'\)renderPartyWorld\(\);/g)||[];
+  assert.equal(matches.length,2,'both input adapters must repaint the visual-only facing');
+  assert.match(boot,/playerDirection:partyWorld\.facing\(\)/);
+  assert.match(boot,/var result=partyWorld\.navigate\(dir\);/);
+  assert.match(boot,/partyWorldInteractive\(\)\?partyWorld\.navigate\(direction\)/);
+});
