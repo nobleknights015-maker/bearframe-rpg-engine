@@ -28,7 +28,7 @@ test('full owner library stays lazy while actual native tile and tall actors rea
  const t=temp();
  try{
   t.save();const process=t.run();assert.equal(process.status,0,process.stderr);
-  const profile=JSON.parse(fs.readFileSync(path.join(t.pack,'art-profile.json'),'utf8'));
+  const profile=JSON.parse(fs.readFileSync(path.join(t.root,'art-profile.json'),'utf8'));
   validate(profile.manifest);
   assert.equal(Object.keys(profile.manifest.assets).length,5);
   assert.equal(profile.manifest.assets.asset_unused.preload,false);
@@ -53,7 +53,7 @@ test('bad source name, false 32px tile and cropped frames are refused without em
  ]){
   const t=temp();try{
    corrupt(t.roles);t.save();assert.notEqual(t.run().status,0);
-   assert.equal(fs.existsSync(path.join(t.pack,'art-profile.json')),false);
+   assert.equal(fs.existsSync(path.join(t.root,'art-profile.json')),false);
   }finally{t.clean();}
  }
 });
