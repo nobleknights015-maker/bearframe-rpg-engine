@@ -68,12 +68,15 @@ test('asset replacement, decode readiness, image identity and trim invalidation 
  images.tiles.width=128;
  assert.equal(h.painter.paint(scene(),images).skipped,false);
  images.tiles.complete=false;
- assert.equal(h.painter.paint(scene(),images).skipped,false);
+ assert.throws(()=>h.painter.paint(scene(),images),{name:'AssertionError'},
+  'incomplete images must be rejected, not painted or cached');
  images.tiles.complete=true;
+ assert.equal(h.painter.paint(scene(),images).skipped,false);
  h.painter.invalidate();
  assert.equal(h.painter.paint(scene(),images).skipped,false);
- assert.equal(h.calls(),6);
- assert.ok(h.painter.snapshot().invalidations>=1);
+ assert.equal(h.calls(),7);
+ assert.equal(h.painter.snapshot().failures,1);
+ assert.ok(h.painter.snapshot().invalidations>=2);
 });
 test('draw failure invalidates previous pixels and clean retry repaints',()=>{
  const canvas={width:64,height:64,getContext:()=>({})};
