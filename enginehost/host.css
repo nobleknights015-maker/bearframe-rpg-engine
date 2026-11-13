@@ -410,3 +410,63 @@ body.landscape-gameplay #party-world-battle .engine-page-nav button{
   min-height:29px!important}
 body.landscape-gameplay #party-world-battle [data-engine-page-hidden]{
   display:none!important}
+
+
+/* Mobile JRPG touch and controller final hit-target pass.
+ * Five-row details keep these controls reachable inside the 450px logical
+ * landscape stage; the fitted viewport still owns scaling and safe areas. */
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu .jrpg-commands button{
+  min-height:48px;min-width:0;
+}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu .jrpg-menu-top button{
+  min-height:44px;min-width:88px;
+}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu .jrpg-details .jrpg-action{
+  min-height:44px;flex-shrink:0;padding:7px 11px;
+  font-size:14px;line-height:1.25;
+}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu .jrpg-details .jrpg-pages{
+  display:flex;align-items:center;gap:8px;min-height:44px;
+  flex-shrink:0;margin-top:auto;
+}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu .jrpg-details .jrpg-pages button{
+  min-height:44px;min-width:92px;padding:7px 10px;
+  touch-action:manipulation;
+}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu .jrpg-page-label{
+  order:-1;flex:1;min-width:0;text-align:left;
+  font:13px/1.3 system-ui,sans-serif;color:#b7cee7;
+}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu button:disabled{
+  opacity:.45;cursor:default;
+}
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu
+  button:not(:disabled):active,
+body.landscape-gameplay #engine-landscape-stage #jrpg-menu
+  button[data-jrpg-selected="true"]{
+  background:#416489;border-color:#e5efff;color:#fff;
+}
+body.landscape-gameplay #engine-landscape-stage .engine-page-nav button{
+  min-height:44px!important;min-width:80px;
+}
+body.landscape-gameplay #party-world-battle .party-command.jrpg-battle-actions select{
+  min-height:44px;
+}
+body.landscape-gameplay #engine-landscape-stage[data-phase="battle"]
+  #pw-screen-world #party-world-battle{
+  grid-template-rows:minmax(0,1fr) 48px 44px;
+}
+body.landscape-gameplay #party-world-battle #party-commit{
+  min-height:48px;height:48px;
+}
+body.landscape-gameplay #party-world-battle .engine-page-nav button{
+  min-height:44px!important;
+}
+body.landscape-gameplay #pw-screen-world .pad button:not(:disabled):active{
+  background:#3a628a;border-color:#d8eafb;
+}
+@media (prefers-reduced-motion:reduce){
+  body.landscape-gameplay #pw-screen-world .room-transition-playing{
+    animation:none!important;
+  }
+}

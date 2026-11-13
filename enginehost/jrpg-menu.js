@@ -280,7 +280,9 @@ function createBearframeJRPGMenu(root, openButton, deps) {
     });
     // Page long inventories, rosters and equipment actions rather than
     // scrolling or clipping out-of-reach buttons on an Android landscape HUD.
-    var entries=Array.from(detail.children),pageSize=7;
+    // Five larger entries fit the baseline 450px landscape view without
+    // shrinking touch/controller hit targets or clipping the pager.
+    var entries=Array.from(detail.children),pageSize=5;
     var totalPages=Math.ceil(entries.length/pageSize);
     var allActions=subActions.slice();
     pageNumber=Math.min(pageNumber,Math.max(0,totalPages-1));
@@ -289,12 +291,17 @@ function createBearframeJRPGMenu(root, openButton, deps) {
       var previous=node('button','◀ Previous');
       var next=node('button','Next ▶');
       previous.type=next.type='button';
+      pager.setAttribute('role','navigation');
+      pager.setAttribute('aria-label','JRPG command pages');
+      var pageLabel=node('span','', 'jrpg-page-label');
+      pageLabel.setAttribute('aria-live','polite');
       previous.setAttribute('data-jrpg-page','previous');
       next.setAttribute('data-jrpg-page','next');
       function updatePage(offset){
         pageNumber=Math.max(0,Math.min(totalPages-1,pageNumber+offset));
         entries.forEach(function(entry,i){entry.hidden=Math.floor(i/pageSize)!==pageNumber;});
         previous.disabled=pageNumber===0;next.disabled=pageNumber===totalPages-1;
+        pageLabel.textContent='Page '+(pageNumber+1)+' / '+totalPages;
         // Hidden and disabled actions cannot receive controller focus.
         subActions=allActions.filter(function(a){return !a.hidden&&!a.disabled;});
         if(!previous.disabled)subActions.push(previous);
@@ -312,7 +319,8 @@ function createBearframeJRPGMenu(root, openButton, deps) {
       }
       previous.addEventListener('click',function(){updatePage(-1);});
       next.addEventListener('click',function(){updatePage(1);});
-      pager.appendChild(previous);pager.appendChild(next);detail.appendChild(pager);
+      pager.appendChild(previous);pager.appendChild(next);
+      pager.appendChild(pageLabel);detail.appendChild(pager);
       updatePage(0);
     }
     subActions=subActions.filter(function(a){return !a.hidden&&!a.disabled;});

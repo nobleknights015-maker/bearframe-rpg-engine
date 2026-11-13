@@ -272,6 +272,16 @@
     var partyWorldStatus=document.getElementById('party-world-status');
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
+    var partyWorldPainter=createBearframeScenePainter(partyWorldSurface);
+    // A WebView Canvas 2D context can be restored with identical commands
+    // but an empty bitmap. Force the next paint rather than cache the loss.
+    partyWorldSurface.addEventListener('contextlost',function(){
+      partyWorldPainter.invalidate();
+      partyWorldSceneReady=false;syncPresentationClock();
+    });
+    partyWorldSurface.addEventListener('contextrestored',function(){
+      partyWorldPainter.invalidate();renderPartyWorld();
+    });
     // Presentation-only step window; never stored in the durable journal.
     var lastDrawnPlayer=null,playerWalkUntilTick=-1;
     var lastRoom=null;
@@ -376,7 +386,7 @@
     });
     var previousPartyPhase=null;
     // Tick is a purely visual clock, independent of all persisted revisions.
-    function paintPartyWorldFrame(tick,deterministic){
+    function paintPartyWorldFrame(tick,deterministic,allowCachedAudit){
       if(!sceneReady()||restoring)
         throw new Error('Scene atlas loading or recovery in progress');
       var current=partyWorld.view();
@@ -403,8 +413,7 @@
         }
       }
       var frame=partyWorld.compose(options);
-      drawBearframeSceneCanvas(partyWorldSurface,frame,
-        sceneImages());
+      partyWorldPainter.paint(frame,sceneImages(),!!deterministic&&!allowCachedAudit);
     }
     function syncPresentationClock(){
       if(!partyWorldClock)return;
@@ -422,6 +431,26 @@
       partyWorldClock.stop();
       paintPartyWorldFrame(tick,true);
       return {ok:true,tick:tick,revision:partyWorld.view().sequence};
+    }
+    // Installed WebView acceptance: two identical deterministic scene paints
+    // must not execute two Canvas draws or advance a durable RPG revision.
+    function renderCacheAudit(){
+      if(!partyWorldInteractive())return {ok:false,reason:'scene-not-ready'};
+      partyWorldClock.stop();
+      var before=partyWorld.view(),tick=partyWorldClock.tick();
+      paintPartyWorldFrame(tick,true);
+      var first=partyWorldPainter.snapshot();
+      paintPartyWorldFrame(tick,true,true);
+      var second=partyWorldPainter.snapshot();
+      var after=partyWorld.view(),saved=partyWorld.verifySave();
+      syncPresentationClock();
+      return {ok:second.skipped===first.skipped+1&&
+        second.paints===first.paints&&saved.ok&&
+        before.sequence===after.sequence,
+        beforeRevision:before.sequence,afterRevision:after.sequence,
+        skippedBefore:first.skipped,skippedAfter:second.skipped,
+        drawsBefore:first.paints,drawsAfter:second.paints,
+        averageDrawMs:second.averageDrawMs,maxDrawMs:second.maxDrawMs};
     }
     function renderPartyWorld(){
       var snap=partyWorld.snapshot(),v=snap.view;
@@ -696,6 +725,8 @@
         return {ok:false,reason:'invalid-level'};
       if(restoring)return {ok:true,evicted:0,restoring:true};
       var target=level>=80?0:level>=40?4194304:8388608;
+      // A replaced or evicted atlas must never reuse the preceding frame.
+      partyWorldPainter.invalidate();
       var trimmed=assets.trimTo(target);
       trimCount++;
       if(!sceneReady()){
@@ -752,6 +783,7 @@
         trimCount:trimCount,recoveryCount:recoveryCount,
         recoveryFailures:recoveryFailures,restoring:!!restoring,
         atlasSource:'packaged-png',ownerArtActive:!!artProfile,
+        scenePaint:partyWorldPainter.snapshot(),
         renderer:surface.width+'x'+surface.height};
     }
     assets.preload(requiredImages).then(function(){
@@ -766,7 +798,9 @@
       sceneryLayerAudit:sceneryLayerAudit,
       animatedTileAudit:animatedTileAudit,
       renderVisualTickForAudit:renderVisualTickForAudit,
+      renderCacheAudit:renderCacheAudit,
       presentationClock:partyWorldClock,
+      scenePainter:partyWorldPainter,
       partyWorldScreens:partyWorldScreens,
       jrpgMenu:jrpgMenu,
       gameAudio:gameAudio,
