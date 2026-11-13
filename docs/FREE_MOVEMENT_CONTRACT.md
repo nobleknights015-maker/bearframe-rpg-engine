@@ -11,14 +11,30 @@ one-tile-per-action behavior and exactly the same save format.
 
 New authored projects can opt in using:
 
-    "movement":{"mode":"free","speed":32,"radius":48}
+    "movement":{"mode":"free","directions":4,"speed":32,"radius":48}
+
+**Production decision: exactly four cardinal directions.** An omitted
+`directions` value defaults to 4 in free mode. Eight-direction locomotion
+is preserved only behind an explicit `"directions":8` configuration for
+existing experimental tests and future engine reuse; no Bearframe production
+profile enables it. Grid/tile projects are always cardinal-only regardless
+of runtime input. A joystick that reports two axes is reduced to one
+cardinal movement command by the player-input adapter; no diagonal move is
+committed.
+
+Free movement and directions are independent: 32x32 map art and four-facing
+character animations work with either classic one-tile steps or fractional
+tile positioning. The current installed owner-art preview is still
+four-way **tile-based**; switching to four-way free movement requires a
+separately validated authored content profile and isolated journal.
 
 All units are fixed point: 256 canonical units = one authored tile (the
 rendering tile may still be native 32x32). Speed is 8..64 fixed-point units
 per successful movement command; radius is 8..96 units of collision footprint
-half-width. Diagonal movement normalizes both axes, avoiding a sqrt(2)
-speed advantage. Supported commands: up, down, left, right, up-left,
-up-right, down-left, down-right.
+half-width. Production commands: up, down, left, right only.
+The stored experimental eight-way implementation retains normalized diagonal
+vectors, wall sliding, and corner avoidance when directions=8 is explicitly
+selected for a different profile.
 
 Collision samples all four corners of the character's footprint and uses
 separate X/Y sweeps. That permits wall sliding but blocks crossing a
@@ -45,11 +61,13 @@ generates a gameplay command or save write, and transitions between rooms
 cancel rather than animate through the wall. Fixed-tick rendering audits
 disable the tween. Grid mode keeps its previous 50 ms animation cadence.
 
-The eight directions do **not** require eight sets of character artwork.
-Diagonal movement reuses up/right/down/left poses, retaining the previous
-compatible facing when practical. The optional diagonal pad buttons are
-hidden for historical tile-mode content. Native Android analog and
-simultaneous physical D-pad buttons can generate diagonal semantic actions.
+Four-direction sprite art is now the default for both grid movement
+and smooth exploration. Production gameplay does not need diagonal-facing
+frames. Optional diagonal pad buttons are hidden for both four-way grid and
+four-way free projects. Native Android analog input and simultaneous physical
+D-pad buttons may still generate diagonal semantic signals, but the gameplay
+input adapter reduces those to cardinal input unless the authored project
+explicitly opted in to eight-way locomotion.
 
 ## Outstanding release requirements
 
