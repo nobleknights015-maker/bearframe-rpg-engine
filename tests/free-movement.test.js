@@ -179,3 +179,17 @@ test('WebView and Android input code include eight-way movement without requesti
  assert.match(read('enginehost/boot.js'),/partyWorldProject\.movement/);
  assert.match(read('enginehost/touch-pad.js'),/up-left/);
 });
+
+test('Android CI installs and executes free locomotion, independent native journal and camera gate',()=>{
+ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+ const java=read('android/test/RouteRunner.java');
+ const ci=read('.github/workflows/engine-ci.yml');
+ for(const phrase of ['checkUnifiedFreeMovement()',
+   'stage.equals("unified-free-movement")',
+   "p.movement={mode:'free',speed:32,radius:48}",
+   "a.dispatch({type:'move',dir:'up-right'})",
+   "a.verifySave().ok", "reboot.resume().ok"])
+   assert.ok(java.includes(phrase),'Missing installed free movement probe: '+phrase);
+ assert.match(ci,/stage unified-free-movement/);
+ assert.match(ci,/route=PASS unified-free-movement/);
+});
