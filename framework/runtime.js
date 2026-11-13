@@ -361,6 +361,7 @@ function createBearframeEngine(project) {
       battle:s.battle?clone(s.battle):null,prompt:s.prompt?clone(s.prompt):null,
       message:s.message,allies:s.allies.slice()};
     result.movementMode=free?'free':'tile';
+    result.movementDirections=free?free.directions:4;
     if(free)result.freePosition={
       x:p.px/free.scale-0.5,y:p.py/free.scale-0.5
     };

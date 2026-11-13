@@ -41,7 +41,7 @@ function createBearframePartyWorldHost(storage,project,theme,options){
   }
   function navigate(dir){
     var directions=['up','down','left','right'];
-    if(free)directions=directions.concat([
+    if(free&&free.directions===8)directions=directions.concat([
       'up-left','up-right','down-left','down-right']);
     if(directions.indexOf(dir)===-1)
       return {ok:false,reason:'invalid-direction'};

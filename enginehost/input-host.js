@@ -107,10 +107,12 @@ function createBearframeWorldInput(screens,view,navigate,roots,menu){
       var direction=event.direction;
       var diagonal=['up-left','up-right','down-left','down-right']
         .indexOf(direction)>=0;
-      if(diagonal&&(v.movementMode!=='free'||mode!=='world'||blocked))
+      if(diagonal&&(v.movementMode!=='free'||v.movementDirections!==8||
+         mode!=='world'||blocked))
         direction=direction.split('-')[0];
       if(['up','down','left','right'].indexOf(direction)<0&&
-         !(diagonal&&v.movementMode==='free'&&mode==='world'&&!blocked))
+         !(diagonal&&v.movementMode==='free'&&v.movementDirections===8&&
+           mode==='world'&&!blocked))
         return false;
       if(mode!=='world'){
         if(direction==='left')return turnTab(-1);

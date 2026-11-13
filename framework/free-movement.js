@@ -1,4 +1,4 @@
-/* Fixed-point eight-way field locomotion.
+/* Fixed-point cardinal field locomotion with opt-in eight-way vectors.
  * 256 integer units = one authored map tile. No wall-clock floats, DOM,
  * Android input, renderer state, RNG, or gameplay writes.
  * Collision is a centered square footprint; X/Y sweep permits natural wall
@@ -11,6 +11,8 @@ function createBearframeFreeMovement(project){
   var SCALE=256;
   var speed=project.movement.speed===undefined?32:project.movement.speed;
   var radius=project.movement.radius===undefined?48:project.movement.radius;
+  // Preserve the eight-way implementation, but production defaults to four.
+  var directions=project.movement.directions===8?8:4;
   if(!Number.isInteger(speed)||speed<8||speed>64||
      !Number.isInteger(radius)||radius<8||radius>96)
     throw new TypeError('Invalid free movement speed or radius');
@@ -41,7 +43,8 @@ function createBearframeFreeMovement(project){
   }
   function walk(mapId,position,direction){
     var pair=vectors[direction];
-    if(!pair||!position||!inside(mapId,position.px,position.py))
+    if(!pair||(directions===4&&direction.indexOf('-')>=0)||
+       !position||!inside(mapId,position.px,position.py))
       return {ok:false,reason:'invalid-position-or-direction',steps:[]};
     // Rational, deterministic sqrt(1/2) approximation. Speed 32 becomes 23
     // units per diagonal axis (32.53 total vs 32 cardinal).
@@ -58,13 +61,15 @@ function createBearframeFreeMovement(project){
       steps:steps};
   }
   function facing(direction,previous){
-    if(!Object.prototype.hasOwnProperty.call(vectors,direction))
+    if(!Object.prototype.hasOwnProperty.call(vectors,direction)||
+       (directions===4&&direction.indexOf('-')>=0))
       return null;
     if(direction.indexOf('-')<0)return direction;
     var bits=direction.split('-');
     return bits.indexOf(previous)>=0?previous:bits[0];
   }
   return Object.freeze({scale:SCALE,speed:speed,radius:radius,
+    directions:directions,
     point:point,inside:inside,walk:walk,facing:facing});
 }
 if(typeof module!=='undefined'&&module.exports)

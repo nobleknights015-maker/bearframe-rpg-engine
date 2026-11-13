@@ -30,13 +30,19 @@ function validateEngineProject(project) {
     if(locomotion.mode!=='free'&&locomotion.mode!=='tile')
       fail('project.movement.mode must be free or tile');
     Object.keys(locomotion).forEach(function(name){
-      if(['mode','speed','radius'].indexOf(name)<0)
+      if(['mode','speed','radius','directions'].indexOf(name)<0)
         fail('unknown project.movement option '+name);
     });
     if(locomotion.mode==='tile'&&
-       (locomotion.speed!==undefined||locomotion.radius!==undefined))
+       (locomotion.speed!==undefined||locomotion.radius!==undefined||
+        locomotion.directions!==undefined))
       fail('tile movement does not accept free-motion tuning');
     if(locomotion.mode==='free'){
+      // Four cardinal directions are the Bearframe production baseline.
+      // Eight-way remains an explicit opt-in for preserved experimental work.
+      if(locomotion.directions!==undefined&&
+         locomotion.directions!==4&&locomotion.directions!==8)
+        fail('project.movement.directions must be 4 or 8');
       if(locomotion.speed!==undefined)
         integer(locomotion.speed,8,64,'project.movement.speed');
       if(locomotion.radius!==undefined)
