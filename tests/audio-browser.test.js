@@ -286,13 +286,15 @@ test('second playback volume write failure is isolated and does not publish a gh
      pause(){this.pauses++;},
      load(){this.loads++;},
      removeAttribute(name){if(name==='src')this.src='';}};
+   // Capture the element's ordinal: the factory increments the global
+   // creation counter before the adapter's second volume write happens.
+   const ordinal=created++;
    let writes=0,volume=1;
    Object.defineProperty(e,'volume',{get(){return volume;},set(value){
      writes++;
-     if(created===0&&writes===2)throw new Error('native second volume write failed');
+     if(ordinal===0&&writes===2)throw new Error('native second volume write failed');
      volume=value;
    }});
-   created++;
    elements.push(e);
    return e;
  });
