@@ -117,7 +117,9 @@ test('failed setting journal write prevents UI, sound changes and fake save succ
  assert.deepEqual(g.prefs.snapshot(),prior);
  assert.equal(g.ui.doc.body.classList.contains('jrpg-pad-hidden'),false);
  assert.match(g.ui.message.textContent,/Could not save display setting/);
- g.ui.action('Mute').click();
+ // The mute action is on a later page: navigate there as a real user would.
+ // Detached or paginated-out controls must remain inert in production.
+ clickVisibleAction(g.ui,'Mute');
  assert.equal(g.audioState.muted,false);
  assert.equal(g.prefs.snapshot().muted,false);
  assert.match(g.ui.message.textContent,/Could not save audio setting/);
