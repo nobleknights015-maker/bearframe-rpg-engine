@@ -67,9 +67,11 @@ media cannot create a playable APK.
   `menu_select`, `step`, `event`, `item`,
   `battle_start`, `battle_round`, `battle_end` and `save`.
   Missing optional cues are silent, not errors.
-- Audio mute/volume bus changes are ephemeral presentation settings and
-  do not change the RPG save. Android focus loss, app background and
-  Activity suspension stop playback; foreground resume does not autoplay.
+- Audio mute/volume bus changes persist through the separate two-slot
+  `bf:<project>:v1:ui` settings journal and **never** modify the RPG save.
+  Audio enable/permission is intentionally never persisted. Android focus
+  loss, app background and Activity suspension stop playback; foreground
+  resume does not autoplay.
 - The native audio focus request happens only in a user-triggered enable
   action, before attempting browser playback.
 - Browser policy/decoder rejection is surfaced as unavailable and requires

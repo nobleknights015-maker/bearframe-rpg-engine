@@ -362,6 +362,16 @@ jobs:
             adb shell am instrument -w -e stage unified-jrpg-menu dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/jrpg-menu.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-jrpg-menu' "$RUNNER_TEMP/jrpg-menu.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/jrpg-menu.txt"
+            # Actual installed Android settings journal: real menu taps,
+            # process death, restored D-pad/reduced motion and audio preferences.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-ui-settings-first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/settings-first.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-ui-settings-first' "$RUNNER_TEMP/settings-first.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/settings-first.txt"
+            adb shell am force-stop dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-ui-settings-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/settings-second.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-ui-settings-second' "$RUNNER_TEMP/settings-second.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/settings-second.txt"
             # Native physical input routing on installed Android 35 WebView.
             # Covers real KeyEvent/joystick adapters and independent v2 saves.
             adb shell pm clear dev.bearframe.ridge

@@ -39,7 +39,10 @@ function createBearframeUiPreferences(storage,projectId){
       if(!valid(v))throw new TypeError('Invalid UI preference state');
       return JSON.stringify(v);
     }};
-  var journal=Slots(adapter,storage,'bf:ui:'+projectId+':v1');
+  // Native WebView SharedPreferences accepts bf:<project>:v<version>:<kind>:a/b.
+  // Keep settings in a distinct version/type namespace without expanding
+  // the native bridge's strict key allowlist or touching RPG save keys.
+  var journal=Slots(adapter,storage,'bf:'+projectId+':v1:ui');
   var current=journal.load()||fresh();
   function snapshot(){return copy(current);}
   function commit(next){
