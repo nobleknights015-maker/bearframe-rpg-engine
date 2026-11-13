@@ -254,7 +254,9 @@ test('native media volume setter failure is reported and later commands still ex
  assert.equal(results.length,3);
  assert.equal(results[0].reason,'gain-threw');
  assert.match(results[0].message,/media volume backend unavailable/);
- assert.deepEqual(results.slice(1),[{ok:true},{ok:true}]);
+ // Failed gain retires the broken track; pause must report no-music,
+ // while stop remains idempotent and a fresh track can play.
+ assert.deepEqual(results.slice(1),[{ok:false,reason:'no-music'},{ok:true}]);
  assert.equal(currentVolume,.8);
  assert.equal(backend.status().music,null);
  assert.equal(elements[0].src,'');
