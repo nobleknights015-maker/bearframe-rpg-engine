@@ -1206,6 +1206,19 @@ public final class RouteRunner extends Instrumentation {
             "tap('#party-world-inventory [data-inventory-equip=\\\"charm\\\"]');" +
             "tap('[data-party-world-dir=\\\"right\\\"]');" +
             "tap('[data-party-world-dir=\\\"right\\\"]');" +
+            "var panel=document.getElementById('party-world-battle');" +
+            "if(!h.battle()||!panel||getComputedStyle(panel).display!=='grid')" +
+              "throw Error('Fullscreen JRPG battle not visible');" +
+            "var arena=panel.querySelector('.jrpg-battle-stage');" +
+            "if(!arena||!arena.getClientRects().length||" +
+              "!panel.querySelector('.jrpg-battle-foe')||" +
+              "!panel.querySelector('.jrpg-battle-member')||" +
+              "!panel.querySelector('[data-party-skill]')||" +
+              "!panel.querySelector('[data-party-target]'))" +
+              "throw Error('Missing battle arena, targets or party status');" +
+            "var confirm=panel.querySelector('#party-commit');" +
+            "if(!confirm||!confirm.getClientRects().length||confirm.disabled)" +
+              "throw Error('Battle confirm inaccessible');" +
             "var turns=0;while(h.battle()&&turns++<10)tap('#party-world-battle #party-commit');" +
             "if(h.battle())throw new Error('Battle not completed');" +
             "}else{tap('[data-party-world-dir=\\\"down\\\"]');}" +
