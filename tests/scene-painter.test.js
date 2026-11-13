@@ -74,7 +74,7 @@ test('asset replacement, decode readiness, image identity and trim invalidation 
  assert.equal(h.painter.paint(scene(),images).skipped,false);
  h.painter.invalidate();
  assert.equal(h.painter.paint(scene(),images).skipped,false);
- assert.equal(h.calls(),7);
+ assert.equal(h.calls(),6); // The rejected incomplete atlas never reaches draw count.
  assert.equal(h.painter.snapshot().failures,1);
  assert.ok(h.painter.snapshot().invalidations>=2);
 });
