@@ -103,3 +103,15 @@ test('battle overlay fits landscape stage and keeps canonical equipment/turn gat
  assert.match(src,/if\(!handled\)render\(\)/);
  assert.match(get('enginehost/boot.js'),/partyWorld\.submit\(orders\)/);
 });
+
+test('installed Android WebView checks fitted battle arena before submitting turn',()=>{
+ const get=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+ const java=get('android/test/RouteRunner.java');
+ const ci=get('.github/workflows/engine-ci.yml');
+ for(const phrase of ["getComputedStyle(panel).display!=='grid'",
+   ".jrpg-battle-stage", ".jrpg-battle-foe", ".jrpg-battle-member",
+   "[data-party-skill]", "[data-party-target]", "confirm.getClientRects().length"])
+   assert.ok(java.includes(phrase),'Missing installed battle visual acceptance: '+phrase);
+ assert.match(ci,/stage unified-party-world-ui-first/);
+ assert.match(ci,/stage unified-party-world-ui-second/);
+});
