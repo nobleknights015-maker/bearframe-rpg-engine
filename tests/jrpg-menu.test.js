@@ -150,3 +150,54 @@ test('Android CI explicitly exercises the visible JRPG command modal and saved e
   assert.match(workflow,/stage unified-jrpg-menu/);
   assert.match(workflow,/route=PASS unified-jrpg-menu/);
 });
+
+test('controller keeps a live Options action focused after its button is replaced',()=>{
+  const g=game();
+  assert.equal(g.menu.open('options'),true);
+  assert.equal(g.menu.handle({type:'navigate',direction:'right'}),true);
+  assert.equal(g.controls.doc.activeElement.textContent,'Hide touch D-pad');
+  const before=g.writes();
+  assert.equal(g.menu.handle({type:'confirm'}),true);
+  assert.equal(g.controls.doc.body.classList.contains('jrpg-pad-hidden'),true);
+  assert.equal(g.controls.doc.activeElement.textContent,'Show touch D-pad');
+  assert.equal(g.menu.handle({type:'confirm'}),true);
+  assert.equal(g.controls.doc.body.classList.contains('jrpg-pad-hidden'),false);
+  assert.equal(g.controls.doc.activeElement.textContent,'Hide touch D-pad');
+  assert.equal(g.writes(),before,'display-only actions must never save RPG progress');
+});
+
+test('controller can turn every inventory page without focusing disabled pager buttons',()=>{
+  const t=ui(),items={},inventory={};
+  for(let i=0;i<22;i++){
+    const id='item'+i;
+    items[id]={name:'Item '+i,kind:'key'};inventory[id]=1;
+  }
+  const view={map:'sample',sequence:1,quests:{},inventory,
+    partyActors:[],hp:10,maxHp:10};
+  const menu=createMenu(t.root,t.open,{project:{items,quests:{}},view:()=>view,
+    dispatch:()=>{throw Error('paging must not dispatch gameplay');},
+    verifySave:()=>({ok:true,revision:1}),onVisibility:()=>{}});
+  assert.equal(menu.open('items'),true);
+  assert.equal(menu.handle({type:'navigate',direction:'right'}),true);
+  assert.equal(t.doc.activeElement.textContent,'Next ▶');
+  for(let page=1;page<=3;page++){
+    assert.equal(menu.handle({type:'confirm'}),true);
+    assert.ok(t.detail.children[page*7].hidden===false);
+  }
+  assert.equal(t.doc.activeElement.textContent,'◀ Previous',
+    'last page must redirect focus off newly disabled Next');
+  assert.equal(menu.handle({type:'confirm'}),true);
+  assert.equal(t.doc.activeElement.textContent,'◀ Previous');
+  assert.equal(menu.handle({type:'navigate',direction:'down'}),true);
+  assert.equal(t.doc.activeElement.textContent,'Next ▶');
+  assert.equal(view.sequence,1);
+});
+
+test('Pause while menu is open selects and focuses the actual Save command',()=>{
+  const g=game();
+  assert.equal(g.menu.open('options'),true);
+  assert.equal(g.menu.handle({type:'navigate',direction:'right'}),true);
+  assert.equal(g.menu.handle({type:'pause'}),true);
+  assert.equal(g.menu.current(),'save');
+  assert.equal(g.controls.doc.activeElement.textContent,'Save');
+});
