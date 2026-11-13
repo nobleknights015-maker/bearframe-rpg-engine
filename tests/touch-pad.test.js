@@ -118,6 +118,7 @@ test('host pages load pad only for real gameplay and preserve normal button sema
   assert.match(read('enginehost/index.html'),/<script src="touch-pad\.js"><\/script>/);
   assert.match(read('enginehost/boot.js'),/createBearframeTouchPad\(/);
   assert.match(read('enginehost/host.css'),/touch-action:\s*none/);
-  assert.match(read('enginehost/boot.js'),/partyWorld\.navigate\(direction\)/);
+  assert.match(read('enginehost/boot.js'),/function performPartyMovement\(dir\)/);
+  assert.match(read('enginehost/boot.js'),/createBearframeTouchPad\(partyWorldButtons,\s*performPartyMovement\)/);
   assert.match(read('enginehost/boot.js'),/window\.BearframeHost\.navigate\(direction\)/);
 });
