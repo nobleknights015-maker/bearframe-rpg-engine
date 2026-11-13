@@ -129,3 +129,27 @@ test('production JRPG shoulders open command UI instead of invisible developer t
  assert.equal(input.handle({type:'next-tab'}),true);
  assert.deepEqual(calls.slice(-2),['menu','next-tab']);
 });
+
+test('four-way live controller routes diagonal stick signals to one cardinal action',()=>{
+ const base=harness(),calls=[];
+ let v={prompt:null,partyBattle:null,battle:null,movementMode:'free',
+        movementDirections:4};
+ const input=make({current:()=>base.screen(),select:()=>{}},()=>v,
+   dir=>{calls.push(dir);return {ok:true};},base.panels);
+ for(const [source,expected] of [
+   ['up-right','up'],['down-left','down'],
+   ['left','left'],['right','right']
+ ]){
+   assert.equal(input.handle({type:'navigate',direction:source}),true);
+   assert.equal(calls.at(-1),expected);
+ }
+ assert.deepEqual(calls,['up','down','left','right']);
+ v={...v,movementMode:'tile',movementDirections:4};
+ assert.equal(input.handle({type:'navigate',direction:'down-right'}),true);
+ assert.equal(calls.at(-1),'down');
+ v={...v,movementMode:'free',movementDirections:8};
+ assert.equal(input.handle({type:'navigate',direction:'up-right'}),true);
+ assert.equal(calls.at(-1),'up-right','eight-way code only for explicit eight-way profile');
+ assert.equal(input.handle({type:'navigate',direction:'bad'}),false);
+ assert.equal(calls.length,6);
+});
