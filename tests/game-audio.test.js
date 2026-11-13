@@ -217,4 +217,8 @@ test('Android build and live menu wire playable soundbank only through validated
  assert.match(menu,/\['master','Master'\]/);
  assert.match(menu,/deps\.audio\.volume\(bus,/);
  assert.match(menu,/deps\.audio\.enable\(\)/);
+ const java=read('android/test/RouteRunner.java');
+ assert.match(java,/Default engine must be silent without an owned audio pack/);
+ assert.match(java,/No licensed game soundtrack/);
+ assert.match(java,/Audio Options unexpectedly modified RPG save/);
 });
