@@ -75,6 +75,18 @@ if [[ -n "${BF_CONTENT_PROFILE_JSON:-}" ]]; then
   node "$root/scripts/build_content_profile.js" "$BF_CONTENT_PROFILE_JSON" \
     "$work/assets/enginehost/content-profile.js"
 fi
+# Optional private licensed soundtrack/FX import. Never commit owner audio or
+# filesystem paths. Fail the build if the authored profile cannot be copied
+# and byte-verified into the offline APK.
+if [[ -n "${BF_GAME_AUDIO_PROFILE_JSON:-}" ]]; then
+  if [[ -z "${BF_GAME_AUDIO_PACK_DIR:-}" ]]; then
+    echo "BF_GAME_AUDIO_PACK_DIR required with BF_GAME_AUDIO_PROFILE_JSON" >&2
+    exit 1
+  fi
+  node "$root/scripts/install_game_audio_profile.js" \
+    "$BF_GAME_AUDIO_PROFILE_JSON" "$BF_GAME_AUDIO_PACK_DIR" \
+    "$work/assets/enginehost"
+fi
 # A generated, original silent WAV proves local audio packaging without game media.
 node "$root/scripts/generate_audio_fixture.js" "$work/assets/enginehost/audio/diagnostics/silence.wav"
 unzip -p "$RHINO_JAR" META-INF/LICENSE.txt > "$work/assets/Rhino-LICENSE.txt"
