@@ -960,6 +960,70 @@ public final class RouteRunner extends Instrumentation {
     /** Installed Android WebView acceptance for the actual JRPG command dialog.
      * Uses real UI buttons and the same durable world game session.
      */
+    /** Installed Android WebView proof for opt-in fixed-point locomotion.
+     * Uses a synthetic isolated project and native durable journal, leaving
+     * the actual player's grid save namespace completely untouched.
+     */
+    private void checkUnifiedFreeMovement() throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String raw=evalHost("(function(){try{" +
+            "var p=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_WORLD_FIXTURE));" +
+            "p.id='free_android_probe';p.contentRevision='free_android_1';" +
+            "p.movement={mode:'free',speed:32,radius:48};" +
+            "var t={tileSize:32,clearColor:'#101018',atlases:{" +
+              "terrain:{width:64,height:32},characters:{width:64,height:48}}," +
+              "tiles:{floor:{atlas:'terrain',x:0,y:0,w:32,h:32}," +
+              "wall:{atlas:'terrain',x:32,y:0,w:32,h:32}}," +
+              "sprites:{player:{ticksPerFrame:1,frames:[" +
+              "{atlas:'characters',x:0,y:0,w:32,h:48}]}}};" +
+            "var storage={read:function(k){return BearframeNative.read(k);}," +
+              "write:function(k,v){return BearframeNative.write(k,v)===true;}};" +
+            "var settings={slotPrefix:'bf:free_android_probe:v2:runtime'};" +
+            "var a=createBearframeSession(p,storage,t,settings);" +
+            "if(!a.start('Free',3).ok)throw Error('Cannot start free session');" +
+            "var first=a.snapshot().view;" +
+            "var frameA=a.compose({width:96,height:96,tick:0});" +
+            "if(!a.dispatch({type:'move',dir:'right'}).ok)" +
+              "throw Error('Subtile motion refused');" +
+            "var second=a.snapshot().view;" +
+            "if(second.x!==first.x||second.y!==first.y||" +
+              "second.freePosition.x<=first.freePosition.x)" +
+              "throw Error('World still moves tile-by-tile');" +
+            "var frameB=a.compose({width:96,height:96,tick:0});" +
+            "if(frameB.camera.x<=frameA.camera.x)" +
+              "throw Error('Camera did not track sub-tile movement');" +
+            "if(!a.dispatch({type:'move',dir:'up-right'}).ok)" +
+              "throw Error('Diagonal motion refused');" +
+            "var view=a.snapshot().view;" +
+            "if(view.freePosition.y>=second.freePosition.y||" +
+              "view.freePosition.x<=second.freePosition.x)" +
+              "throw Error('Diagonal vector not applied');" +
+            "if(!a.verifySave().ok)throw Error('Persistent position unverified');" +
+            "var reboot=createBearframeSession(p,storage,t,settings);" +
+            "if(!reboot.resume().ok||!reboot.verifySave().ok)" +
+              "throw Error('Native journal restart refused');" +
+            "var recovered=reboot.snapshot().view;" +
+            "if(recovered.sequence!==view.sequence||" +
+              "JSON.stringify(recovered.freePosition)!==" +
+              "JSON.stringify(view.freePosition))" +
+              "throw Error('Subtile save lost on restart');" +
+            "return JSON.stringify({ok:true,sequence:view.sequence," +
+              "position:view.freePosition,cameraMove:frameB.camera.x-frameA.camera.x});" +
+            "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(raw).nextValue());
+        if(proof.has("error"))
+            throw new AssertionError("Installed free locomotion failed: "+proof);
+        if(!proof.getBoolean("ok")||proof.getInt("sequence")!=2||
+           proof.getInt("cameraMove")<=0)
+            throw new AssertionError("Free locomotion incomplete: "+proof);
+        resultMeta.putString("freeMovement",
+            "PASS installed eight-way subtile motion, camera and native save");
+    }
+
     private void checkUnifiedJrpgMenu() throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -2445,6 +2509,13 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedControllerWorld(stage.equals("unified-v2-controller-second"));
                 result.putAll(resultMeta);
                 result.putString("route","PASS "+stage);
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-free-movement")){
+                checkUnifiedFreeMovement();
+                result.putAll(resultMeta);
+                result.putString("route","PASS unified-free-movement");
                 finish(Activity.RESULT_OK,result);
                 return;
             }

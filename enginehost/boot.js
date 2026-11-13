@@ -241,6 +241,9 @@
       'bf:'+partyWorldProject.id+':v2:runtime':undefined;
     var partyWorld=createBearframePartyWorldHost(storage,partyWorldProject,theme,
       {slotPrefix:partyWorldSaveNamespace});
+    var freeExploration=!!(partyWorldProject.movement&&
+      partyWorldProject.movement.mode==='free');
+    var motionTween=createBearframeMotionTween(110);
     var partyWorldStatus=document.getElementById('party-world-status');
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
@@ -266,6 +269,11 @@
     }
     var partyWorldSaveStatus=document.getElementById('party-world-save-status');
     var partyWorldButtons=Array.from(document.querySelectorAll('[data-party-world-dir]'));
+    partyWorldButtons.forEach(function(button){
+      if(button.getAttribute('data-party-world-dir').indexOf('-')>=0)
+        button.hidden=!(partyWorldProject.movement&&
+          partyWorldProject.movement.mode==='free');
+    });
     var partyWorldScreens=createBearframeScreenNavigator(
       document.getElementById('party-world-navigation'),{
         world:document.getElementById('pw-screen-world'),
@@ -280,16 +288,21 @@
         verifySave:function(){return partyWorld.verifySave();},
         onVisibility:function(){syncPresentationClock();renderPartyWorld();}
       });
+    function performPartyMovement(dir){
+      if(!partyWorldInteractive())
+        return {ok:false,reason:'assets-restoring'};
+      var before=partyWorld.view(),result=partyWorld.navigate(dir);
+      if(result.ok){
+        if(!freeExploration||!motionTween.capture(
+          before,partyWorld.view(),performance.now()))motionTween.reset();
+      }
+      if(result.ok||result.reason==='no-change')renderPartyWorld();
+      else partyWorldStatus.textContent='Party movement refused: '+result.reason;
+      return result;
+    }
     var partyWorldInput=createBearframeWorldInput(
       partyWorldScreens,function(){return partyWorld.view();},
-      function(dir){
-        if(!partyWorldInteractive())
-          return {ok:false,reason:'assets-restoring'};
-        var result=partyWorld.navigate(dir);
-        if(result.ok||result.reason==='no-change')renderPartyWorld();
-        else partyWorldStatus.textContent='Party movement refused: '+result.reason;
-        return result;
-      },{
+      performPartyMovement,{
         world:document.getElementById('pw-screen-world'),
         party:document.getElementById('pw-screen-party'),
         save:document.getElementById('pw-screen-save')
@@ -330,21 +343,33 @@
     });
     var previousPartyPhase=null;
     // Tick is a purely visual clock, independent of all persisted revisions.
-    function paintPartyWorldFrame(tick){
+    function paintPartyWorldFrame(tick,deterministic){
       if(!sceneReady()||restoring)
         throw new Error('Scene atlas loading or recovery in progress');
       var current=partyWorld.view();
       if(current){
+        var pos=current.freePosition||current;
         if(lastDrawnPlayer&&current.map===lastDrawnPlayer.map&&
-           (current.x!==lastDrawnPlayer.x||current.y!==lastDrawnPlayer.y))
-          playerWalkUntilTick=tick+5;
-        lastDrawnPlayer={map:current.map,x:current.x,y:current.y};
+           (pos.x!==lastDrawnPlayer.x||pos.y!==lastDrawnPlayer.y))
+          playerWalkUntilTick=tick+(freeExploration?9:5);
+        lastDrawnPlayer={map:current.map,x:pos.x,y:pos.y};
       }
-      var frame=partyWorld.compose({
+      var options={
         width:partyWorldSurface.width,height:partyWorldSurface.height,tick:tick,
         playerDirection:partyWorld.facing(),
         playerMoving:tick<playerWalkUntilTick
-      });
+      };
+      if(freeExploration&&!deterministic&&current&&current.freePosition){
+        var shown=motionTween.sample(performance.now());
+        if(shown){
+          options.playerDrawPosition=shown;
+          options.cameraTarget={
+            x:Math.max(0,Math.min(current.rows[0].length-1,shown.x)),
+            y:Math.max(0,Math.min(current.rows.length-1,shown.y))
+          };
+        }
+      }
+      var frame=partyWorld.compose(options);
       drawBearframeSceneCanvas(partyWorldSurface,frame,
         sceneImages());
     }
@@ -362,7 +387,7 @@
         return {ok:false,reason:'invalid-tick'};
       if(!partyWorldInteractive())return {ok:false,reason:'scene-not-ready'};
       partyWorldClock.stop();
-      paintPartyWorldFrame(tick);
+      paintPartyWorldFrame(tick,true);
       return {ok:true,tick:tick,revision:partyWorld.view().sequence};
     }
     function renderPartyWorld(){
@@ -529,7 +554,7 @@
         revisionBefore:before.sequence,revisionAfter:after.sequence};
     }
     partyWorldClock=createBearframePresentationClock({
-      intervalMs:50,
+      intervalMs:freeExploration?16:50,
       paint:function(tick){
         if(document.hidden||restoring||!partyWorldSceneReady||
            partyWorldScreens.current()!=='world')return false;
@@ -549,15 +574,8 @@
     window.addEventListener('pagehide',function(){partyWorldClock.stop();});
     window.addEventListener('blur',function(){partyWorldClock.stop();});
     window.addEventListener('focus',function(){syncPresentationClock();});
-    var partyWorldTouchPad=createBearframeTouchPad(partyWorldButtons,function(direction){
-      // All touch presses and held repeats go through the exact same durable
-      // command path as controller navigation. Only successful actions redraw.
-      var result=partyWorldInteractive()?partyWorld.navigate(direction):
-        {ok:false,reason:'assets-restoring'};
-      if(result.ok||result.reason==='no-change')renderPartyWorld();
-      else partyWorldStatus.textContent='Party movement refused: '+result.reason;
-      return result;
-    });
+    var partyWorldTouchPad=createBearframeTouchPad(partyWorldButtons,
+      performPartyMovement);
     document.getElementById('party-world-verify').addEventListener('click',function(){
       var result=partyWorld.verifySave();
       partyWorldSaveStatus.textContent=result.ok?

@@ -198,6 +198,31 @@ function createBearframeSceneComposer(project,theme){
     if(!integer(width,16,4096)||!integer(height,16,4096)||!integer(tick,0,2147483647))
       throw new TypeError('Invalid viewport or animation tick');
     var ts=theme.tileSize,worldW=map.rows[0].length*ts,worldH=map.rows.length*ts;
+    // Opt-in canonical fixed-point motion is saved by the engine, not the
+    // renderer. Use its precise coordinates for actor pixels and camera
+    // tracking while retaining integer coordinates for events/collision.
+    var precise=view.freePosition;
+    if(precise!==undefined){
+      if(!precise||typeof precise!=='object'||Array.isArray(precise)||
+         typeof precise.x!=='number'||typeof precise.y!=='number'||
+         !isFinite(precise.x)||!isFinite(precise.y)||
+         Math.floor(precise.x+0.5)!==view.x||
+         Math.floor(precise.y+0.5)!==view.y||
+         precise.x< -0.5||precise.y< -0.5||
+         precise.x>map.rows[0].length-0.5||
+         precise.y>map.rows.length-0.5)
+        throw new TypeError('Invalid precise player position');
+    }
+    var display=options.playerDrawPosition;
+    if(display!==undefined){
+      var reference=precise||{x:view.x,y:view.y};
+      if(!display||typeof display!=='object'||Array.isArray(display)||
+         typeof display.x!=='number'||typeof display.y!=='number'||
+         !isFinite(display.x)||!isFinite(display.y)||
+         Math.abs(display.x-reference.x)>1||
+         Math.abs(display.y-reference.y)>1)
+        throw new TypeError('Invalid player presentation position');
+    }
     // Optional fractional tile-coordinate focus for scripted scenes and
     // camera pans. The player remains at the canonical view position.
     // The host owns interpolation; the scene composer stays stateless.
@@ -209,7 +234,10 @@ function createBearframeSceneComposer(project,theme){
          focus.x<0||focus.y<0||
          focus.x>=map.rows[0].length||focus.y>=map.rows.length)
         throw new TypeError('Invalid scene camera target');
-    }else focus={x:view.x,y:view.y};
+    }else focus=precise?{
+      x:Math.max(0,Math.min(map.rows[0].length-1,precise.x)),
+      y:Math.max(0,Math.min(map.rows.length-1,precise.y))
+    }:{x:view.x,y:view.y};
     function camera(target,extent,worldExtent){
       if(worldExtent<=extent)return Math.floor((worldExtent-extent)/2);
       return Math.max(0,Math.min(worldExtent-extent,Math.floor(target-extent/2)));
@@ -263,7 +291,9 @@ function createBearframeSceneComposer(project,theme){
           layer:0.75,exit:{map:map.exits[at].map,x:x,y:y}});
       });
     }
-    var actors=[{id:'player',x:view.x,y:view.y,sprite:'player',
+    var actors=[{id:'player',
+      x:display?display.x:precise?precise.x:view.x,
+      y:display?display.y:precise?precise.y:view.y,sprite:'player',
       direction:options.playerDirection,moving:!!options.playerMoving,
       pattern:options.playerPattern}];
     if(options.actors!==undefined){

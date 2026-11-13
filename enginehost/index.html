@@ -64,6 +64,10 @@
         <button data-party-world-dir="left" aria-label="Party world move left">←</button>
         <button data-party-world-dir="down" aria-label="Party world move down">↓</button>
         <button data-party-world-dir="right" aria-label="Party world move right">→</button>
+        <button data-party-world-dir="up-left" aria-label="Move northwest" hidden>↖</button>
+        <button data-party-world-dir="up-right" aria-label="Move northeast" hidden>↗</button>
+        <button data-party-world-dir="down-left" aria-label="Move southwest" hidden>↙</button>
+        <button data-party-world-dir="down-right" aria-label="Move southeast" hidden>↘</button>
       </div>
       <div id="party-world-events" aria-label="Party world scripted events"></div>
       <div id="party-world-battle" aria-label="Party world battle commands"></div>
@@ -124,6 +128,7 @@
 <script src="../framework/party-combat.js"></script>
 <script src="../framework/progression.js"></script>
 <script src="../framework/party-runtime.js"></script>
+<script src="../framework/free-movement.js"></script>
 <script src="../framework/runtime.js"></script>
 <script src="../framework/save-slots.js"></script>
 <script src="../framework/legacy-save-v1.js"></script>
@@ -156,6 +161,7 @@
 <script src="landscape-pager.js"></script>
 <script src="screen-navigation.js"></script>
 <script src="presentation-clock.js"></script>
+<script src="motion-tween.js"></script>
 <script src="input-host.js"></script>
 <script src="jrpg-menu.js"></script>
 <script src="touch-pad.js"></script>

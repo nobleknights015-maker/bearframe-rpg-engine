@@ -22,6 +22,8 @@ function createBearframePartyWorldHost(storage,project,theme,options){
   // Facing is an ephemeral rendering hint, not part of the world journal.
   // The caller's durable movement action still decides whether position moves.
   var lastFacing='down';
+  var free=project.movement&&project.movement.mode==='free'?
+    (node?require('../framework/free-movement.js'):createBearframeFreeMovement)(project):null;
   function snapshot(){return session.snapshot();}
   function view(){return snapshot().view;}
   function dispatch(command){
@@ -38,12 +40,17 @@ function createBearframePartyWorldHost(storage,project,theme,options){
     return dispatch({type:'party-round',orders:orders});
   }
   function navigate(dir){
-    if(['up','down','left','right'].indexOf(dir)===-1)
+    var directions=['up','down','left','right'];
+    if(free)directions=directions.concat([
+      'up-left','up-right','down-left','down-right']);
+    if(directions.indexOf(dir)===-1)
       return {ok:false,reason:'invalid-direction'};
     var result=dispatch({type:'move',dir:dir});
-    // Facing into a wall is visually meaningful; failed storage commits
-    // must not change presentation or imply the move succeeded.
-    if(result.ok||result.reason==='no-change')lastFacing=dir;
+    // Diagonal locomotion reuses four cardinal animation poses. Preserve
+    // whichever compatible cardinal the actor already faced, else prefer
+    // the vertical direction. Blocked moves still turn but never save.
+    if(result.ok||result.reason==='no-change')
+      lastFacing=free?free.facing(dir,lastFacing):dir;
     return result;
   }
   return Object.freeze({snapshot:snapshot,view:view,battle:battle,
