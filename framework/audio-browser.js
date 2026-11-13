@@ -74,11 +74,19 @@ function createBearframeBrowserAudioBackend(createElement, config) {
         typeof cmd.gain!=='number'||!isFinite(cmd.gain)||
         cmd.gain<0||cmd.gain>100)
         return Promise.resolve({ok:false,reason:'invalid-gain'});
-      gain[cmd.bus]=cmd.gain/100;
-      if(cmd.bus==='music'&&liveMusic)
-        liveMusic.element.volume=gain.music;
-      if(cmd.bus==='sfx')
-        voices.forEach(function(entry){entry.element.volume=gain.sfx;});
+      // A detached or failed native media element can throw on volume writes.
+      // Keep the serialized command queue alive and report the adapter failure.
+      var nextGain=cmd.gain/100;
+      try{
+        if(cmd.bus==='music'&&liveMusic)
+          liveMusic.element.volume=nextGain;
+        if(cmd.bus==='sfx')
+          voices.forEach(function(entry){entry.element.volume=nextGain;});
+      }catch(error){
+        return Promise.resolve({ok:false,reason:'gain-threw',
+          message:String(error&&error.message||error)});
+      }
+      gain[cmd.bus]=nextGain;
       return Promise.resolve({ok:true});
     }
     if(cmd.type==='stop'){
