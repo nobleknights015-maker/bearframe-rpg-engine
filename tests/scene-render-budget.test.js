@@ -5,7 +5,7 @@ const make=require('../framework/performance');
 const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 
 test('bounded Engine v1 performance window reports successful render-work timings',()=>{
- const budget=make({profile:'balanced',windowSize:6});
+ const budget=make({profile:'balanced',windowSize:10});
  assert.equal(budget.snapshot().health.sampleCount,0);
  [3,5,8,20].forEach(ms=>budget.recordFrame(ms));
  const snap=budget.snapshot();
@@ -17,7 +17,7 @@ test('bounded Engine v1 performance window reports successful render-work timing
  assert.equal(snap.longFrames,0);
  assert.equal(snap.profile,'balanced');
  for(let i=0;i<10;i++)budget.recordFrame(4);
- assert.equal(budget.snapshot().health.sampleCount,6,
+ assert.equal(budget.snapshot().health.sampleCount,10,
    'render telemetry must have a bounded memory footprint');
  assert.equal(budget.snapshot().health.p95Ms,4);
 });
