@@ -38,7 +38,10 @@ function createBearframeBrowserAudioBackend(createElement, config) {
     element.preload='auto';
     element.src=prefix+command.path;
     element.loop=!!command.loop;
-    element.volume=Math.min(1,Math.max(0,command.gain/100));
+    // A native volume setter may throw during initial construction. Retire
+    // the element before reporting failure; never leave a sourced orphan.
+    try{element.volume=Math.min(1,Math.max(0,command.gain/100));}
+    catch(error){cleanup(element);throw error;}
     return {id:id,element:element};
   }
   function safePlay(entry){
