@@ -15,8 +15,31 @@ function createBearframeJRPGMenu(root, openButton, deps) {
     ['status','Status'],['party','Party'],['quests','Quests'],
     ['save','Save'],['options','Options']
   ];
+  var savedUI=deps.preferences?deps.preferences.snapshot():null;
   var current='overview', opened=false, selected=0, actionIndex=0, pageNumber=0,
-      showPad=true, reducedMotion=false;
+      showPad=savedUI?savedUI.showPad:true,
+      reducedMotion=savedUI?savedUI.reducedMotion:false;
+  doc.body.classList.toggle('jrpg-pad-hidden',!showPad);
+  doc.body.classList.toggle('jrpg-reduced-motion',reducedMotion);
+  function persistDisplay(name,value){
+    if(!deps.preferences)return true;
+    var result=deps.preferences.set(name,value);
+    if(!result.ok){
+      message('Could not save display setting: '+result.reason);
+      return false;
+    }
+    return true;
+  }
+  function persistAudio(name,value,bus){
+    if(!deps.preferences)return true;
+    var result=bus?deps.preferences.volume(bus,value):
+      deps.preferences.set(name,value);
+    if(!result.ok){
+      message('Could not save audio setting: '+result.reason);
+      return false;
+    }
+    return true;
+  }
   var commands=root.querySelector('[data-jrpg-commands]');
   var detail=root.querySelector('[data-jrpg-details]');
   var closeButton=root.querySelector('[data-jrpg-close]');
@@ -177,15 +200,18 @@ function createBearframeJRPGMenu(root, openButton, deps) {
   function options(){
     line('Display & controls','jrpg-entry');
     addAction(showPad?'Hide touch D-pad':'Show touch D-pad',function(){
-      showPad=!showPad;root.ownerDocument.body.classList.toggle('jrpg-pad-hidden',!showPad);
+      if(!persistDisplay('showPad',!showPad))return;
+      showPad=!showPad;
+      doc.body.classList.toggle('jrpg-pad-hidden',!showPad);
       render();
     },false);
     addAction(reducedMotion?'Enable transition animations':'Reduce transition animations',function(){
+      if(!persistDisplay('reducedMotion',!reducedMotion))return;
       reducedMotion=!reducedMotion;
-      root.ownerDocument.body.classList.toggle('jrpg-reduced-motion',reducedMotion);
+      doc.body.classList.toggle('jrpg-reduced-motion',reducedMotion);
       render();
     },false);
-    line('These display preferences do not change the game save.','jrpg-helper');
+    line('Display preferences are saved separately from game progress.','jrpg-helper');
     if(!deps.audio)return;
     var audio=deps.audio.status();
     line('Game audio','jrpg-entry');
@@ -208,19 +234,24 @@ function createBearframeJRPGMenu(root, openButton, deps) {
     },false);
     else addAction('Turn sound off',function(){deps.audio.disable();render();},false);
     addAction(audio.muted?'Unmute':'Mute',function(){
+      if(!persistAudio('muted',!audio.muted))return;
       deps.audio.mute(!audio.muted);render();
     },false);
     [['master','Master'],['music','Music'],['sfx','Effects']].forEach(function(pair){
       var bus=pair[0],value=audio.volumes[bus];
       line(pair[1]+' · '+value+'%','jrpg-helper');
       addAction(pair[1]+' −',function(){
-        deps.audio.volume(bus,Math.max(0,value-10));render();
+        var next=Math.max(0,value-10);
+        if(!persistAudio('volumes',next,bus))return;
+        deps.audio.volume(bus,next);render();
       },value===0);
       addAction(pair[1]+' +',function(){
-        deps.audio.volume(bus,Math.min(100,value+10));render();
+        var next=Math.min(100,value+10);
+        if(!persistAudio('volumes',next,bus))return;
+        deps.audio.volume(bus,next);render();
       },value===100);
     });
-    line('Audio preferences affect playback only—not saved gameplay.',
+    line('Sound levels persist; playback still requires explicit enabling.',
       'jrpg-helper');
   }
   function render(){
