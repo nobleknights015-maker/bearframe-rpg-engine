@@ -275,3 +275,37 @@ test('one failing SFX volume setter cannot permanently poison serialized batches
  assert.equal(backend.status().music,'theme');
  backend.dispose();
 });
+
+
+test('second playback volume write failure is isolated and does not publish a ghost track',async()=>{
+ const elements=[];
+ let created=0;
+ const backend=create(()=>{
+   const e={src:'',loop:false,currentTime:0,pauses:0,loads:0,
+     play(){return Promise.resolve();},
+     pause(){this.pauses++;},
+     load(){this.loads++;},
+     removeAttribute(name){if(name==='src')this.src='';}};
+   let writes=0,volume=1;
+   Object.defineProperty(e,'volume',{get(){return volume;},set(value){
+     writes++;
+     if(created===0&&writes===2)throw new Error('native second volume write failed');
+     volume=value;
+   }});
+   created++;
+   elements.push(e);
+   return e;
+ });
+ const result=await backend.execute([music(),sfx('after-failure')]);
+ assert.equal(result.length,2);
+ assert.equal(result[0].reason,'gain-threw');
+ assert.match(result[0].message,/second volume write failed/);
+ assert.deepEqual(result[1],{ok:true});
+ assert.equal(backend.status().music,null);
+ assert.equal(backend.status().activeSfx,1);
+ assert.equal(elements[0].src,'');
+ assert.ok(elements[0].loads>0);
+ assert.equal(elements[1].src,'audio/sfx/impact.wav');
+ assert.deepEqual(await backend.execute([music('recovered')]),[{ok:true}]);
+ backend.dispose();
+});
