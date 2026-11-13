@@ -32,6 +32,17 @@ function dom(){
     message:nodes['[data-jrpg-message]'],
     action:text=>nodes['[data-jrpg-details]'].children.find(n=>n.textContent===text)};
 }
+function clickVisibleAction(ui,label){
+ const target=ui.action(label);
+ assert.ok(target,'Missing action '+label);
+ for(let page=0;target.hidden&&page<20;page++){
+   const next=ui.details.children.flatMap(n=>n.children||[]).find(n=>n.getAttribute&&n.getAttribute('data-jrpg-page')==='next');
+   assert.ok(next&&!next.disabled,'Action not reachable by pagination: '+label);
+   next.click();
+ }
+ assert.equal(target.hidden,false,'Action remained hidden: '+label);
+ target.click();
+}
 function setup(d,projectId){
  const prefs=createPrefs(d.storage,projectId),ui=dom();
  const v={map:'hub',mapName:'Safe room',x:1,y:1,hp:12,maxHp:12,
@@ -87,11 +98,11 @@ test('saved settings immediately restore display classes after new UI constructi
 });
 test('audio mute and bus controls write preferences before changing playback',()=>{
  const d=storage(),g=setup(d,'audio_menu');
- g.ui.action('Mute').click();
+ clickVisibleAction(g.ui,'Mute');
  assert.equal(g.prefs.snapshot().muted,true);
  assert.equal(g.audioState.muted,true);
  const original=g.prefs.snapshot().volumes.master;
- g.ui.action('Master −').click();
+ clickVisibleAction(g.ui,'Master −');
  assert.equal(g.prefs.snapshot().volumes.master,original-10);
  assert.equal(g.audioState.volumes.master,original-10);
  assert.ok(g.hits.includes('mute:true'));
