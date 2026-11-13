@@ -96,6 +96,23 @@ test('mute and bus volumes do not modify external game state',async()=>{
  assert.equal(JSON.stringify(worldState),before);
  audio.dispose();
 });
+test('explicit audio disable preserves session-only mute and individual bus settings',async()=>{
+  const media=fakeAudio(),audio=create(profile,media.make,{project:world});
+  audio.scene(null,{map:'hub',sequence:1});
+  await audio.enable();
+  await audio.volume('master',60);
+  await audio.volume('music',25);
+  await audio.volume('sfx',55);
+  await audio.mute(true);
+  audio.disable();
+  assert.equal(audio.status().enabled,false);
+  assert.equal(audio.status().muted,true);
+  assert.deepEqual(audio.status().volumes,{master:60,music:25,sfx:55});
+  await audio.enable();
+  assert.deepEqual(audio.status().volumes,{master:60,music:25,sfx:55});
+  assert.equal(audio.status().muted,true);
+  audio.dispose();
+});
 test('background and resume never autoplay; new explicit enable can restore local music',async()=>{
  const media=fakeAudio();let releases=0,focus=0;
  const audio=create(profile,media.make,{project:world,
@@ -197,6 +214,7 @@ test('Android build and live menu wire playable soundbank only through validated
  assert.match(boot,/gameAudio\.scene\(before,partyWorld\.view\(\),'move'\)/);
  assert.match(boot,/gameAudio\.suspend\(\)/);
  assert.match(menu,/Enable game sound/);
- assert.match(menu,/Master −/);
+ assert.match(menu,/\['master','Master'\]/);
+ assert.match(menu,/deps\.audio\.volume\(bus,/);
  assert.match(menu,/deps\.audio\.enable\(\)/);
 });
