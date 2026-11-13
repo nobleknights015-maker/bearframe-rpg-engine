@@ -92,8 +92,12 @@ function createBearframeSceneComposer(project,theme){
     return has(tile,'frames')?
       tile.frames[Math.floor(tick/tile.ticksPerFrame)%tile.frames.length]:tile;
   }
-  var scenery={};
+  // Pre-index static map decoration and entrances once. The validated
+  // project has already been deep-cloned, so external edits cannot change
+  // these snapshots between two animation frames.
+  var scenery={},exitKeys={};
   Object.keys(project.maps).forEach(function(mapId){
+    exitKeys[mapId]=Object.keys(project.maps[mapId].exits).sort();
     var layers=project.maps[mapId].visualLayers||[];
     var prepared={ground:{},canopy:{}};
     layers.forEach(function(layer,layerIndex){
@@ -261,9 +265,17 @@ function createBearframeSceneComposer(project,theme){
       var rows=scenery[view.map][depth];
       for(var y=minY;y<maxY;y++){
         var entries=rows[y]||[];
-        for(var i=0;i<entries.length;i++){
+        // Scenery rows are sorted by x then authored layer index.
+        // Seek to the first visible column instead of scanning every
+        // off-screen decoration on large 256x256 maps every frame.
+        var low=0,high=entries.length;
+        while(low<high){
+          var mid=Math.floor((low+high)/2);
+          if(entries[mid].x<minX)low=mid+1;
+          else high=mid;
+        }
+        for(var i=low;i<entries.length&&entries[i].x<maxX;i++){
           var tile=entries[i];
-          if(tile.x<minX||tile.x>=maxX)continue;
           var f=tileFrame(tile.tileId,tick);
           commands.push({type:'sprite',imageId:f.atlas,
             source:{x:f.x,y:f.y,w:f.w,h:f.h},
@@ -280,7 +292,7 @@ function createBearframeSceneComposer(project,theme){
     // painter order allows the player to appear in front of a tall doorway.
     var portal=portals[view.map];
     if(portal){
-      Object.keys(map.exits).sort().forEach(function(at){
+      exitKeys[view.map].forEach(function(at){
         var xy=at.split(','),x=+xy[0],y=+xy[1];
         var dx=Math.floor((x+0.5)*ts-portal.w/2-cx);
         var dy=(y+1)*ts-portal.h-cy;
