@@ -386,7 +386,7 @@
     });
     var previousPartyPhase=null;
     // Tick is a purely visual clock, independent of all persisted revisions.
-    function paintPartyWorldFrame(tick,deterministic){
+    function paintPartyWorldFrame(tick,deterministic,allowCachedAudit){
       if(!sceneReady()||restoring)
         throw new Error('Scene atlas loading or recovery in progress');
       var current=partyWorld.view();
@@ -413,7 +413,7 @@
         }
       }
       var frame=partyWorld.compose(options);
-      partyWorldPainter.paint(frame,sceneImages(),!!deterministic);
+      partyWorldPainter.paint(frame,sceneImages(),!!deterministic&&!allowCachedAudit);
     }
     function syncPresentationClock(){
       if(!partyWorldClock)return;
@@ -431,6 +431,26 @@
       partyWorldClock.stop();
       paintPartyWorldFrame(tick,true);
       return {ok:true,tick:tick,revision:partyWorld.view().sequence};
+    }
+    // Installed WebView acceptance: two identical deterministic scene paints
+    // must not execute two Canvas draws or advance a durable RPG revision.
+    function renderCacheAudit(){
+      if(!partyWorldInteractive())return {ok:false,reason:'scene-not-ready'};
+      partyWorldClock.stop();
+      var before=partyWorld.view(),tick=partyWorldClock.tick();
+      paintPartyWorldFrame(tick,true);
+      var first=partyWorldPainter.snapshot();
+      paintPartyWorldFrame(tick,true,true);
+      var second=partyWorldPainter.snapshot();
+      var after=partyWorld.view(),saved=partyWorld.verifySave();
+      syncPresentationClock();
+      return {ok:second.skipped===first.skipped+1&&
+        second.paints===first.paints&&saved.ok&&
+        before.sequence===after.sequence,
+        beforeRevision:before.sequence,afterRevision:after.sequence,
+        skippedBefore:first.skipped,skippedAfter:second.skipped,
+        drawsBefore:first.paints,drawsAfter:second.paints,
+        averageDrawMs:second.averageDrawMs,maxDrawMs:second.maxDrawMs};
     }
     function renderPartyWorld(){
       var snap=partyWorld.snapshot(),v=snap.view;
@@ -778,6 +798,7 @@
       sceneryLayerAudit:sceneryLayerAudit,
       animatedTileAudit:animatedTileAudit,
       renderVisualTickForAudit:renderVisualTickForAudit,
+      renderCacheAudit:renderCacheAudit,
       presentationClock:partyWorldClock,
       scenePainter:partyWorldPainter,
       partyWorldScreens:partyWorldScreens,
