@@ -117,5 +117,6 @@ test('installed world forwards actual direction and motion flags to scene',()=>{
   const code=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
   assert.match(code,/playerDirection:partyWorld\.facing\(\)/);
   assert.match(code,/playerMoving:tick<playerWalkUntilTick/);
-  assert.match(code,/current\.x!==lastDrawnPlayer\.x/);
+  assert.match(code,/pos\.x!==lastDrawnPlayer\.x/);
+  assert.match(code,/current\.freePosition\|\|current/);
 });
