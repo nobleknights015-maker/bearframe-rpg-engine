@@ -161,7 +161,15 @@ function createBearframeGameAudio(profile,createElement,options){
     armed=false;
     backend.dispose();
     backend=createBackend();
+    // Turning audio off must not silently reset the user's volume/mute
+    // preferences. These are session-local presentation state, not saves.
+    var previous=state;
     state=director.fresh();
+    ['master','music','sfx'].forEach(function(bus){
+      state=director.apply(state,{type:'volume',bus:bus,
+        value:previous.volumes[bus]}).state;
+    });
+    if(previous.muted)state=director.apply(state,{type:'mute'}).state;
     if(options.releaseFocus)options.releaseFocus();
   }
   function mute(flag){
