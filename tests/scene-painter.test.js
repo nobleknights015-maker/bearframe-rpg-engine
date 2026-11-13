@@ -38,6 +38,10 @@ test('identical immutable offline pixel packets skip Canvas draws, not simulatio
  assert.equal(h.painter.snapshot().paints,1);
  assert.equal(h.painter.snapshot().skipped,8);
  assert.equal(h.painter.snapshot().skipRatio,8/9);
+ assert.ok(Number.isFinite(h.painter.snapshot().averageDrawMs));
+ assert.ok(h.painter.snapshot().averageDrawMs>=0);
+ assert.ok(h.painter.snapshot().maxDrawMs>=0);
+ assert.ok(Number.isInteger(h.painter.snapshot().drawsOver16ms));
 });
 test('animated tile frames, camera shifts, canvas sizes and explicit audits repaint',()=>{
  const h=harness();
@@ -118,5 +122,7 @@ test('offline HTML and WebView host include live scene painter and recovery guar
  assert.match(boot,/partyWorldPainter\.invalidate\(\)/);
  assert.match(boot,/scenePaint:partyWorldPainter\.snapshot\(\)/);
  assert.match(boot,/scenePainter:partyWorldPainter/);
+ assert.match(boot,/addEventListener\('contextlost'/);
+ assert.match(boot,/addEventListener\('contextrestored'/);
  assert.match(read('android/build.sh'),/enginehost\/\*\.js/);
 });
