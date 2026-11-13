@@ -272,7 +272,8 @@
     partyWorldButtons.forEach(function(button){
       if(button.getAttribute('data-party-world-dir').indexOf('-')>=0)
         button.hidden=!(partyWorldProject.movement&&
-          partyWorldProject.movement.mode==='free');
+          partyWorldProject.movement.mode==='free'&&
+          partyWorldProject.movement.directions===8);
     });
     var partyWorldScreens=createBearframeScreenNavigator(
       document.getElementById('party-world-navigation'),{
