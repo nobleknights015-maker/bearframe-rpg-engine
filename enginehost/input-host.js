@@ -146,9 +146,16 @@ function createBearframeWorldInput(screens,view,navigate,roots,menu){
         // it must never silently choose the first dialogue answer instead.
         if(focused&&focused.hasAttribute&&focused.hasAttribute('data-event-close'))
           return actions('world',v).indexOf(focused)>=0&&click(focused);
-        return click(focused&&focused.hasAttribute&&
-          focused.hasAttribute('data-event-choice')?focused:
-          byQuery('world','[data-event-choice]'));
+        // Only activate an answer in the current visible event panel.
+        // A detached/hidden focus target from a previous event must not
+        // submit an obsolete choice after a prompt or page transition.
+        var available=actions('world',v);
+        var choice=focused&&focused.hasAttribute&&
+          focused.hasAttribute('data-event-choice')&&
+          available.indexOf(focused)>=0?focused:
+          available.find(function(node){return node.hasAttribute&&
+            node.hasAttribute('data-event-choice');});
+        return click(choice);
       }
       if(mode==='world'&&v.partyBattle){
         // A/Cross must not commit a default round before the player has
