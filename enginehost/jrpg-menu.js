@@ -257,6 +257,10 @@ function createBearframeJRPGMenu(root, openButton, deps) {
   function render(){
     if(!opened)return;
     var v=deps.view();if(!v)return;
+    // Refreshing a menu after a saved action or preference change replaces
+    // its buttons. Preserve controller focus on the corresponding live action.
+    var focusedAction=subActions.indexOf(doc.activeElement);
+    if(focusedAction>=0)actionIndex=focusedAction;
     empty(detail);subActions=[];
     heading.textContent=current==='overview'?'Command Menu':labelFor(current);
     if(current==='overview')showOverview(v);
@@ -289,16 +293,29 @@ function createBearframeJRPGMenu(root, openButton, deps) {
         pageNumber=Math.max(0,Math.min(totalPages-1,pageNumber+offset));
         entries.forEach(function(entry,i){entry.hidden=Math.floor(i/pageSize)!==pageNumber;});
         previous.disabled=pageNumber===0;next.disabled=pageNumber===totalPages-1;
-        subActions=allActions.filter(function(a){return !a.hidden;});
-        subActions.push(previous,next);
-        actionIndex=0;
+        // Hidden and disabled actions cannot receive controller focus.
+        subActions=allActions.filter(function(a){return !a.hidden&&!a.disabled;});
+        if(!previous.disabled)subActions.push(previous);
+        if(!next.disabled)subActions.push(next);
+        // At the last/first page the button just pressed is now disabled.
+        // Move focus to the still-usable opposite pager control.
+        if(doc.activeElement===previous||doc.activeElement===next){
+          var focused=doc.activeElement;
+          if(subActions.indexOf(focused)<0&&subActions.length){
+            var fallback=focused===next?previous:next;
+            (subActions.indexOf(fallback)>=0?fallback:subActions[0]).focus();
+          }
+          actionIndex=Math.max(0,subActions.indexOf(doc.activeElement));
+        }else actionIndex=0;
       }
       previous.addEventListener('click',function(){updatePage(-1);});
       next.addEventListener('click',function(){updatePage(1);});
       pager.appendChild(previous);pager.appendChild(next);detail.appendChild(pager);
       updatePage(0);
     }
+    subActions=subActions.filter(function(a){return !a.hidden&&!a.disabled;});
     if(actionIndex>=subActions.length)actionIndex=0;
+    if(focusedAction>=0&&subActions.length)subActions[actionIndex].focus();
   }
   sections.forEach(function(entry,i){
     var btn=node('button',entry[1],'jrpg-command');
@@ -347,7 +364,10 @@ function createBearframeJRPGMenu(root, openButton, deps) {
     }
     if(event.type==='cancel')return back();
     if(event.type==='menu'||event.type==='map')return close();
-    if(event.type==='pause'){current='save';selected=6;render();return true;}
+    if(event.type==='pause'){
+      current='save';selected=6;actionIndex=0;pageNumber=0;
+      commandButtons[selected].focus();render();return true;
+    }
     if(event.type==='navigate'){
       if(!['up','down','left','right'].includes(event.direction))return false;
       if(current!=='overview'&&event.direction==='left')return back();
