@@ -153,3 +153,27 @@ test('four-way live controller routes diagonal stick signals to one cardinal act
  assert.equal(input.handle({type:'navigate',direction:'bad'}),false);
  assert.equal(calls.length,6);
 });
+
+test('event confirm ignores detached, hidden and disabled stale answers',()=>{
+ const h=harness();
+ const stale=h.button('world','[data-event-choice="stale"]');
+ const live=h.button('world','[data-event-choice="live"]');
+ h.view({prompt:{event:'current'},partyBattle:null,battle:null});
+ stale.focus();
+ stale.getClientRects=()=>[];
+ assert.equal(h.input.handle({type:'confirm'}),true);
+ assert.equal(stale.clicked,0);
+ assert.equal(live.clicked,1);
+ live.disabled=true;
+ assert.equal(h.input.handle({type:'confirm'}),false);
+ assert.equal(live.clicked,1);
+ const replacement=h.button('world','[data-event-choice="replacement"]');
+ delete h.panels.world.nodes['[data-event-choice="stale"]'];
+ live.disabled=false;
+ stale.focus();
+ assert.equal(h.input.handle({type:'confirm'}),true);
+ assert.equal(stale.clicked,0,'detached choice cannot be submitted');
+ assert.equal(live.clicked,2,'current visible choice is used instead');
+ assert.equal(replacement.clicked,0);
+ assert.equal(h.moves(),0,'no world movement during event selection');
+});
