@@ -80,8 +80,20 @@ function createBearframeBrowserAudioBackend(createElement, config) {
       try{
         if(cmd.bus==='music'&&liveMusic)
           liveMusic.element.volume=nextGain;
-        if(cmd.bus==='sfx')
-          voices.forEach(function(entry){entry.element.volume=nextGain;});
+        if(cmd.bus==='sfx'){
+          // A dead native voice must not prevent surviving voices from
+          // receiving the new bus gain. Retire failed elements safely.
+          var failed=[];
+          voices.slice().forEach(function(entry){
+            try{entry.element.volume=nextGain;}
+            catch(error){failed.push({entry:entry,error:error});}
+          });
+          if(failed.length){
+            failed.forEach(function(item){removeVoice(item.entry);});
+            return Promise.resolve({ok:false,reason:'gain-threw',
+              message:String(failed[0].error&&failed[0].error.message||failed[0].error)});
+          }
+        }
       }catch(error){
         return Promise.resolve({ok:false,reason:'gain-threw',
           message:String(error&&error.message||error)});
