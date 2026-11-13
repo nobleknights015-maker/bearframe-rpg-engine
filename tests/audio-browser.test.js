@@ -336,3 +336,29 @@ test('failed SFX volume write retires only broken voice and updates surviving vo
  assert.equal(elements[2].volume,.45);
  backend.dispose();
 });
+
+
+test('failed native music gain retires broken track and permits replacement',async()=>{
+ const {backend,elements}=rig();
+ assert.deepEqual(await backend.execute([music()]),[{ok:true}]);
+ Object.defineProperty(elements[0],'volume',{
+   configurable:true,
+   set(){throw new Error('music output detached');}
+ });
+ const result=await backend.execute([
+   {type:'gain',bus:'music',gain:25},
+   {type:'resume',bus:'music',id:'theme'},
+   sfx('still-works')
+ ]);
+ assert.equal(result[0].reason,'gain-threw');
+ assert.match(result[0].message,/music output detached/);
+ assert.equal(result[1].reason,'no-music');
+ assert.deepEqual(result[2],{ok:true});
+ assert.equal(backend.status().music,null);
+ assert.equal(elements[0].src,'');
+ assert.equal(elements[0].loads,1);
+ assert.equal(backend.status().activeSfx,1);
+ assert.deepEqual(await backend.execute([music('replacement')]),[{ok:true}]);
+ assert.equal(backend.status().music,'replacement');
+ backend.dispose();
+});
