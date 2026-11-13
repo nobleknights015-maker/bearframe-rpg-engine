@@ -201,3 +201,46 @@ test('Pause while menu is open selects and focuses the actual Save command',()=>
   assert.equal(g.menu.current(),'save');
   assert.equal(g.controls.doc.activeElement.textContent,'Save');
 });
+
+test('detached JRPG equipment controls cannot dispatch after a section switch or close',()=>{
+  const g=game();
+  assert.equal(g.host.navigate('right').ok,true);
+  assert.equal(g.host.dispatch({type:'choose',id:'collect'}).ok,true);
+  assert.equal(g.menu.open('equipment'),true);
+  const stale=g.controls.detail.children.find(n=>n.textContent==='Equip Training blade');
+  assert.ok(stale);
+  const before=g.host.view().sequence,writes=g.writes();
+  g.controls.commands.children.find(n=>n.textContent==='Options').click();
+  stale.click();
+  assert.equal(g.host.view().sequence,before);
+  assert.equal(g.writes(),writes);
+  g.menu.close();
+  stale.click();
+  assert.equal(g.host.view().sequence,before);
+  assert.equal(g.writes(),writes);
+});
+
+test('hidden inventory-page actions cannot dispatch until their page is visible',()=>{
+  const t=ui(),items={},inventory={};let dispatches=0;
+  for(let i=0;i<10;i++){
+    const id='potion'+i;
+    items[id]={name:'Potion '+i,kind:'consumable'};inventory[id]=1;
+  }
+  const view={map:'test',sequence:1,quests:{},inventory,partyActors:[],hp:5,maxHp:10};
+  const menu=createMenu(t.root,t.open,{project:{items,quests:{}},view:()=>view,
+    dispatch:()=>{dispatches++;return {ok:false,reason:'test'};},
+    verifySave:()=>({ok:true,revision:1}),onVisibility:()=>{}});
+  assert.equal(menu.open('items'),true);
+  const action=t.detail.children.find(n=>n.textContent==='Use Potion 0');
+  assert.ok(action);
+  const pager=t.detail.children.find(n=>n.className==='jrpg-pages');
+  assert.ok(pager);
+  pager.children[1].click();
+  assert.equal(action.hidden,true);
+  action.click();
+  assert.equal(dispatches,0);
+  pager.children[0].click();
+  action.click();
+  assert.equal(dispatches,1);
+  assert.equal(view.sequence,1);
+});
