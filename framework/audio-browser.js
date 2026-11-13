@@ -95,6 +95,9 @@ function createBearframeBrowserAudioBackend(createElement, config) {
           }
         }
       }catch(error){
+        // A music element whose native gain setter failed is no longer
+        // trustworthy. Retire it so resume cannot reuse a broken track.
+        if(cmd.bus==='music')stopMusic();
         return Promise.resolve({ok:false,reason:'gain-threw',
           message:String(error&&error.message||error)});
       }
