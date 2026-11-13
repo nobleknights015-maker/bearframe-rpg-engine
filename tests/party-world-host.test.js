@@ -70,7 +70,7 @@ test('offline Android DOM exposes an independent full-world v2 integration UI',(
  assert.match(html,/data-party-world-dir="right"/);
  assert.match(html,/id="party-world-verify"/);
  assert.match(html,/id="party-world-surface"/);
- assert.match(boot,/partyWorldPainter\.paint\(frame,sceneImages\(\),!!deterministic\)/);
+ assert.match(boot,/partyWorldPainter\.paint\(frame,sceneImages\(\),!!deterministic&&!allowCachedAudit\)/);
  assert.match(html,/src="scene-painter\.js"/);
  assert.match(boot,/partyWorld\.compose\(/);
  assert.match(boot,/renderPartyWorld\(\)/);
