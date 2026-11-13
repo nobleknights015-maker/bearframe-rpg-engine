@@ -273,6 +273,15 @@
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
     var partyWorldPainter=createBearframeScenePainter(partyWorldSurface);
+    // A WebView Canvas 2D context can be restored with identical commands
+    // but an empty bitmap. Force the next paint rather than cache the loss.
+    partyWorldSurface.addEventListener('contextlost',function(){
+      partyWorldPainter.invalidate();
+      partyWorldSceneReady=false;syncPresentationClock();
+    });
+    partyWorldSurface.addEventListener('contextrestored',function(){
+      partyWorldPainter.invalidate();renderPartyWorld();
+    });
     // Presentation-only step window; never stored in the durable journal.
     var lastDrawnPlayer=null,playerWalkUntilTick=-1;
     var lastRoom=null;
