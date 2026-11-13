@@ -116,7 +116,10 @@ function createBearframeBrowserAudioBackend(createElement, config) {
         message:String(error&&error.message||error)});}
       // The director's play gain already combines master and bus volume.
       // Do not multiply it by the last gain event a second time.
-      entry.element.volume=cmd.gain/100;
+      try{entry.element.volume=cmd.gain/100;}
+      catch(error){cleanup(entry.element);
+        return Promise.resolve({ok:false,reason:'gain-threw',
+          message:String(error&&error.message||error)});}
       if(cmd.bus==='music'){
         stopMusic();
         liveMusic=entry;
