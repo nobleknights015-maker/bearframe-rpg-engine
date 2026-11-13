@@ -1474,6 +1474,19 @@ public final class RouteRunner extends Instrumentation {
         if(!pixelsChanged||sample.getInt("revision")!=first.getInt("revision"))
             throw new AssertionError("Real idle scene pixels did not advance without saves: "+
                 first+" -> "+sample);
+        // Exercise the actual installed WebView, not a fake Canvas: two
+        // pixel-identical frames must suppress the second draw and preserve
+        // the canonical verified RPG journal.
+        String cacheRaw=evalHost("JSON.stringify(BearframeHost.renderCacheAudit())");
+        JSONObject cache=new JSONObject((String)new JSONTokener(cacheRaw).nextValue());
+        if(!cache.getBoolean("ok") ||
+           cache.getInt("skippedAfter")!=cache.getInt("skippedBefore")+1 ||
+           cache.getInt("drawsAfter")!=cache.getInt("drawsBefore") ||
+           cache.getInt("beforeRevision")!=cache.getInt("afterRevision") ||
+           cache.getDouble("averageDrawMs")<0 ||
+           cache.getDouble("maxDrawMs")<0)
+            throw new AssertionError("Installed scene painter cache or journal failed: "+cache);
+        resultMeta.putString("scenePainter",cache.toString());
         String paused=evalHost("(function(){BearframeHost.partyWorldScreens.select('party');" +
             "return JSON.stringify(BearframeHost.presentationClock.snapshot());})()");
         JSONObject pauseBefore=new JSONObject((String)new JSONTokener(paused).nextValue());
