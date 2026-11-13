@@ -350,6 +350,12 @@ jobs:
             adb shell am instrument -w -e stage unified-party-screens-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/party-screens-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-party-screens-second' "$RUNNER_TEMP/party-screens-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/party-screens-second.txt"
+            # Exercise opt-in eight-way field movement in an actual installed
+            # offline WebView, including native journal restart and sub-tile camera.
+            adb shell pm clear dev.bearframe.ridge
+            adb shell am instrument -w -e stage unified-free-movement dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/free-movement.txt"
+            grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-free-movement' "$RUNNER_TEMP/free-movement.txt"
+            grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/free-movement.txt"
             # Actual player-facing JRPG modal: verify controller menu navigation,
             # event lock, equipped item save and visibility inside WebView.
             adb shell pm clear dev.bearframe.ridge
