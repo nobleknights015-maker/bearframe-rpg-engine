@@ -213,6 +213,16 @@ function createBearframeSceneComposer(project,theme){
          precise.y>map.rows.length-0.5)
         throw new TypeError('Invalid precise player position');
     }
+    var display=options.playerDrawPosition;
+    if(display!==undefined){
+      var reference=precise||{x:view.x,y:view.y};
+      if(!display||typeof display!=='object'||Array.isArray(display)||
+         typeof display.x!=='number'||typeof display.y!=='number'||
+         !isFinite(display.x)||!isFinite(display.y)||
+         Math.abs(display.x-reference.x)>1||
+         Math.abs(display.y-reference.y)>1)
+        throw new TypeError('Invalid player presentation position');
+    }
     // Optional fractional tile-coordinate focus for scripted scenes and
     // camera pans. The player remains at the canonical view position.
     // The host owns interpolation; the scene composer stays stateless.
@@ -281,8 +291,9 @@ function createBearframeSceneComposer(project,theme){
           layer:0.75,exit:{map:map.exits[at].map,x:x,y:y}});
       });
     }
-    var actors=[{id:'player',x:precise?precise.x:view.x,
-      y:precise?precise.y:view.y,sprite:'player',
+    var actors=[{id:'player',
+      x:display?display.x:precise?precise.x:view.x,
+      y:display?display.y:precise?precise.y:view.y,sprite:'player',
       direction:options.playerDirection,moving:!!options.playerMoving,
       pattern:options.playerPattern}];
     if(options.actors!==undefined){
