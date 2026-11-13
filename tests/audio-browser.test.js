@@ -311,3 +311,28 @@ test('second playback volume write failure is isolated and does not publish a gh
  assert.deepEqual(await backend.execute([music('recovered')]),[{ok:true}]);
  backend.dispose();
 });
+
+test('failed SFX volume write retires only broken voice and updates surviving voices',async()=>{
+ const {backend,elements}=rig();
+ assert.deepEqual(await backend.execute([sfx('broken'),sfx('healthy')]),[{ok:true},{ok:true}]);
+ let oldVolume=elements[0].volume;
+ Object.defineProperty(elements[0],'volume',{
+   configurable:true,get(){return oldVolume;},
+   set(){throw new Error('native voice detached');}
+ });
+ const results=await backend.execute([
+   {type:'gain',bus:'sfx',gain:30},
+   sfx('new-voice')
+ ]);
+ assert.equal(results[0].reason,'gain-threw');
+ assert.match(results[0].message,/native voice detached/);
+ assert.deepEqual(results[1],{ok:true});
+ assert.equal(elements[0].src,'');
+ assert.equal(elements[1].volume,.3);
+ assert.equal(elements[2].src,'audio/sfx/impact.wav');
+ assert.equal(backend.status().activeSfx,2);
+ assert.deepEqual(await backend.execute([{type:'gain',bus:'sfx',gain:45}]),[{ok:true}]);
+ assert.equal(elements[1].volume,.45);
+ assert.equal(elements[2].volume,.45);
+ backend.dispose();
+});
