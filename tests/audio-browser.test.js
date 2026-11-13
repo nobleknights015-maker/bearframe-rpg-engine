@@ -215,3 +215,23 @@ test('queued audio batches snapshot commands against caller mutation',async()=>{
  assert.equal(backend.status().activeSfx,1);
  backend.dispose();
 });
+
+
+test('native media pause exception is reported without aborting subsequent audio commands',async()=>{
+ const {backend,elements}=rig();
+ assert.deepEqual(await backend.execute([music()]),[{ok:true}]);
+ elements[0].pause=()=>{throw new Error('media backend unavailable');};
+ const results=await backend.execute([
+   {type:'pause',bus:'music',id:'theme'},
+   {type:'gain',bus:'music',gain:20},
+   {type:'stop',bus:'music',id:'theme'}
+ ]);
+ assert.equal(results.length,3);
+ assert.equal(results[0].reason,'pause-threw');
+ assert.match(results[0].message,/media backend unavailable/);
+ assert.deepEqual(results.slice(1),[{ok:true},{ok:true}]);
+ assert.equal(backend.status().music,null);
+ assert.equal(elements[0].src,'');
+ assert.deepEqual(await backend.execute([music('recovered')]),[{ok:true}]);
+ backend.dispose();
+});
