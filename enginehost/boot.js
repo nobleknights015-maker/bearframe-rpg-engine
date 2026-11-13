@@ -273,6 +273,9 @@
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
     var partyWorldPainter=createBearframeScenePainter(partyWorldSurface);
+    // Ported Engine v1 frame-work budget: read-only telemetry, NOT reported FPS.
+    var sceneBudget=createBearframePerformanceBudget({profile:'balanced',windowSize:120});
+    var sceneBudgetSamples=0;
     // A WebView Canvas 2D context can be restored with identical commands
     // but an empty bitmap. Force the next paint rather than cache the loss.
     partyWorldSurface.addEventListener('contextlost',function(){
@@ -389,6 +392,7 @@
     function paintPartyWorldFrame(tick,deterministic,allowCachedAudit){
       if(!sceneReady()||restoring)
         throw new Error('Scene atlas loading or recovery in progress');
+      var workStarted=performance.now();
       var current=partyWorld.view();
       if(current){
         var pos=current.freePosition||current;
@@ -414,6 +418,17 @@
       }
       var frame=partyWorld.compose(options);
       partyWorldPainter.paint(frame,sceneImages(),!!deterministic&&!allowCachedAudit);
+      // Record only successful scene composition plus draw/skip CPU cost.
+      // The requestAnimationFrame clock and compositor FPS are independent.
+      sceneBudget.recordFrame(Math.max(0,performance.now()-workStarted));
+      if((++sceneBudgetSamples%60)===0){
+        var visibleActors=0;
+        frame.commands.forEach(function(command){
+          if(command.actor)visibleActors++;
+        });
+        sceneBudget.assess({loadedAssets:assets.snapshot().loaded.length,
+          visibleSprites:visibleActors,visibleTiles:frame.visibleTiles});
+      }
     }
     function syncPresentationClock(){
       if(!partyWorldClock)return;
@@ -784,6 +799,7 @@
         recoveryFailures:recoveryFailures,restoring:!!restoring,
         atlasSource:'packaged-png',ownerArtActive:!!artProfile,
         scenePaint:partyWorldPainter.snapshot(),
+        renderWork:sceneBudget.snapshot(),
         renderer:surface.width+'x'+surface.height};
     }
     assets.preload(requiredImages).then(function(){
@@ -801,6 +817,7 @@
       renderCacheAudit:renderCacheAudit,
       presentationClock:partyWorldClock,
       scenePainter:partyWorldPainter,
+      renderBudget:sceneBudget,
       partyWorldScreens:partyWorldScreens,
       jrpgMenu:jrpgMenu,
       gameAudio:gameAudio,
