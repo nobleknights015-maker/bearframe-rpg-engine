@@ -1487,6 +1487,17 @@ public final class RouteRunner extends Instrumentation {
            cache.getDouble("maxDrawMs")<0)
             throw new AssertionError("Installed scene painter cache or journal failed: "+cache);
         resultMeta.putString("scenePainter",cache.toString());
+        // CPU work is measured on the installed Android WebView, not inferred
+        // from a Node benchmark or confused with actual compositor FPS.
+        String costRaw=evalHost("JSON.stringify(BearframeHost.renderBudget.snapshot())");
+        JSONObject cost=new JSONObject((String)new JSONTokener(costRaw).nextValue());
+        JSONObject work=cost.getJSONObject("health");
+        if(work.getInt("sampleCount")<2 ||
+           work.getDouble("averageMs")<0 ||
+           work.getDouble("p95Ms")<0 ||
+           cost.getInt("longFrames")<0)
+            throw new AssertionError("Missing installed render-work samples: "+cost);
+        resultMeta.putString("renderWork",cost.toString());
         String paused=evalHost("(function(){BearframeHost.partyWorldScreens.select('party');" +
             "return JSON.stringify(BearframeHost.presentationClock.snapshot());})()");
         JSONObject pauseBefore=new JSONObject((String)new JSONTokener(paused).nextValue());
