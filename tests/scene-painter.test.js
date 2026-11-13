@@ -118,10 +118,12 @@ test('offline HTML and WebView host include live scene painter and recovery guar
  const html=read('enginehost/index.html'),boot=read('enginehost/boot.js');
  assert.match(html,/src="scene-painter\.js"/);
  assert.match(boot,/createBearframeScenePainter\(partyWorldSurface\)/);
- assert.match(boot,/partyWorldPainter\.paint\(frame,sceneImages\(\),!!deterministic\)/);
+ assert.match(boot,/partyWorldPainter\.paint\(frame,sceneImages\(\),!!deterministic&&!allowCachedAudit\)/);
  assert.match(boot,/partyWorldPainter\.invalidate\(\)/);
  assert.match(boot,/scenePaint:partyWorldPainter\.snapshot\(\)/);
  assert.match(boot,/scenePainter:partyWorldPainter/);
+ assert.match(boot,/renderCacheAudit:renderCacheAudit/);
+ assert.match(boot,/saved\.ok&&/);
  assert.match(boot,/addEventListener\('contextlost'/);
  assert.match(boot,/addEventListener\('contextrestored'/);
  assert.match(read('android/build.sh'),/enginehost\/\*\.js/);
