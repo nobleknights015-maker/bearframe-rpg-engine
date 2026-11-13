@@ -29,7 +29,19 @@ settings concern local playback only. `enabled` is deliberately **not**
 persisted because Android/browser audio must not autoplay after startup
 or foreground restoration. Playback still needs an explicit gesture.
 
-This module does not by itself wire the Options menu. That integration
-belongs to the separate player-facing settings pass, after current
-game-audio work is merged and tested. Physical Android restoration and
-upgrade/rollback acceptance remain open.
+The player-facing JRPG Options menu is now wired to these preferences:
+D-pad visibility and reduced-motion settings are loaded at construction
+and applied to the viewport; sound bus volumes and mute are restored into
+the inactive audio director before any user-enabled playback. Every menu
+change commits to this independent journal **before** updating the UI or
+audio gain. A failed settings write displays an error and leaves the
+previous verified value active.
+
+The installed Android test `unified-ui-settings-first/second` opens the
+real Options menu, changes display settings, writes audio preferences,
+force-stops the Activity, and verifies restored CSS, audio levels,
+non-autoplay, original RPG save revision and separate journals.
+
+**Open:** physical Android acceptance, OS app update/rollback across
+different signing identities, accessibility/large-font ergonomics and
+long-running storage/flash endurance.
