@@ -241,6 +241,10 @@
       'bf:'+partyWorldProject.id+':v2:runtime':undefined;
     var partyWorld=createBearframePartyWorldHost(storage,partyWorldProject,theme,
       {slotPrefix:partyWorldSaveNamespace});
+    // A separate two-slot settings journal must never share any key with
+    // the canonical RPG session, archive or engine diagnostic save.
+    var userSettings=createBearframeUiPreferences(storage,partyWorldProject.id);
+    var savedSettings=userSettings.snapshot();
     // Gameplay audio is opt-in and never part of the simulation/save journal.
     // The soundtrack catalog is compiled from an explicitly installed
     // local sound pack. Empty profiles remain silent and safe.
@@ -250,6 +254,10 @@
       {project:partyWorldProject,
        requestFocus:function(){return !androidFocus||androidFocus.request()===true;},
        releaseFocus:releaseFocus});
+    ['master','music','sfx'].forEach(function(bus){
+      gameAudio.volume(bus,savedSettings.volumes[bus]);
+    });
+    gameAudio.mute(savedSettings.muted);
     gameAudio.scene(null,partyWorld.view(),null);
     window.addEventListener('pagehide',function(){gameAudio.dispose();});
     window.addEventListener('blur',function(){gameAudio.suspend();});
@@ -304,7 +312,7 @@
         view:function(){return partyWorld.view();},project:partyWorldProject,
         dispatch:function(command){return partyWorldAction(command);},
         verifySave:function(){return partyWorld.verifySave();},
-        audio:gameAudio,
+        audio:gameAudio,preferences:userSettings,
         onVisibility:function(){syncPresentationClock();renderPartyWorld();}
       });
     function performPartyMovement(dir){
@@ -762,6 +770,7 @@
       partyWorldScreens:partyWorldScreens,
       jrpgMenu:jrpgMenu,
       gameAudio:gameAudio,
+      userSettings:userSettings,
       input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
