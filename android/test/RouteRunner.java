@@ -973,7 +973,7 @@ public final class RouteRunner extends Instrumentation {
         String raw=evalHost("(function(){try{" +
             "var p=JSON.parse(JSON.stringify(FRAMEWORK_PARTY_WORLD_FIXTURE));" +
             "p.id='free_android_probe';p.contentRevision='free_android_1';" +
-            "p.movement={mode:'free',speed:32,radius:48};" +
+            "p.movement={mode:'free',directions:8,speed:32,radius:48};" +
             "var t={tileSize:32,clearColor:'#101018',atlases:{" +
               "terrain:{width:64,height:32},characters:{width:64,height:48}}," +
               "tiles:{floor:{atlas:'terrain',x:0,y:0,w:32,h:32}," +
@@ -1011,6 +1011,36 @@ public final class RouteRunner extends Instrumentation {
               "JSON.stringify(recovered.freePosition)!==" +
               "JSON.stringify(view.freePosition))" +
               "throw Error('Subtile save lost on restart');" +
+            "var cardinal=JSON.parse(JSON.stringify(p));" +
+            "cardinal.id='cardinal_android_probe';" +
+            "cardinal.contentRevision='cardinal_android_1';" +
+            "cardinal.movement.directions=4;" +
+            "var opts4={slotPrefix:'bf:cardinal_android_probe:v2:runtime'};" +
+            "var four=createBearframeSession(cardinal,storage,t,opts4);" +
+            "if(!four.start('Cardinal',7).ok)throw Error('Four-way session refused');" +
+            "var v4=four.snapshot().view;" +
+            "if(v4.movementDirections!==4||v4.movementMode!=='free')" +
+              "throw Error('Four-way movement contract missing');" +
+            "var illegal=four.dispatch({type:'move',dir:'down-right'});" +
+            "if(illegal.ok||four.snapshot().view.sequence!==0)" +
+              "throw Error('Diagonal mutated four-way durable journal');" +
+            "if(!four.dispatch({type:'move',dir:'right'}).ok)" +
+              "throw Error('Four-way sub-tile movement refused');" +
+            "var moved4=four.snapshot().view;" +
+            "if(moved4.x!==v4.x||moved4.y!==v4.y||" +
+              "moved4.freePosition.x<=v4.freePosition.x||" +
+              "moved4.freePosition.y!==v4.freePosition.y)" +
+              "throw Error('Four-way cardinal vector inaccurate');" +
+            "var fourHost=createBearframePartyWorldHost(" +
+              "storage,cardinal,t,opts4);" +
+            "if(fourHost.navigate('up-right').ok||" +
+              "fourHost.facing()!=='down'||!fourHost.verifySave().ok)" +
+              "throw Error('Four-way controller/facing accepted diagonal');" +
+            "var fourReload=createBearframeSession(cardinal,storage,t,opts4);" +
+            "if(!fourReload.resume().ok||!fourReload.verifySave().ok||" +
+              "JSON.stringify(fourReload.snapshot().view.freePosition)!==" +
+              "JSON.stringify(moved4.freePosition))" +
+              "throw Error('Four-way native position lost on restart');" +
             "return JSON.stringify({ok:true,sequence:view.sequence," +
               "position:view.freePosition,cameraMove:frameB.camera.x-frameA.camera.x});" +
             "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
@@ -1021,7 +1051,7 @@ public final class RouteRunner extends Instrumentation {
            proof.getInt("cameraMove")<=0)
             throw new AssertionError("Free locomotion incomplete: "+proof);
         resultMeta.putString("freeMovement",
-            "PASS installed eight-way subtile motion, camera and native save");
+            "PASS installed 4-way free movement, preserved 8-way test, camera and native save");
     }
 
     private void checkUnifiedJrpgMenu() throws Exception {
