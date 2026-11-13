@@ -115,12 +115,14 @@ test('long inventories are paged rather than clipped and inaccessible',()=>{
     onVisibility:()=>{}});
   assert.equal(menu.open('items'),true);
   const page=t.detail.children.find(n=>n.className==='jrpg-pages');
-  assert.ok(page,'page buttons required when item count exceeds seven');
-  assert.equal(t.detail.children.filter(n=>!n.hidden&&n.className==='jrpg-entry').length,7);
+  assert.ok(page,'page buttons required when item count exceeds five');
+  assert.equal(t.detail.children.filter(n=>!n.hidden&&n.className==='jrpg-entry').length,5);
   page.children[1].click();
-  assert.equal(t.detail.children.filter(n=>!n.hidden&&n.className==='jrpg-entry').length,7);
+  assert.equal(t.detail.children.filter(n=>!n.hidden&&n.className==='jrpg-entry').length,5);
   assert.equal(t.detail.children[0].hidden,true);
-  assert.ok(t.detail.children[7].textContent.includes('Item'));
+  assert.ok(t.detail.children[5].textContent.includes('Item'));
+  assert.equal(page.children[2].textContent,'Page 2 / 5');
+  assert.equal(page.getAttribute('aria-label'),'JRPG command pages');
 });
 test('Android source wires JRPG menu while preserving original developer diagnostics for test routes',()=>{
   const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
@@ -180,9 +182,9 @@ test('controller can turn every inventory page without focusing disabled pager b
   assert.equal(menu.open('items'),true);
   assert.equal(menu.handle({type:'navigate',direction:'right'}),true);
   assert.equal(t.doc.activeElement.textContent,'Next ▶');
-  for(let page=1;page<=3;page++){
+  for(let page=1;page<=4;page++){
     assert.equal(menu.handle({type:'confirm'}),true);
-    assert.ok(t.detail.children[page*7].hidden===false);
+    assert.ok(t.detail.children[page*5].hidden===false);
   }
   assert.equal(t.doc.activeElement.textContent,'◀ Previous',
     'last page must redirect focus off newly disabled Next');
@@ -243,4 +245,20 @@ test('hidden inventory-page actions cannot dispatch until their page is visible'
   action.click();
   assert.equal(dispatches,1);
   assert.equal(view.sequence,1);
+});
+
+test('landscape JRPG actions, close buttons and page controls retain accessible tap sizes',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const css=fs.readFileSync(path.join(__dirname,'../enginehost/host.css'),'utf8');
+ const menu=fs.readFileSync(path.join(__dirname,'../enginehost/jrpg-menu.js'),'utf8');
+ assert.match(menu,/entries=Array\.from\(detail\.children\),pageSize=5/);
+ assert.match(menu,/pageLabel\.setAttribute\('aria-live','polite'\)/);
+ assert.match(menu,/pageLabel\.textContent='Page '/);
+ for(const pattern of [
+   /#jrpg-menu \.jrpg-details \.jrpg-action\{[^}]*min-height:44px/,
+   /#jrpg-menu \.jrpg-details \.jrpg-pages button\{[^}]*min-height:44px/,
+   /#jrpg-menu \.jrpg-menu-top button\{[^}]*min-height:44px/,
+   /\.engine-page-nav button\{[^}]*min-height:44px!important/,
+   /#party-world-battle #party-commit\{[^}]*min-height:48px/
+ ])assert.match(css,pattern);
 });
