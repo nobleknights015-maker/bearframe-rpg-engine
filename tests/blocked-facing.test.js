@@ -26,8 +26,10 @@ test('turning into a wall updates facing for idle art without committing fake mo
 test('both touch and controller world adapters repaint blocked-facing without accepting a move',()=>{
   const boot=fs.readFileSync(path.join(__dirname,'../enginehost/boot.js'),'utf8');
   const matches=boot.match(/if\(result\.ok\|\|result\.reason==='no-change'\)renderPartyWorld\(\);/g)||[];
-  assert.equal(matches.length,2,'both input adapters must repaint the visual-only facing');
+  assert.equal(matches.length,1,'touch and gamepad share one durable facing repaint');
   assert.match(boot,/playerDirection:partyWorld\.facing\(\)/);
-  assert.match(boot,/var result=partyWorld\.navigate\(dir\);/);
-  assert.match(boot,/partyWorldInteractive\(\)\?partyWorld\.navigate\(direction\)/);
+  assert.match(boot,/function performPartyMovement\(dir\)/);
+  assert.match(boot,/result=partyWorld\.navigate\(dir\)/);
+  assert.match(boot,/partyWorldTouchPad=createBearframeTouchPad\(partyWorldButtons,\s*performPartyMovement\)/);
+  assert.match(boot,/partyWorldScreens,function\(\)\{return partyWorld\.view\(\);\},\s*performPartyMovement/);
 });
