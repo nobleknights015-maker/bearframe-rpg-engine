@@ -60,12 +60,14 @@ function createBearframeJRPGMenu(root, openButton, deps) {
   function actors(v){return Array.isArray(v.partyActors)?v.partyActors:[];}
   function isBlocked(v){return !v||!!v.prompt||!!v.partyBattle||!!v.battle;}
   function addAction(label,callback,disabled,description){
+    var sectionAtCreation=current;
     var btn=node('button',label,'jrpg-action');
     btn.type='button';btn.disabled=!!disabled;
     btn.setAttribute('data-jrpg-action','');
     if(description)btn.setAttribute('aria-label',description);
     btn.addEventListener('click',function(){
-      if(!btn.disabled)callback();
+      if(opened && current===sectionAtCreation && btn.parentNode===detail &&
+         !btn.hidden && !btn.disabled)callback();
     });
     detail.appendChild(btn);
     subActions.push(btn);
