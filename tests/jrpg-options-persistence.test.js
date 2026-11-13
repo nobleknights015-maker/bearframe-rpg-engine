@@ -71,7 +71,7 @@ test('JRPG options commit D-pad and reduced-motion settings outside game save',(
  assert.equal(g.ui.doc.body.classList.contains('jrpg-reduced-motion'),true);
  assert.equal(g.prefs.snapshot().sequence,2);
  assert.equal(JSON.stringify(g.v),before);
- assert.ok([...d.data.keys()].every(k=>k.startsWith('bf:ui:ui_menu:v1:')));
+ assert.ok([...d.data.keys()].every(k=>k.startsWith('bf:ui_menu:v1:ui:')));
 });
 test('saved settings immediately restore display classes after new UI construction',()=>{
  const d=storage(),one=setup(d,'ui_menu');
