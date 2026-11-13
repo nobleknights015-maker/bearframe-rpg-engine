@@ -1093,6 +1093,15 @@ public final class RouteRunner extends Instrumentation {
             "equip.click();" +
             "var gear=h.view().partyGear.pilot.weapon;" +
             "var same=h.verifySave().ok&&h.view().sequence===before+3;" +
+            "var audio=BearframeHost.gameAudio;" +
+            "if(!audio||audio.status().available||audio.status().enabled)" +
+              "throw Error('Default engine must be silent without an owned audio pack');" +
+            "var options=overlay.querySelector('[data-jrpg-command=options]');" +
+            "if(!options)throw Error('Game Options missing');options.click();" +
+            "if(!overlay.textContent.includes('No licensed game soundtrack'))" +
+              "throw Error('Audio availability not visible in Options');" +
+            "if(h.view().sequence!==before+3)" +
+              "throw Error('Audio Options unexpectedly modified RPG save');" +
             "m.close();" +
             "return JSON.stringify({gear:gear,saved:same,menuClosed:overlay.hidden," +
               "sequence:h.view().sequence,original:before});" +

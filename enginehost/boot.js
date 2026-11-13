@@ -241,6 +241,23 @@
       'bf:'+partyWorldProject.id+':v2:runtime':undefined;
     var partyWorld=createBearframePartyWorldHost(storage,partyWorldProject,theme,
       {slotPrefix:partyWorldSaveNamespace});
+    // Gameplay audio is opt-in and never part of the simulation/save journal.
+    // The soundtrack catalog is compiled from an explicitly installed
+    // local sound pack. Empty profiles remain silent and safe.
+    var gameAudio=createBearframeGameAudio(
+      BEARFRAME_GAME_AUDIO_PROFILE,
+      function(tag){return document.createElement(tag);},
+      {project:partyWorldProject,
+       requestFocus:function(){return !androidFocus||androidFocus.request()===true;},
+       releaseFocus:releaseFocus});
+    gameAudio.scene(null,partyWorld.view(),null);
+    window.addEventListener('pagehide',function(){gameAudio.dispose();});
+    window.addEventListener('blur',function(){gameAudio.suspend();});
+    window.addEventListener('focus',function(){gameAudio.resume();});
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden)gameAudio.suspend();
+      else gameAudio.resume();
+    });
     var freeExploration=!!(partyWorldProject.movement&&
       partyWorldProject.movement.mode==='free');
     var motionTween=createBearframeMotionTween(110);
@@ -287,6 +304,7 @@
         view:function(){return partyWorld.view();},project:partyWorldProject,
         dispatch:function(command){return partyWorldAction(command);},
         verifySave:function(){return partyWorld.verifySave();},
+        audio:gameAudio,
         onVisibility:function(){syncPresentationClock();renderPartyWorld();}
       });
     function performPartyMovement(dir){
@@ -294,6 +312,7 @@
         return {ok:false,reason:'assets-restoring'};
       var before=partyWorld.view(),result=partyWorld.navigate(dir);
       if(result.ok){
+        gameAudio.scene(before,partyWorld.view(),'move');
         if(!freeExploration||!motionTween.capture(
           before,partyWorld.view(),performance.now()))motionTween.reset();
       }
@@ -313,8 +332,11 @@
         partyWorldStatus.textContent='Party scene unavailable; controls are paused.';
         return {ok:false,reason:'assets-restoring'};
       }
-      var result=partyWorld.dispatch(command);
-      if(result.ok)renderPartyWorld();
+      var before=partyWorld.view(),result=partyWorld.dispatch(command);
+      if(result.ok){
+        gameAudio.scene(before,partyWorld.view(),command.type);
+        renderPartyWorld();
+      }
       else partyWorldStatus.textContent='Party action refused: '+result.reason;
       return result;
     }
@@ -327,8 +349,10 @@
       document.getElementById('party-world-battle'),{
         battle:function(){return partyWorld.battle();},
         submit:function(orders){
-          return partyWorldInteractive()?partyWorld.submit(orders):
-            {ok:false,reason:'assets-restoring'};
+          if(!partyWorldInteractive())return {ok:false,reason:'assets-restoring'};
+          var before=partyWorld.view(),result=partyWorld.submit(orders);
+          if(result.ok)gameAudio.scene(before,partyWorld.view(),'party-round');
+          return result;
         }
       },partyWorldProject.partyCombat.skills,function(outcome){
         if(outcome.ok)renderPartyWorld();
@@ -737,16 +761,18 @@
       presentationClock:partyWorldClock,
       partyWorldScreens:partyWorldScreens,
       jrpgMenu:jrpgMenu,
+      gameAudio:gameAudio,
       input:function(action){return partyWorldInput.handle(action);},
       navigate:function(dir){
         if(['up','down','left','right'].indexOf(dir)<0)return {ok:false,reason:'invalid-direction'};
         return act({type:'move',dir:dir});
       },
       suspend:function(){
-        partyWorldClock.stop();audioProbe.suspend();return snapshot();
+        partyWorldClock.stop();audioProbe.suspend();
+        gameAudio.suspend();return snapshot();
       },
       resume:function(){
-        audioProbe.resume();
+        audioProbe.resume();gameAudio.resume();
         if(restoring)return snapshot();
         show();renderPartyWorld();syncPresentationClock();
         return snapshot();

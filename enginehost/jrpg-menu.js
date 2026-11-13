@@ -186,6 +186,42 @@ function createBearframeJRPGMenu(root, openButton, deps) {
       render();
     },false);
     line('These display preferences do not change the game save.','jrpg-helper');
+    if(!deps.audio)return;
+    var audio=deps.audio.status();
+    line('Game audio','jrpg-entry');
+    if(!audio.available){
+      line('No licensed game soundtrack has been packaged. Audio remains off.',
+        'jrpg-helper');
+      return;
+    }
+    line('Sound is '+(audio.enabled?'enabled':'off')+
+      (audio.muted?' · muted':'')+
+      (audio.error?' · '+audio.error:''),'jrpg-helper');
+    if(!audio.enabled)addAction('Enable game sound',function(){
+      deps.audio.enable().then(function(result){
+        if(opened&&current==='options'){
+          render();
+          message(result.ok?'Sound enabled.':
+            'Sound unavailable: '+(result.reason||'playback refused'));
+        }
+      });
+    },false);
+    else addAction('Turn sound off',function(){deps.audio.disable();render();},false);
+    addAction(audio.muted?'Unmute':'Mute',function(){
+      deps.audio.mute(!audio.muted);render();
+    },false);
+    [['master','Master'],['music','Music'],['sfx','Effects']].forEach(function(pair){
+      var bus=pair[0],value=audio.volumes[bus];
+      line(pair[1]+' · '+value+'%','jrpg-helper');
+      addAction(pair[1]+' −',function(){
+        deps.audio.volume(bus,Math.max(0,value-10));render();
+      },value===0);
+      addAction(pair[1]+' +',function(){
+        deps.audio.volume(bus,Math.min(100,value+10));render();
+      },value===100);
+    });
+    line('Audio preferences affect playback only—not saved gameplay.',
+      'jrpg-helper');
   }
   function render(){
     if(!opened)return;
@@ -238,6 +274,7 @@ function createBearframeJRPGMenu(root, openButton, deps) {
     btn.type='button';btn.setAttribute('data-jrpg-command',entry[0]);
     btn.addEventListener('click',function(){
       selected=i;actionIndex=0;pageNumber=0;current=entry[0];render();
+      if(deps.audio)deps.audio.signal('menu_select');
     });
     commands.appendChild(btn);commandButtons.push(btn);
   });
@@ -251,13 +288,16 @@ function createBearframeJRPGMenu(root, openButton, deps) {
     }else current='overview';
     actionIndex=0;pageNumber=0;render();
     commandButtons[selected].focus();
+    if(deps.audio)deps.audio.signal('menu_open');
     deps.onVisibility(true);
     return true;
   }
   function close(){
     if(!opened)return false;
     opened=false;root.hidden=true;root.setAttribute('aria-hidden','true');
-    current='overview';message('');openButton.focus();deps.onVisibility(false);
+    current='overview';message('');openButton.focus();
+    if(deps.audio)deps.audio.signal('menu_close');
+    deps.onVisibility(false);
     return true;
   }
   function back(){
@@ -298,6 +338,7 @@ function createBearframeJRPGMenu(root, openButton, deps) {
         doc.activeElement.click();return true;
       }
       current=sections[selected][0];actionIndex=0;pageNumber=0;render();
+      if(deps.audio)deps.audio.signal('menu_select');
       if(subActions.length)subActions[0].focus();
       return true;
     }
