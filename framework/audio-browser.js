@@ -90,7 +90,9 @@ function createBearframeBrowserAudioBackend(createElement, config) {
       if(cmd.bus!=='music'||!liveMusic||liveMusic.id!==cmd.id)
         return Promise.resolve({ok:false,reason:'no-music'});
       if(cmd.type==='pause'){
-        liveMusic.element.pause();return Promise.resolve({ok:true});
+        try{liveMusic.element.pause();return Promise.resolve({ok:true});}
+        catch(error){return Promise.resolve({ok:false,reason:'pause-threw',
+          message:String(error&&error.message||error)});}
       }
       return safePlay(liveMusic);
     }
