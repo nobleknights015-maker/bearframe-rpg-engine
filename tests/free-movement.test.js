@@ -13,7 +13,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function freeProject(){
   const p=clone(fixture);
   p.id='free-movement-test';p.contentRevision='free_position_1';
-  p.movement={mode:'free',speed:32,radius:48};
+  p.movement={mode:'free',directions:8,speed:32,radius:48};
   return p;
 }
 function standalone(map){
@@ -25,7 +25,7 @@ function standalone(map){
       exits:{},events:{},encounters:{}}
   };
   p.start={map:'hub',x:1,y:1};
-  p.movement={mode:'free',speed:32,radius:48};
+  p.movement={mode:'free',directions:8,speed:32,radius:48};
   return p;
 }
 function storage(){
@@ -186,10 +186,78 @@ test('Android CI installs and executes free locomotion, independent native journ
  const ci=read('.github/workflows/engine-ci.yml');
  for(const phrase of ['checkUnifiedFreeMovement()',
    'stage.equals("unified-free-movement")',
-   "p.movement={mode:'free',speed:32,radius:48}",
+   "p.movement={mode:'free',directions:8,speed:32,radius:48}",
    "a.dispatch({type:'move',dir:'up-right'})",
    "a.verifySave().ok", "reboot.resume().ok"])
    assert.ok(java.includes(phrase),'Missing installed free movement probe: '+phrase);
  assert.match(ci,/stage unified-free-movement/);
  assert.match(ci,/route=PASS unified-free-movement/);
+});
+
+test('smooth Bearframe production mode defaults to four cardinal directions',()=>{
+  const p=freeProject();
+  delete p.movement.directions;
+  validate(p);
+  const movement=makeMovement(p);
+  assert.equal(movement.directions,4);
+  const origin=movement.point(1,1);
+  for(const direction of ['up','down','left','right'])
+    assert.equal(movement.walk('hub',origin,direction).ok,true);
+  for(const direction of ['up-left','up-right','down-left','down-right']){
+    assert.equal(movement.walk('hub',origin,direction).ok,false);
+    assert.equal(movement.facing(direction,'right'),null);
+  }
+  const engine=makeEngine(p);
+  const first=engine.fresh('FourWay',1);
+  assert.equal(engine.view(first).movementDirections,4);
+  assert.equal(engine.step(first,{type:'move',dir:'down-right'}),first);
+  const next=engine.step(first,{type:'move',dir:'right'});
+  assert.equal(next.player.px,first.player.px+32);
+  assert.equal(next.player.py,first.player.py);
+  assert.equal(next.player.x,first.player.x,'the motion is smooth, not a tile jump');
+  assert.equal(engine.view(next).movementDirections,4);
+  assert.equal(engine.validateState(next),true);
+});
+test('4-way smooth mode rejects diagonal direct calls without changing facing, journal or location',()=>{
+  const p=freeProject();
+  p.id='free-cardinal-test';
+  p.contentRevision='fourway_1';
+  p.movement.directions=4;
+  const disk=storage();
+  const host=makeHost(disk,p,theme,{slotPrefix:'bf:free-cardinal-test:v2:runtime'});
+  const first=host.view(),direction=host.facing();
+  const before=host.verifySave();
+  assert.equal(host.navigate('up-right').reason,'invalid-direction');
+  assert.equal(host.facing(),direction);
+  assert.deepEqual(host.view(),first);
+  assert.equal(host.verifySave().revision,before.revision);
+  assert.equal(host.navigate('right').ok,true);
+  const moved=host.view();
+  assert.equal(moved.movementDirections,4);
+  assert.equal(moved.freePosition.x>first.freePosition.x,true);
+  const restored=makeHost(disk,p,theme,{slotPrefix:'bf:free-cardinal-test:v2:runtime'});
+  assert.deepEqual(restored.view().freePosition,moved.freePosition);
+  assert.equal(restored.verifySave().ok,true);
+});
+test('movement schema accepts explicit 4 or 8, refuses any other direction counts',()=>{
+  for(const count of [0,1,2,3,5,6,7,9,4.5,'4',null]){
+    const p=freeProject();p.movement.directions=count;
+    assert.throws(()=>validate(p),/movement.directions/);
+  }
+  for(const count of [4,8]){
+    const p=freeProject();p.movement.directions=count;
+    assert.doesNotThrow(()=>validate(p));
+  }
+  const p=freeProject();p.movement={mode:'tile',directions:4};
+  assert.throws(()=>validate(p),/tile movement/);
+});
+test('WebView only exposes diagonals when the authored project explicitly requests eight directions',()=>{
+ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+ const boot=read('enginehost/boot.js');
+ const input=read('enginehost/input-host.js');
+ const host=read('enginehost/party-world-host.js');
+ assert.match(boot,/partyWorldProject\.movement\.directions===8/);
+ assert.match(input,/v\.movementDirections!==8/);
+ assert.match(input,/v\.movementDirections===8/);
+ assert.match(host,/if\(free&&free\.directions===8\)/);
 });
