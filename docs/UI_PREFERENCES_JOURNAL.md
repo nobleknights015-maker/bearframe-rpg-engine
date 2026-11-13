@@ -5,8 +5,8 @@ A reusable, project-scoped `framework/ui-preferences.js` service now stores
 two-slot native save journal as the simulation, with an unrelated prefix:
 
 ```
-bf:ui:<project_id>:v1:a
-bf:ui:<project_id>:v1:b
+bf:<project_id>:v1:ui:a
+bf:<project_id>:v1:ui:b
 ```
 
 The state is intentionally small, versioned and independent of any map,
