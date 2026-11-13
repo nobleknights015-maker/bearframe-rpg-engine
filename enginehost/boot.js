@@ -272,6 +272,7 @@
     var partyWorldStatus=document.getElementById('party-world-status');
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
+    var partyWorldPainter=createBearframeScenePainter(partyWorldSurface);
     // Presentation-only step window; never stored in the durable journal.
     var lastDrawnPlayer=null,playerWalkUntilTick=-1;
     var lastRoom=null;
@@ -403,8 +404,7 @@
         }
       }
       var frame=partyWorld.compose(options);
-      drawBearframeSceneCanvas(partyWorldSurface,frame,
-        sceneImages());
+      partyWorldPainter.paint(frame,sceneImages(),!!deterministic);
     }
     function syncPresentationClock(){
       if(!partyWorldClock)return;
@@ -696,6 +696,8 @@
         return {ok:false,reason:'invalid-level'};
       if(restoring)return {ok:true,evicted:0,restoring:true};
       var target=level>=80?0:level>=40?4194304:8388608;
+      // A replaced or evicted atlas must never reuse the preceding frame.
+      partyWorldPainter.invalidate();
       var trimmed=assets.trimTo(target);
       trimCount++;
       if(!sceneReady()){
@@ -752,6 +754,7 @@
         trimCount:trimCount,recoveryCount:recoveryCount,
         recoveryFailures:recoveryFailures,restoring:!!restoring,
         atlasSource:'packaged-png',ownerArtActive:!!artProfile,
+        scenePaint:partyWorldPainter.snapshot(),
         renderer:surface.width+'x'+surface.height};
     }
     assets.preload(requiredImages).then(function(){
@@ -767,6 +770,7 @@
       animatedTileAudit:animatedTileAudit,
       renderVisualTickForAudit:renderVisualTickForAudit,
       presentationClock:partyWorldClock,
+      scenePainter:partyWorldPainter,
       partyWorldScreens:partyWorldScreens,
       jrpgMenu:jrpgMenu,
       gameAudio:gameAudio,
