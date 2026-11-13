@@ -19,7 +19,7 @@ test('default UI preferences are stable, sound and four-way pad visible, no writ
  assert.equal(d.writes(),0);
  assert.equal(p.health().validSlots,0);
  assert.equal(p.keys.length,2);
- assert.ok(p.keys.every(k=>k.startsWith('bf:ui:framework-party-world-test:v1')));
+ assert.ok(p.keys.every(k=>k.startsWith('bf:framework-party-world-test:v1:ui')));
 });
 test('UI preferences use two-slot atomic journal and survive process recreation',()=>{
  const d=disk(),p=create(d.storage,'framework-party-world-test');
