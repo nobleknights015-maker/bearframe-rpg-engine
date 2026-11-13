@@ -54,7 +54,7 @@ test('failed native write cannot change visible settings or any saved RPG state'
  const worldSave=Slots(engine,d.storage,'bf:framework-party-world-test:v2:diagnostics');
  const state=engine.fresh('Pilot',77);
  assert.equal(worldSave.save(state).ok,true);
- const gameBefore=JSON.stringify(d.data.get(worldSave.keys[0]));
+ const gameBefore=d.data.get(worldSave.keys[0]);
  d.setFail(true);
  const before=p.snapshot();
  const result=p.set('showPad',false);
