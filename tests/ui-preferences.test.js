@@ -118,3 +118,16 @@ test('UI preference project IDs reject invalid path segments and names',()=>{
  for(const id of ['../game','with space','',null,'-dash','UPPER','x'.repeat(65)])
    assert.throws(()=>create(d.storage,id),/UI preferences require/);
 });
+
+test('UI setting keys satisfy the exact native SharedPreferences allowlist and are disjoint from RPG saves',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const java=fs.readFileSync(path.join(__dirname,'../android/src/dev/bearframe/ridge/UnifiedEngineActivity.java'),'utf8');
+ assert.ok(java.includes('key.matches("bf:[a-z][a-z0-9_-]{0,63}:v[1-9][0-9]{0,3}(?::[a-z][a-z0-9_-]{0,63})?:[ab]")'),
+   'Native storage allowlist changed: review UI key compatibility');
+ const allowed=/^bf:[a-z][a-z0-9_-]{0,63}:v[1-9][0-9]{0,3}(?::[a-z][a-z0-9_-]{0,63})?:[ab]$/;
+ const d=disk(),p=create(d.storage,'framework-party-world-test');
+ assert.ok(p.keys.every(key=>allowed.test(key)));
+ assert.equal(p.keys.some(key=>key.startsWith('bf:framework-party-world-test:v2:diagnostics:')),false);
+ assert.equal(p.set('showPad',false).ok,true);
+ assert.equal(create(d.storage,'framework-party-world-test').snapshot().showPad,false);
+});
