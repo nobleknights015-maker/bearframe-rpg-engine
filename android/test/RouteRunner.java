@@ -1078,10 +1078,15 @@ public final class RouteRunner extends Instrumentation {
                 "throw Error('Settings control not visible '+label);" +
               "b.click();}" +
             "tap('Hide touch D-pad');" +
+            "if(!document.body.classList.contains('jrpg-pad-hidden'))" +
+              "throw Error('Pad display not applied: '+JSON.stringify({" +
+              "ui:p.snapshot(),body:document.body.className," +
+              "message:document.querySelector('[data-jrpg-message]').textContent}));" +
             "tap('Reduce transition animations');" +
-            "if(!document.body.classList.contains('jrpg-pad-hidden')||" +
-              "!document.body.classList.contains('jrpg-reduced-motion'))" +
-              "throw Error('Saved display controls not applied');" +
+            "if(!document.body.classList.contains('jrpg-reduced-motion'))" +
+              "throw Error('Reduced-motion not applied: '+JSON.stringify({" +
+              "ui:p.snapshot(),body:document.body.className," +
+              "message:document.querySelector('[data-jrpg-message]').textContent}));" +
             "if(!p.set('muted',true).ok||!p.volume('music',45).ok)" +
               "throw Error('Independent audio preferences refused');" +
             "m.close();" +
