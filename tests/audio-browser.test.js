@@ -362,3 +362,30 @@ test('failed native music gain retires broken track and permits replacement',asy
  assert.equal(backend.status().music,'replacement');
  backend.dispose();
 });
+
+test('initial native volume setter failure cleans sourced media and preserves later playback',async()=>{
+ const elements=[];
+ let fail=true;
+ const backend=create(()=>{
+   const e={src:'',currentTime:0,preload:null,loop:false,
+     play(){return Promise.resolve();},pause(){this.pauses=(this.pauses||0)+1;},
+     load(){this.loads=(this.loads||0)+1;},
+     removeAttribute(name){if(name==='src')this.src='';}};
+   Object.defineProperty(e,'volume',{configurable:true,
+     set(value){if(fail)throw new Error('initial native volume failure');this.savedVolume=value;},
+     get(){return this.savedVolume;}});
+   elements.push(e);return e;
+ });
+ const failed=await backend.execute([music()]);
+ assert.equal(failed[0].reason,'invalid-asset');
+ assert.match(failed[0].message,/initial native volume failure/);
+ assert.equal(elements[0].src,'');
+ assert.ok(elements[0].pauses>=1);
+ assert.ok(elements[0].loads>=1);
+ assert.equal(backend.status().music,null);
+ fail=false;
+ assert.deepEqual(await backend.execute([music('recovered'),sfx()]),[{ok:true},{ok:true}]);
+ assert.equal(backend.status().music,'recovered');
+ assert.equal(backend.status().activeSfx,1);
+ backend.dispose();
+});
