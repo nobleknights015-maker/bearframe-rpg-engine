@@ -1054,6 +1054,64 @@ public final class RouteRunner extends Instrumentation {
             "PASS installed 4-way free movement, preserved 8-way test, camera and native save");
     }
 
+    /** Installed Android native-journal persistence of options. Distinct
+     * from all legacy, diagnostic, and real-world character-save namespaces.
+     */
+    private void checkUnifiedUiPreferences(boolean restart) throws Exception {
+        Intent launch=new Intent();
+        launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screen=startActivitySync(launch);
+        unifiedSnapshot();
+        String response=evalHost("(function(){try{" +
+            "var h=BearframeHost.partyWorld,p=BearframeHost.userSettings," +
+              "m=BearframeHost.jrpgMenu,a=BearframeHost.gameAudio;" +
+            "if(!h||!p||!m||!a)throw Error('Installed settings module missing');" +
+            "var before=h.view().sequence;" +
+            "if(!"+(restart?"true":"false")+"){" +
+            "if(!m.open('options'))throw Error('Cannot open real Options menu');" +
+            "function tap(label){" +
+              "var b=Array.from(document.querySelectorAll(" +
+                "'#jrpg-menu [data-jrpg-action]')).find(function(node){" +
+                  "return node.textContent===label;});" +
+              "if(!b||b.disabled||!b.getClientRects().length)" +
+                "throw Error('Settings control not visible '+label);" +
+              "b.click();}" +
+            "tap('Hide touch D-pad');" +
+            "tap('Reduce transition animations');" +
+            "if(!document.body.classList.contains('jrpg-pad-hidden')||" +
+              "!document.body.classList.contains('jrpg-reduced-motion'))" +
+              "throw Error('Saved display controls not applied');" +
+            "if(!p.set('muted',true).ok||!p.volume('music',45).ok)" +
+              "throw Error('Independent audio preferences refused');" +
+            "m.close();" +
+            "}else{" +
+            "var v=p.snapshot();" +
+            "if(v.showPad||!v.reducedMotion||!v.muted||v.volumes.music!==45)" +
+              "throw Error('Settings journal lost after force-stop');" +
+            "if(!document.body.classList.contains('jrpg-pad-hidden')||" +
+              "!document.body.classList.contains('jrpg-reduced-motion'))" +
+              "throw Error('Settings CSS not restored on Activity restart');" +
+            "var sound=a.status();" +
+            "if(!sound.muted||sound.volumes.music!==45||sound.enabled)" +
+              "throw Error('Audio pref restoration/autoplay contract failed');" +
+            "}" +
+            "var pview=p.snapshot();" +
+            "if(pview.sequence!==4||h.view().sequence!==before||" +
+              "!h.verifySave().ok)" +
+              "throw Error('Settings modified game save or wrong prefs revision');" +
+            "return JSON.stringify({ok:true,settingsRevision:pview.sequence," +
+              "gameRevision:h.view().sequence,muted:pview.muted});" +
+            "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
+        JSONObject proof=new JSONObject((String)new JSONTokener(response).nextValue());
+        if(proof.has("error"))
+            throw new AssertionError("Installed UI preferences failed: "+proof);
+        if(!proof.getBoolean("ok")||proof.getInt("settingsRevision")!=4)
+            throw new AssertionError("Incomplete UI preference acceptance: "+proof);
+        resultMeta.putString("uiPreferences",
+            "PASS isolated native preferences, options buttons, restart, no autoplay");
+    }
+
     private void checkUnifiedJrpgMenu() throws Exception {
         Intent launch=new Intent();
         launch.setClassName("dev.bearframe.ridge","dev.bearframe.ridge.UnifiedEngineActivity");
@@ -2568,6 +2626,14 @@ public final class RouteRunner extends Instrumentation {
                 checkUnifiedFreeMovement();
                 result.putAll(resultMeta);
                 result.putString("route","PASS unified-free-movement");
+                finish(Activity.RESULT_OK,result);
+                return;
+            }
+            if(stage.equals("unified-ui-settings-first") ||
+               stage.equals("unified-ui-settings-second")){
+                checkUnifiedUiPreferences(stage.equals("unified-ui-settings-second"));
+                result.putAll(resultMeta);
+                result.putString("route","PASS "+stage);
                 finish(Activity.RESULT_OK,result);
                 return;
             }
