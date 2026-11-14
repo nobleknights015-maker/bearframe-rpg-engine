@@ -42,3 +42,23 @@ test('content fingerprints refuse enumerable array metadata rather than silently
   assert.equal(fingerprint(base), original);
   assert.equal(fingerprint({entries:[1,2],contentRevision:'v1'}), original);
 });
+
+test('content fingerprints reject accessors and symbol-keyed metadata without invoking getters', () => {
+  const baseline = {contentRevision:'v1', entries:[1,2]};
+  const stable = fingerprint(baseline);
+  let calls = 0;
+  const accessor = {contentRevision:'v1', entries:[1,2]};
+  Object.defineProperty(accessor.entries, '0', {
+    enumerable:true, configurable:true,
+    get(){ calls++; return 1; }
+  });
+  assert.throws(() => fingerprint(accessor), /accessor property/);
+  assert.equal(calls, 0);
+  const hidden = {contentRevision:'v1', entries:[1,2]};
+  Object.defineProperty(hidden, 'metadata', {value:'hidden', enumerable:false});
+  assert.equal(fingerprint(hidden), stable);
+  const symbol = {contentRevision:'v1', entries:[1,2]};
+  symbol[Symbol('metadata')] = 'ignored without guard';
+  assert.throws(() => fingerprint(symbol), /symbol property/);
+  assert.equal(fingerprint(baseline), stable);
+});
