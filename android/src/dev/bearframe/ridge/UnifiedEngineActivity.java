@@ -105,6 +105,7 @@ public final class UnifiedEngineActivity extends Activity {
             });
         }
     });
+    private final DeviceQAClipboard deviceQAClipboard=new DeviceQAClipboard(this);
     private final AudioFocusRouter audioFocus=new AudioFocusRouter(this,()->{
         if(browser!=null)browser.evaluateJavascript(
             "window.BearframeHost&&window.BearframeHost.suspend()",null);
@@ -266,6 +267,7 @@ public final class UnifiedEngineActivity extends Activity {
         browser.addJavascriptInterface(new NativeSaveBridge(),"BearframeNative");
         browser.addJavascriptInterface(audioFocus,"BearframeAudioFocus");
         browser.addJavascriptInterface(exporter,"BearframeArchiveExport");
+        browser.addJavascriptInterface(deviceQAClipboard,"BearframeDeviceQAClipboard");
         setContentView(browser);
         browser.loadUrl(DIAGNOSTICS);
     }
@@ -315,6 +317,7 @@ public final class UnifiedEngineActivity extends Activity {
             browser.removeJavascriptInterface("BearframeNative");
             browser.removeJavascriptInterface("BearframeAudioFocus");
             browser.removeJavascriptInterface("BearframeArchiveExport");
+            browser.removeJavascriptInterface("BearframeDeviceQAClipboard");
             browser.stopLoading();
             browser.destroy();
             browser=null;
