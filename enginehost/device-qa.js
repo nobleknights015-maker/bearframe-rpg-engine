@@ -41,7 +41,7 @@ function createBearframeDeviceQA(options){
     return {control:name,widthCssPx:num(rect.width),heightCssPx:num(rect.height)};
   }
   function sample(){
-    var undersized=[],count=0,minW=null,minH=null;
+    var undersized=[],undersizedCount=0,count=0,minW=null,minH=null;
     var buttons=stage.querySelectorAll('button');
     Array.prototype.forEach.call(buttons,function(button){
       if(!visible(button))return;
@@ -52,16 +52,9 @@ function createBearframeDeviceQA(options){
       minW=minW===null?box.width:Math.min(minW,box.width);
       minH=minH===null?box.height:Math.min(minH,box.height);
       if(box.width<44||box.height<44){
+        undersizedCount++;
         if(undersized.length<12)undersized.push(describe(button,box));
       }
-    });
-    // Store counts separately from the bounded example list.
-    var undersizedCount=0;
-    Array.prototype.forEach.call(buttons,function(button){
-      if(!visible(button))return;
-      var b=button.getBoundingClientRect();
-      if(b&&isFinite(b.width)&&isFinite(b.height)&&b.width>0&&b.height>0&&
-         (b.width<44||b.height<44))undersizedCount++;
     });
     lastTouch={minimumRecommendedCssPx:44,visibleControls:count,
       undersizedControls:undersizedCount,minimumWidthCssPx:num(minW),
