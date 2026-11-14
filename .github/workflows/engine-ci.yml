@@ -100,7 +100,24 @@ jobs:
           export SIGNING_KEY="$RUNNER_TEMP/ci-only.p12"
           export BF_ASSET_PACK_DIR="$RUNNER_TEMP/bf-asset-pack"
           bash android/build.sh "$RUNNER_TEMP/bearframe-ci.apk"
+          # Build a distinct higher Android versionCode using the SAME
+          # ephemeral signing identity within this one CI run. The installed
+          # v1 journal must survive a real v1->v2 PackageManager upgrade.
+          BF_ANDROID_VERSION_CODE=2 bash android/build.sh "$RUNNER_TEMP/bearframe-ci-upgrade.apk"
           BF_ENGINE_PREVIEW=1 bash android/build.sh "$RUNNER_TEMP/bearframe-engine-preview.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$RUNNER_TEMP/bearframe-ci.apk" |
+            grep -F "package: name='dev.bearframe.ridge' versionCode='1'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$RUNNER_TEMP/bearframe-ci-upgrade.apk" |
+            grep -F "package: name='dev.bearframe.ridge' versionCode='2'"
+          # Refuse to call it an upgrade if the two APKs have different
+          # certificate digests. The job key remains disposable, never public.
+          apksigner="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          original_cert="$("$apksigner" verify --print-certs "$RUNNER_TEMP/bearframe-ci.apk" |
+            sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          upgrade_cert="$("$apksigner" verify --print-certs "$RUNNER_TEMP/bearframe-ci-upgrade.apk" |
+            sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          test -n "$original_cert"
+          test "$original_cert" = "$upgrade_cert"
           bash android/test/build.sh "$RUNNER_TEMP/route-test-ci.apk"
           # The preview is a separate package and its launcher explicitly
           # targets UnifiedEngineActivity (not the original Rhino launcher).
@@ -154,7 +171,9 @@ jobs:
           authored.id='ci-external-content';authored.contentRevision='ci_content_1';
           fs.writeFileSync(process.argv[3],JSON.stringify({version:1,project:authored}));
           NODE
-          bash android/build.sh "$RUNNER_TEMP/bearframe-owner-art-ci.apk"
+          # The installed upgraded package is version 2 by this point, so
+          # the owner-art test APK must be monotonically versioned as well.
+          BF_ANDROID_VERSION_CODE=3 bash android/build.sh "$RUNNER_TEMP/bearframe-owner-art-ci.apk"
           unzip -p "$RUNNER_TEMP/bearframe-owner-art-ci.apk" assets/enginehost/art-profile.js |
             grep -q 'var BEARFRAME_OWNER_ART_PROFILE ='
           unzip -p "$RUNNER_TEMP/bearframe-owner-art-ci.apk" assets/enginehost/content-profile.js |
@@ -253,10 +272,11 @@ jobs:
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-first' "$RUNNER_TEMP/compat-file-first.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-first.txt"
             adb shell am force-stop dev.bearframe.ridge
-            # Reinstalling the same signed APK with -r preserves app data.
-            # This exercises the PackageManager replacement path in addition
-            # to the force-stop restart path (not a real version upgrade).
-            adb install -r "$RUNNER_TEMP/bearframe-ci.apk"
+            # This is a REAL v1 -> v2 Android package upgrade, not merely
+            # reinstalling the same version. The same job-local signer is
+            # required, and existing legacy plus new journals must survive.
+            adb install -r "$RUNNER_TEMP/bearframe-ci-upgrade.apk"
+            adb shell dumpsys package dev.bearframe.ridge | grep -F 'versionCode=2'
             adb shell am instrument -w -e stage unified-compat-file-second dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_RESULT: route=PASS unified-compat-file-second' "$RUNNER_TEMP/compat-file-second.txt"
             grep -F 'INSTRUMENTATION_CODE: -1' "$RUNNER_TEMP/compat-file-second.txt"
