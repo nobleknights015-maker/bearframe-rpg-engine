@@ -44,10 +44,11 @@ test('samples actual visible button rectangles and excludes disabled/paginated-o
  assert.deepEqual(touch,{minimumRecommendedCssPx:44,visibleControls:2,
    undersizedControls:1,minimumWidthCssPx:38,minimumHeightCssPx:42,
    undersizedExamples:[{control:'tiny-button',widthCssPx:38,heightCssPx:42}]});
- h.small.parentElement.hidden=true;
+ const hiddenParent={hidden:true,parentElement:h.stage,getAttribute:()=>null};
+ h.small.parentElement=hiddenParent;
  assert.equal(h.qa.sample().visibleControls,1);
  assert.equal(h.qa.sample().undersizedControls,0);
- h.small.parentElement.hidden=false;
+ h.small.parentElement=h.stage;
  h.small.hidden=true;
  assert.equal(h.qa.sample().visibleControls,1);
 });
