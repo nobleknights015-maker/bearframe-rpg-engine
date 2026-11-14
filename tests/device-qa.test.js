@@ -127,7 +127,7 @@ test('physical QA stays in developer diagnostics, uses explicit native clipboard
  assert.match(html,/id="device-qa-report" readonly/);
  assert.match(html,/src="device-qa\.js"/);
  assert.match(boot,/createBearframeDeviceQA\(/);
- assert.match(boot,/deviceQA\.sample\(\);},true/);
+ assert.match(boot,/sampleControls\(true\);},true/);
  assert.match(boot,/deviceQaBridge\.copyReport\(report\)===true/);
  assert.match(boot,/deviceQA:deviceQA/);
  assert.match(boot,/function sampleControls\(force\)/);
