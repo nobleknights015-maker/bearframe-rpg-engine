@@ -9,7 +9,8 @@ function createBearframeDeviceQA(options){
   var stage=options.stage,doc=stage.ownerDocument;
   if(!doc||typeof stage.querySelectorAll!=='function')
     throw new TypeError('Device QA requires a document stage');
-  var lastTouch=null;
+  var lastTouch=null,screenSamples=Object.create(null);
+  var screenNames=['world','event','battle','menu','party','save'];
   function num(v){
     return typeof v==='number'&&isFinite(v)?Math.round(v*100)/100:null;
   }
@@ -40,7 +41,8 @@ function createBearframeDeviceQA(options){
     if(!/^[a-zA-Z0-9:_-]{1,48}$/.test(name))name='button';
     return {control:name,widthCssPx:num(rect.width),heightCssPx:num(rect.height)};
   }
-  function sample(){
+  function sample(screen){
+    if(screenNames.indexOf(screen)<0)screen='world';
     var undersized=[],undersizedCount=0,count=0,minW=null,minH=null;
     var buttons=stage.querySelectorAll('button');
     Array.prototype.forEach.call(buttons,function(button){
@@ -59,6 +61,14 @@ function createBearframeDeviceQA(options){
     lastTouch={minimumRecommendedCssPx:44,visibleControls:count,
       undersizedControls:undersizedCount,minimumWidthCssPx:num(minW),
       minimumHeightCssPx:num(minH),undersizedExamples:undersized};
+    // Bounded per-screen snapshots let the Founder capture world, battle and
+    // menu touch sizes from the one developer screen without background loops.
+    // Four examples per screen bound clipboard size even with long menus.
+    screenSamples[screen]={
+      visibleControls:count,undersizedControls:undersizedCount,
+      minimumWidthCssPx:num(minW),minimumHeightCssPx:num(minH),
+      undersizedExamples:undersized.slice(0,4)
+    };
     return lastTouch;
   }
   function capture(){
@@ -85,6 +95,7 @@ function createBearframeDeviceQA(options){
       interpretation:'CPU scene/draw work; NOT measured display FPS',
       display:values(layout,['width','height','scale','stageWidth','stageHeight']),
       touch:JSON.parse(JSON.stringify(touch)),
+      touchByScreen:JSON.parse(JSON.stringify(screenSamples)),
       renderer:{
         paints:num(paint.paints),skips:num(paint.skipped),
         skipRatio:num(paint.skipRatio),
