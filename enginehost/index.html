@@ -14,6 +14,13 @@
   <canvas id="surface" width="224" height="160" aria-label="Portable atlas renderer diagnostics"></canvas>
   <p id="metrics" aria-live="polite"></p>
   <button id="runtime-assets-retry" type="button" disabled hidden>Retry scene asset loading</button>
+  <section id="device-qa-section" aria-label="Physical Android QA evidence">
+    <h2>Device QA report</h2>
+    <p>Collects visible control sizes and engine performance counters only. No save content, account data, or gameplay commands. A user-requested copy puts the report on the Android clipboard.</p>
+    <button id="device-qa-copy" type="button">Generate and copy device QA report</button>
+    <p id="device-qa-status" role="status" aria-live="polite">No device report collected.</p>
+    <textarea id="device-qa-report" readonly rows="8" aria-label="Device QA report text" placeholder="The report will appear here for manual copying if the Android clipboard is unavailable."></textarea>
+  </section>
   <section class="context-actions" aria-label="Current world actions">
     <p id="runtime-phase" role="status" aria-live="polite">Loading world controls…</p>
     <p id="runtime-action-status" role="status" aria-live="polite">Actions use the saved session.</p>
@@ -165,6 +172,7 @@
 <script src="landscape-pager.js"></script>
 <script src="screen-navigation.js"></script>
 <script src="presentation-clock.js"></script>
+<script src="device-qa.js"></script>
 <script src="scene-painter.js"></script>
 <script src="motion-tween.js"></script>
 <script src="input-host.js"></script>
