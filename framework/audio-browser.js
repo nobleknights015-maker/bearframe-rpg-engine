@@ -35,13 +35,14 @@ function createBearframeBrowserAudioBackend(createElement, config) {
     if(!element||typeof element.play!=='function'||
        typeof element.pause!=='function')
       throw new TypeError('Invalid audio element for '+id);
-    element.preload='auto';
-    element.src=prefix+command.path;
-    element.loop=!!command.loop;
-    // A native volume setter may throw during initial construction. Retire
-    // the element before reporting failure; never leave a sourced orphan.
-    try{element.volume=Math.min(1,Math.max(0,command.gain/100));}
-    catch(error){cleanup(element);throw error;}
+    // Every native media property setter may fail (including src/loop/preload).
+    // Retire partially initialized elements before reporting the failure.
+    try{
+      element.preload='auto';
+      element.src=prefix+command.path;
+      element.loop=!!command.loop;
+      element.volume=Math.min(1,Math.max(0,command.gain/100));
+    }catch(error){cleanup(element);throw error;}
     return {id:id,element:element};
   }
   function safePlay(entry){
