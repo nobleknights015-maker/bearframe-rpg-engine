@@ -207,7 +207,7 @@ jobs:
             # Test the unique per-run QA package, not a shared preview app
             # identity that would require wiping a tester's existing saves.
             preview_sha="$(printf '%s' "$GITHUB_SHA" | cut -c1-8)"
-          preview_id="${preview_sha}${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
+            preview_id="${preview_sha}${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
             preview_pkg="dev.bearframe.ridge.preview.c${preview_id}"
             adb install -r "$RUNNER_TEMP/bearframe-engine-preview.apk"
             adb shell am start -W -n "${preview_pkg}/dev.bearframe.ridge.UnifiedEngineActivity" | tee "$RUNNER_TEMP/preview-launch.txt"
