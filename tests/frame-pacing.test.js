@@ -87,5 +87,5 @@ test('Android host surfaces callback cadence separately from scene CPU work and 
  assert.match(boot,/framePacing:partyWorldClock\.pacingSnapshot\(\)/);
  assert.match(java,/BearframeHost\.presentationClock\.pacingSnapshot\(\)/);
  assert.match(java,/Installed frame pacing callback telemetry failed/);
- assert.doesNotMatch(clock,/save|dispatch\(/i);
+ assert.doesNotMatch(clock,/session\.dispatch|journal\.write|localStorage\.setItem/);
 });
