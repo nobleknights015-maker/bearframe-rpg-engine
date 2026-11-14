@@ -27,7 +27,7 @@ test('CI builds and publishes separately installable engine test APK',()=>{
   const workflow=fs.readFileSync(path.join(root,'.github/workflows/engine-ci.yml'),'utf8');
   assert.match(build,/BF_ENGINE_PREVIEW/);
   assert.match(build,/scripts\/build_preview_manifest.py/);
-  assert.match(workflow,/BF_ENGINE_PREVIEW=1 bash android\/build.sh/);
+  assert.match(workflow,/BF_ENGINE_PREVIEW=1 BF_ENGINE_PREVIEW_BUILD_ID="\$preview_id"/);
   assert.match(workflow,/bearframe-engine-preview.apk/);
   assert.match(workflow,/BF_ENGINE_PREVIEW_BUILD_ID="\$preview_id"/);
   assert.match(workflow,/GITHUB_RUN_ATTEMPT/);
