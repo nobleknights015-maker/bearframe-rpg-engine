@@ -1673,7 +1673,12 @@ public final class RouteRunner extends Instrumentation {
             if(!fits.getBoolean(i))
                 throw new AssertionError("Landscape clipped screen profile "+i+": "+result);
         JSONObject qa=result.getJSONObject("qa"),
-            qaNative=result.getJSONObject("qaNative");
+            qaNative=result.getJSONObject("qaNative"),
+            qaScreens=qa.getJSONObject("touchByScreen");
+        if(!qaScreens.has("world")||!qaScreens.has("party")||
+           !qaScreens.has("save")||
+           qaScreens.getJSONObject("world").getInt("visibleControls")<1)
+            throw new AssertionError("Device QA did not retain world, party and save samples: "+qa);
         if(!"bearframe-device-qa".equals(qa.getString("kind"))||
            !qa.getBoolean("saveVerified")||
            qa.getJSONObject("touch").getInt("visibleControls")<1||
