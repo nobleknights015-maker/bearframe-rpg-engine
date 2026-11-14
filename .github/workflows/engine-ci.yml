@@ -104,7 +104,14 @@ jobs:
           # ephemeral signing identity within this one CI run. The installed
           # v1 journal must survive a real v1->v2 PackageManager upgrade.
           BF_ANDROID_VERSION_CODE=2 bash android/build.sh "$RUNNER_TEMP/bearframe-ci-upgrade.apk"
-          BF_ENGINE_PREVIEW=1 bash android/build.sh "$RUNNER_TEMP/bearframe-engine-preview.apk"
+          # Each CI run has a disposable signing key. Use a NEW package
+          # identity for its preview so installing it on a phone never
+          # demands uninstalling a differently signed older preview.
+          # Include run attempt to isolate reruns of the same commit.
+          preview_sha="$(printf '%s' "$GITHUB_SHA" | cut -c1-8)"
+          preview_id="${preview_sha}${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
+          BF_ENGINE_PREVIEW=1 BF_ENGINE_PREVIEW_BUILD_ID="$preview_id" \
+            bash android/build.sh "$RUNNER_TEMP/bearframe-engine-preview.apk"
           "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$RUNNER_TEMP/bearframe-ci.apk" |
             grep -F "package: name='dev.bearframe.ridge' versionCode='1'"
           "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$RUNNER_TEMP/bearframe-ci-upgrade.apk" |
@@ -122,7 +129,7 @@ jobs:
           # The preview is a separate package and its launcher explicitly
           # targets UnifiedEngineActivity (not the original Rhino launcher).
           "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$RUNNER_TEMP/bearframe-engine-preview.apk" | tee "$RUNNER_TEMP/preview-badging.txt"
-          grep -F "package: name='dev.bearframe.ridge.preview'" "$RUNNER_TEMP/preview-badging.txt"
+          grep -F "package: name='dev.bearframe.ridge.preview.c${preview_id}'" "$RUNNER_TEMP/preview-badging.txt"
           grep -F "launchable-activity: name='dev.bearframe.ridge.UnifiedEngineActivity'" "$RUNNER_TEMP/preview-badging.txt"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$RUNNER_TEMP/bearframe-engine-preview.apk"
           test -s "$RUNNER_TEMP/bearframe-ci.apk"
@@ -197,10 +204,12 @@ jobs:
             # Preview can coexist with the original package; both must
             # install and its WebView engine must be launchable by the user.
             adb install -r "$RUNNER_TEMP/bearframe-ci.apk"
+            # Test the unique per-run QA package, not a shared preview app
+            # identity that would require wiping a tester's existing saves.
             adb install -r "$RUNNER_TEMP/bearframe-engine-preview.apk"
-            adb shell am start -W -n dev.bearframe.ridge.preview/dev.bearframe.ridge.UnifiedEngineActivity | tee "$RUNNER_TEMP/preview-launch.txt"
+            adb shell am start -W -n "dev.bearframe.ridge.preview.c$(printf '%s' "$GITHUB_SHA" | cut -c1-8)${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}/dev.bearframe.ridge.UnifiedEngineActivity" | tee "$RUNNER_TEMP/preview-launch.txt"
             grep -F 'Status: ok' "$RUNNER_TEMP/preview-launch.txt"
-            adb shell am force-stop dev.bearframe.ridge.preview
+            adb shell am force-stop "dev.bearframe.ridge.preview.c$(printf '%s' "$GITHUB_SHA" | cut -c1-8)${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
             adb install -r "$RUNNER_TEMP/route-test-ci.apk"
             adb shell pm clear dev.bearframe.ridge
             adb shell am instrument -w -e stage first dev.bearframe.ridge.tests/.RouteRunner | tee "$RUNNER_TEMP/native-stage-one.txt"

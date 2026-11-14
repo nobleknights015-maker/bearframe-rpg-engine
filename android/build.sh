@@ -98,9 +98,19 @@ java -m jdk.compiler/com.sun.tools.javac.Main -source 8 -target 8 -bootclasspath
 # engine host directly, so user testing never requires replacing an installed
 # original Rhino app or its saved preferences.
 manifest="$root/android/AndroidManifest.xml"
+if [[ -n "${BF_ENGINE_PREVIEW_BUILD_ID:-}" && "${BF_ENGINE_PREVIEW:-0}" != "1" ]]; then
+  echo "BF_ENGINE_PREVIEW_BUILD_ID requires BF_ENGINE_PREVIEW=1" >&2
+  exit 1
+fi
 if [[ "${BF_ENGINE_PREVIEW:-0}" == "1" ]]; then
   manifest="$work/preview-manifest.xml"
-  python3 "$root/scripts/build_preview_manifest.py" "$root/android/AndroidManifest.xml" "$manifest"
+  if [[ -n "${BF_ENGINE_PREVIEW_BUILD_ID:-}" ]]; then
+    python3 "$root/scripts/build_preview_manifest.py" \
+      "$root/android/AndroidManifest.xml" "$manifest" "$BF_ENGINE_PREVIEW_BUILD_ID"
+  else
+    python3 "$root/scripts/build_preview_manifest.py" \
+      "$root/android/AndroidManifest.xml" "$manifest"
+  fi
 fi
 # Explicit test-version override for a SAME-SIGNER APK upgrade. This never
 # edits the checked-in manifest, changes package identity or changes journals.

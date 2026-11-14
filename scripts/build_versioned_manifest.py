@@ -28,7 +28,10 @@ def versioned_manifest(source, output, requested_code):
         raise ValueError("Android versionCode outside safe upgrade range")
     tree = ET.parse(src)
     manifest = tree.getroot()
-    if manifest.tag != "manifest" or manifest.get("package") not in VALID_PACKAGES:
+    package = manifest.get("package")
+    if (manifest.tag != "manifest" or
+        not (package in VALID_PACKAGES or isinstance(package, str) and
+             re.fullmatch(r"dev\.bearframe\.ridge\.preview\.c[0-9a-f]{8,32}", package))):
         raise ValueError("Unexpected Android package; refusing version override")
     old_text = manifest.get(A + "versionCode")
     if old_text is None or not re.fullmatch(r"[1-9][0-9]{0,9}", old_text):
