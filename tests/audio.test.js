@@ -79,3 +79,23 @@ test('catalog mutation cannot redirect playback or change validated clip semanti
   [{type:'play',bus:'sfx',id:'tap',path:'audio/fx/tap.wav',loop:false,gain:100}]);
  assert.deepEqual(director.apply(start,{type:'music',id:'injected'}).commands,[]);
 });
+
+test('audio sequence remains an exact safe integer and fails closed on exhaustion',()=>{
+ const director=create(catalog),initial=director.fresh();
+ for(const sequence of [-1,1.5,Number.MAX_SAFE_INTEGER+1,Infinity,NaN]){
+  assert.equal(director.validateState({...initial,sequence}),false);
+  assert.throws(()=>director.apply({...initial,sequence},{type:'mute'}),/Invalid audio state/);
+ }
+ const near={...initial,sequence:Number.MAX_SAFE_INTEGER-1};
+ const last=director.apply(near,{type:'mute'});
+ assert.equal(last.state.sequence,Number.MAX_SAFE_INTEGER);
+ assert.equal(last.state.muted,true);
+ const unchanged=director.apply(last.state,{type:'mute'});
+ assert.equal(unchanged.state,last.state);
+ const fx=director.apply(last.state,{type:'sfx',id:'step'});
+ assert.equal(fx.state,last.state);
+ assert.deepEqual(fx.commands,[]);
+ assert.throws(()=>director.apply(last.state,{type:'unmute'}),/Audio sequence exhausted/);
+ assert.equal(last.state.muted,true);
+ assert.equal(last.state.sequence,Number.MAX_SAFE_INTEGER);
+});
