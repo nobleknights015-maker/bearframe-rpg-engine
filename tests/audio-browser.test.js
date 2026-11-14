@@ -391,3 +391,32 @@ test('initial native volume setter failure cleans sourced media and preserves la
  assert.equal(backend.status().activeSfx,1);
  backend.dispose();
 });
+
+test('native preload, source and loop setter failures clean up partially initialized media',async()=>{
+ for(const property of ['preload','src','loop']){
+   const elements=[];
+   let fail=true;
+   const backend=create(()=>{
+     const e={currentTime:0,play(){return Promise.resolve();},
+       pause(){this.pauses=(this.pauses||0)+1;},
+       load(){this.loads=(this.loads||0)+1;},
+       removeAttribute(name){if(name==='src')this._src='';}};
+     for(const key of ['preload','src','loop']){
+       Object.defineProperty(e,key,{configurable:true,
+         get(){return this['_'+key];},
+         set(value){if(fail&&key===property)throw new Error('native '+key+' failed');
+           this['_'+key]=value;}});
+     }
+     elements.push(e);return e;
+   });
+   const result=await backend.execute([music()]);
+   assert.equal(result[0].ok,false);
+   assert.match(result[0].message,new RegExp('native '+property+' failed'));
+   assert.equal(elements[0]._src,'');
+   assert.ok(elements[0].loads>=1);
+   assert.equal(backend.status().music,null);
+   fail=false;
+   assert.deepEqual(await backend.execute([music('recovered')]),[{ok:true}]);
+   backend.dispose();
+ }
+});
