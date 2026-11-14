@@ -24,6 +24,12 @@ function createBearframeContentContract(project){
     active.push(v);
     try{
       if(Array.isArray(v)){
+        // Non-index properties would otherwise be omitted from the fingerprint.
+        var own=Object.keys(v);
+        for(var a=0;a<own.length;a++){
+          if(!/^(0|[1-9][0-9]*)$/.test(own[a])||Number(own[a])>=v.length)
+            throw new TypeError('Unsupported content contract array property');
+        }
         var values=[];
         for(var j=0;j<v.length;j++){
           if(!Object.prototype.hasOwnProperty.call(v,j))throw new TypeError('Sparse content contract array');
