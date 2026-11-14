@@ -273,6 +273,7 @@
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
     var partyWorldPainter=createBearframeScenePainter(partyWorldSurface);
+    var deviceQA=null;
     // Ported Engine v1 frame-work budget: read-only telemetry, NOT reported FPS.
     var sceneBudget=createBearframePerformanceBudget({profile:'balanced',windowSize:120});
     var sceneBudgetSamples=0;
@@ -318,7 +319,7 @@
         world:document.getElementById('pw-screen-world'),
         party:document.getElementById('pw-screen-party'),
         save:document.getElementById('pw-screen-save')
-      },function(){syncPresentationClock();});
+      },function(){syncPresentationClock();sampleControls();});
     var jrpgMenu=createBearframeJRPGMenu(
       document.getElementById('jrpg-menu'),
       document.getElementById('jrpg-menu-open'),{
@@ -328,6 +329,13 @@
         audio:gameAudio,preferences:userSettings,
         onVisibility:function(){syncPresentationClock();renderPartyWorld();}
       });
+    function sampleControls(){
+      if(!deviceQA||landscape.isDebug())return;
+      var screen=partyWorldScreens.current(),v=partyWorld.view();
+      var phase=jrpgMenu.isOpen()?'menu':screen!=='world'?screen:
+        v&&v.prompt?'event':v&&(v.partyBattle||v.battle)?'battle':'world';
+      deviceQA.sample(phase);
+    }
     function performPartyMovement(dir){
       if(!partyWorldInteractive())
         return {ok:false,reason:'assets-restoring'};
@@ -514,6 +522,7 @@
       partyWorldScreens.sync(v.prompt?'event':
         v.partyBattle||v.battle?'battle':'explore',partyWorldSceneReady);
       syncPresentationClock();
+      sampleControls();
     }
     // Renderer-only health check for Android instrumentation and the
     // diagnostic screen. Proves that *visible event actors* produce real
@@ -807,7 +816,7 @@
     // Device evidence is captured on request, never from the game journal.
     // Capture touch rectangles before Developer Diagnostics hides gameplay.
     var deviceQaBridge=window.BearframeDeviceQAClipboard||null;
-    var deviceQA=createBearframeDeviceQA({
+    deviceQA=createBearframeDeviceQA({
       stage:document.getElementById('engine-landscape-stage'),
       snapshot:snapshot,
       layout:function(){return landscape.snapshot();},
@@ -817,7 +826,8 @@
       }
     });
     document.getElementById('landscape-open-diagnostics')
-      .addEventListener('click',function(){deviceQA.sample();},true);
+      .addEventListener('click',function(){sampleControls();},true);
+    sampleControls();
     document.getElementById('device-qa-copy').addEventListener('click',function(){
       var output=document.getElementById('device-qa-report'),
         state=document.getElementById('device-qa-status');
