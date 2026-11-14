@@ -800,6 +800,7 @@
         atlasSource:'packaged-png',ownerArtActive:!!artProfile,
         scenePaint:partyWorldPainter.snapshot(),
         renderWork:sceneBudget.snapshot(),
+        framePacing:partyWorldClock.pacingSnapshot(),
         renderer:surface.width+'x'+surface.height};
     }
     assets.preload(requiredImages).then(function(){

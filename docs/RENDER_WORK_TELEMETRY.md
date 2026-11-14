@@ -21,3 +21,9 @@ The offline WebView loads the existing Engine v1-derived `framework/performance.
 Measure sustained 30-minute exploration, menus, combat, real 2,944-asset pack behavior, decoded-image memory/PSS, real compositor frame pacing (p50/p95/p99), gesture latency and thermal throttling. Confirm both landscape orientations and controller/Save behavior. Production signing, update/rollback, and physical Storage Access Framework file import/export remain open.
 
 **Do not equate a clean emulator or low CPU work cost with a production-ready engine.**
+
+## RAF callback delivery pacing
+
+The presentation clock separately records the last 120 **requestAnimationFrame callback intervals** while the world page is active. Its read-only `pacingSnapshot()` exposes average/p95/max callback gaps, counts above 33.34ms and 50ms, and the reciprocal `callbackRateHz`. Pause/resume resets the starting timestamp to prevent a backgrounded app from appearing to have a multi-minute frame hitch. Failed and duplicate RAF callbacks are excluded.
+
+This measures how often Chromium calls the game's animation callback, **not actual GPU compositor presentation or 60fps delivery**. Android WebView may throttle RAF without painting; the portable game can render less often than RAF. The reporting adapter includes a separate `callbackPacing` object beside CPU work data. Actual screen frame-pacing, thermal drift and controller latency must still be captured on Moto G hardware.

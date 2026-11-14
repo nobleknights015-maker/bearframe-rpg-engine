@@ -27,7 +27,10 @@ function harness(){
      scenePaint:{paints:25,skipped:11,skipRatio:11/36,
        averageDrawMs:1.25,maxDrawMs:3.7,drawsOver16ms:0},
      renderWork:{health:{sampleCount:12,averageMs:2.11,p95Ms:5.6,
-       overBudgetRatio:0.08},longFrames:0}
+       overBudgetRatio:0.08},longFrames:0},
+     framePacing:{sampleCount:120,averageCallbackMs:16.67,
+       p95CallbackMs:33.34,maxCallbackMs:75,
+       gapsOver33Ms:8,gapsOver50Ms:2,callbackRateHz:59.99}
    }),
    layout:()=>({width:900,height:420,scale:0.93,stageWidth:960,
      stageHeight:450,secret:secrets}),
@@ -66,6 +69,8 @@ test('captures bounded release evidence and never serializes private gameplay or
  assert.equal(report.touch.visibleControls,2);
  assert.equal(report.renderWork.p95Ms,5.6);
  assert.equal(report.renderer.averageDrawMs,1.25);
+ assert.equal(report.callbackPacing.p95CallbackMs,33.34);
+ assert.equal(report.callbackPacing.gapsOver50Ms,2);
  assert.equal(report.loadedAssets,2944);
  assert.equal(report.saveVerified,true);
  assert.match(report.interpretation,/NOT measured display FPS/);

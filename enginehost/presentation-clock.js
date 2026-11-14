@@ -16,6 +16,26 @@ function createBearframePresentationClock(options){
   if(typeof request!=='function'||typeof cancel!=='function')
     throw new TypeError('Animation frame scheduler required');
   var active=false,handle=null,previous=null,tick=0,paints=0,failures=0,generation=0;
+  // RAF callback cadence is not compositor FPS. Keep a bounded recent sample
+  // without allocating/sorting work on the hot callback path.
+  var lastCallbackTime=null,callbackGaps=[],callbackLimit=120;
+  function pacingSnapshot(){
+    var n=callbackGaps.length;
+    if(!n)return {sampleCount:0,averageCallbackMs:0,p95CallbackMs:0,
+      maxCallbackMs:0,gapsOver33Ms:0,gapsOver50Ms:0,callbackRateHz:0};
+    var sum=0,max=0,over33=0,over50=0;
+    callbackGaps.forEach(function(gap){
+      sum+=gap;max=Math.max(max,gap);
+      if(gap>33.34)over33++;
+      if(gap>50)over50++;
+    });
+    var sorted=callbackGaps.slice().sort(function(a,b){return a-b;});
+    var mean=sum/n;
+    return {sampleCount:n,averageCallbackMs:mean,
+      p95CallbackMs:sorted[Math.min(n-1,Math.ceil(n*0.95)-1)],
+      maxCallbackMs:max,gapsOver33Ms:over33,gapsOver50Ms:over50,
+      callbackRateHz:mean>0?1000/mean:0};
+  }
   function report(error){
     if(typeof options.onError==='function'){
       try{options.onError(error);}catch(ignored){
@@ -35,7 +55,7 @@ function createBearframePresentationClock(options){
   }
   function stop(){
     var wasActive=active;
-    active=false;previous=null;generation++;
+    active=false;previous=null;lastCallbackTime=null;generation++;
     if(handle!==null){
       var pending=handle;
       handle=null;
@@ -55,6 +75,17 @@ function createBearframePresentationClock(options){
       report(new TypeError('Invalid animation timestamp'));
       return;
     }
+    // A pause/restart never fabricates a giant first interval. Negative or
+    // duplicate timestamps do not enter the telemetry window. Tick behavior
+    // below stays identical for saved simulation and deterministic audits.
+    if(lastCallbackTime!==null&&timestamp>lastCallbackTime){
+      var gap=timestamp-lastCallbackTime;
+      if(Number.isFinite(gap)&&gap<=60000){
+        callbackGaps.push(gap);
+        if(callbackGaps.length>callbackLimit)callbackGaps.shift();
+      }
+    }
+    lastCallbackTime=timestamp;
     if(previous===null)previous=timestamp;
     else if(timestamp<previous)previous=timestamp;
     else if(timestamp-previous>=interval){
@@ -85,14 +116,14 @@ function createBearframePresentationClock(options){
   }
   function start(){
     if(active)return false;
-    active=true;previous=null;generation++;
+    active=true;previous=null;lastCallbackTime=null;generation++;
     try{handle=schedule();}
     catch(error){active=false;previous=null;throw error;}
     return true;
   }
   return Object.freeze({
     start:start,stop:stop,
-    tick:function(){return tick;},
+    tick:function(){return tick;},pacingSnapshot:pacingSnapshot,
     snapshot:function(){return {running:active,tick:tick,paints:paints,
       failures:failures,intervalMs:interval};}
   });

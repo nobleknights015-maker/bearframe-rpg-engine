@@ -24,3 +24,7 @@ The report is deliberately on-demand and does not run a background sampler or wr
 An undersized logical/visual CSS hit target is flagged, but the threshold is an ergonomic diagnostic, not a certification of accessibility. Android navigation inset and display scale need actual device review.
 
 Physical Moto G performance, Bluetooth/USB controller behavior, audible audio, SAF document picker, safe production signing and upgrade/rollback remain open release gates. Installed emulator QA evidence does not close them.
+
+## Callback pacing interpretation
+
+The report also includes `callbackPacing`: the number of recent RAF callback gaps, average/p95/maximum interval in milliseconds, count of long gaps above 33.34ms/50ms, and callback-rate reciprocal. This can reveal JavaScript scheduling stalls on the phone without storing gameplay. **Callback rate is not GPU display FPS**, and no rate in the report certifies smooth physical delivery. Idle, active movement, menus and battle should be compared with the real display and Android frame metrics when available.
