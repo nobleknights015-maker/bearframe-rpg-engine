@@ -108,7 +108,8 @@ jobs:
           # identity for its preview so installing it on a phone never
           # demands uninstalling a differently signed older preview.
           # Include run attempt to isolate reruns of the same commit.
-          preview_id="${GITHUB_SHA:0:8}${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
+          preview_sha="$(printf '%s' "$GITHUB_SHA" | cut -c1-8)"
+          preview_id="${preview_sha}${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
           BF_ENGINE_PREVIEW=1 BF_ENGINE_PREVIEW_BUILD_ID="$preview_id" \
             bash android/build.sh "$RUNNER_TEMP/bearframe-engine-preview.apk"
           "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$RUNNER_TEMP/bearframe-ci.apk" |
@@ -205,7 +206,8 @@ jobs:
             adb install -r "$RUNNER_TEMP/bearframe-ci.apk"
             # Test the unique per-run QA package, not a shared preview app
             # identity that would require wiping a tester's existing saves.
-            preview_id="${GITHUB_SHA:0:8}${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
+            preview_sha="$(printf '%s' "$GITHUB_SHA" | cut -c1-8)"
+          preview_id="${preview_sha}${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
             preview_pkg="dev.bearframe.ridge.preview.c${preview_id}"
             adb install -r "$RUNNER_TEMP/bearframe-engine-preview.apk"
             adb shell am start -W -n "${preview_pkg}/dev.bearframe.ridge.UnifiedEngineActivity" | tee "$RUNNER_TEMP/preview-launch.txt"
