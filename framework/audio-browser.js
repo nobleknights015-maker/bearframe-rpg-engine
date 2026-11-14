@@ -149,7 +149,12 @@ function createBearframeBrowserAudioBackend(createElement, config) {
       }
       dropOldest();
       voices.push(entry);
-      entry.element.onended=function(){removeVoice(entry);};
+      try{entry.element.onended=function(){removeVoice(entry);};}
+      catch(error){
+        removeVoice(entry);
+        return Promise.resolve({ok:false,reason:'ended-handler-threw',
+          message:String(error&&error.message||error)});
+      }
       return safePlay(entry).then(function(result){
         if(!result.ok)removeVoice(entry);
         return result;
