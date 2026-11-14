@@ -470,3 +470,18 @@ body.landscape-gameplay #pw-screen-world .pad button:not(:disabled):active{
     animation:none!important;
   }
 }
+
+/* User-initiated phone QA evidence belongs to developer diagnostics only.
+ * The gameplay stage and its pixel-perfect viewport stay unchanged. */
+#device-qa-section{margin:12px 0;padding:12px;border:1px solid #637f9a;
+  border-radius:10px;background:#172333}
+#device-qa-section h2{font-size:18px;margin:0 0 6px}
+#device-qa-section p{font-size:13px;line-height:1.5}
+#device-qa-copy{min-height:48px;width:100%;padding:9px 12px;
+  border:1px solid #a5c4df;border-radius:7px;
+  background:#294969;color:#fff;font-size:15px;touch-action:manipulation}
+#device-qa-report{display:block;width:100%;max-width:100%;
+  min-height:150px;padding:10px;color:#dce9f6;background:#0d1623;
+  border:1px solid #637f9a;border-radius:6px;
+  font:12px/1.45 ui-monospace,monospace;resize:vertical}
+#device-qa-status{color:#d0e9d6}
