@@ -96,3 +96,34 @@ test('browser and Rhino load contract before runtime',()=>{
  assert.ok(html.indexOf('framework/content-contract.js')<html.indexOf('framework/runtime.js'));
  assert.match(ci,/-f framework\/content-contract\.js -f framework\/runtime\.js/);
 });
+
+test('content fingerprint refuses lossy values, sparse arrays and cycles',()=>{
+ const baseline=project('r1');
+ const cases=[
+  p=>{p.extra=undefined;},
+  p=>{p.extra=()=>42;},
+  p=>{p.extra=Symbol('x');},
+  p=>{p.extra=12n;},
+  p=>{p.extra=NaN;},
+  p=>{p.extra=Infinity;},
+  p=>{p.extra=[undefined];},
+  p=>{p.extra=new Array(2);},
+  p=>{p.extra=new Date(0);},
+  p=>{p.extra=p;}
+ ];
+ const original=fingerprint(baseline);
+ for(const mutate of cases){
+  const p=project('r1');mutate(p);
+  assert.throws(()=>fingerprint(p),/content contract/i);
+ }
+ assert.equal(fingerprint(baseline),original);
+});
+test('content fingerprint preserves valid arrays and insertion-order independence',()=>{
+ const a=project('r1');
+ a.extra={z:[null,false,0,'text'],a:{two:2,one:1}};
+ const b=project('r1');
+ b.extra={a:{one:1,two:2},z:[null,false,0,'text']};
+ assert.equal(fingerprint(a),fingerprint(b));
+ b.extra.z[1]=true;
+ assert.notEqual(fingerprint(a),fingerprint(b));
+});
