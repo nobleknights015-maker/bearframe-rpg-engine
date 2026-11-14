@@ -102,6 +102,14 @@ if [[ "${BF_ENGINE_PREVIEW:-0}" == "1" ]]; then
   manifest="$work/preview-manifest.xml"
   python3 "$root/scripts/build_preview_manifest.py" "$root/android/AndroidManifest.xml" "$manifest"
 fi
+# Explicit test-version override for a SAME-SIGNER APK upgrade. This never
+# edits the checked-in manifest, changes package identity or changes journals.
+# Signing key continuity is verified in the Android emulator CI job.
+if [[ -n "${BF_ANDROID_VERSION_CODE:-}" ]]; then
+  versioned="$work/versioned-manifest.xml"
+  python3 "$root/scripts/build_versioned_manifest.py" "$manifest" "$versioned" "$BF_ANDROID_VERSION_CODE"
+  manifest="$versioned"
+fi
 "$tools/aapt2" link -o "$work/base.apk" --manifest "$manifest" -I "$platform" -A "$work/assets"
 (cd "$work/dex" && zip -q "$work/base.apk" classes.dex)
 "$tools/zipalign" -f 4 "$work/base.apk" "$work/aligned.apk"
