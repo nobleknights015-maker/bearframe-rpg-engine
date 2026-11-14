@@ -1498,6 +1498,16 @@ public final class RouteRunner extends Instrumentation {
            cost.getInt("longFrames")<0)
             throw new AssertionError("Missing installed render-work samples: "+cost);
         resultMeta.putString("renderWork",cost.toString());
+        String pacingRaw=evalHost(
+            "JSON.stringify(BearframeHost.presentationClock.pacingSnapshot())");
+        JSONObject cadence=new JSONObject(
+            (String)new JSONTokener(pacingRaw).nextValue());
+        if(cadence.getInt("sampleCount")<2 ||
+           cadence.getDouble("averageCallbackMs")<=0 ||
+           cadence.getDouble("p95CallbackMs")<=0 ||
+           cadence.getDouble("callbackRateHz")<=0)
+            throw new AssertionError("Installed frame pacing callback telemetry failed: "+cadence);
+        resultMeta.putString("rafCallbackPacing",cadence.toString());
         String paused=evalHost("(function(){BearframeHost.partyWorldScreens.select('party');" +
             "return JSON.stringify(BearframeHost.presentationClock.snapshot());})()");
         JSONObject pauseBefore=new JSONObject((String)new JSONTokener(paused).nextValue());
