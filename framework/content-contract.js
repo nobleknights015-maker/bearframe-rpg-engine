@@ -30,6 +30,10 @@ function createBearframeContentContract(project){
       var descriptor=Object.getOwnPropertyDescriptor(v,descriptorKeys[d]);
       if(!Object.prototype.hasOwnProperty.call(descriptor,'value'))
         throw new TypeError('Unsupported content contract accessor property');
+      // JSON-style enumeration would silently omit hidden authored metadata.
+      // Array length is the one intrinsic non-enumerable property we allow.
+      if(!descriptor.enumerable&&!(Array.isArray(v)&&descriptorKeys[d]==='length'))
+        throw new TypeError('Unsupported content contract non-enumerable property');
     }
     active.push(v);
     try{
