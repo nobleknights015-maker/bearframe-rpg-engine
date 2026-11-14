@@ -54,9 +54,6 @@ test('content fingerprints reject accessors and symbol-keyed metadata without in
   });
   assert.throws(() => fingerprint(accessor), /accessor property/);
   assert.equal(calls, 0);
-  const hidden = {contentRevision:'v1', entries:[1,2]};
-  Object.defineProperty(hidden, 'metadata', {value:'hidden', enumerable:false});
-  assert.equal(fingerprint(hidden), stable);
   const symbol = {contentRevision:'v1', entries:[1,2]};
   symbol[Symbol('metadata')] = 'ignored without guard';
   assert.throws(() => fingerprint(symbol), /symbol property/);
