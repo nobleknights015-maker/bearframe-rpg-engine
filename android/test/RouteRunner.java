@@ -1592,11 +1592,18 @@ public final class RouteRunner extends Instrumentation {
             "party.click();var partyVisible=!document.getElementById('pw-screen-party').hidden;" +
             "save.click();var saveVisible=!document.getElementById('pw-screen-save').hidden;" +
             "world.click();" +
+            "var qa=BearframeHost.deviceQA.capture();" +
+            "var qaNative=JSON.parse(BearframeDeviceQAClipboard.metrics());" +
+            "var qaReadOnly=navHost.view().sequence===navRevision;" +
             "var nav=document.getElementById('party-world-navigation').getBoundingClientRect();" +
             "var canvas=document.getElementById('party-world-surface').getBoundingClientRect();" +
             "function inside(a){return a.left>=rect.left-1&&a.top>=rect.top-1&&" +
             "a.right<=rect.right+1&&a.bottom<=rect.bottom+1;}" +
             "var debug=l.setDebug(true),debugOpen=document.body.classList.contains('landscape-debug');" +
+            "document.getElementById('device-qa-copy').click();" +
+            "var qaCopied=document.getElementById('device-qa-status').textContent.indexOf('copied to Android clipboard')>=0;" +
+            "var qaText=document.getElementById('device-qa-report').value;" +
+            "var qaReportValid=qaText.indexOf('bearframe-device-qa')>=0;" +
             "l.setDebug(false);" +
             "return JSON.stringify({w:w,h:h,width:rect.width,height:rect.height," +
             "left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom," +
@@ -1609,7 +1616,9 @@ public final class RouteRunner extends Instrumentation {
             "coverage:(rect.width*rect.height)/(w*h)," +
             "scroll:getComputedStyle(document.documentElement).overflowY," +
             "game:document.body.classList.contains('landscape-gameplay')," +
-            "party:partyVisible,save:saveVisible,debug:debug&&debugOpen});" +
+            "party:partyVisible,save:saveVisible,debug:debug&&debugOpen," +
+            "qa:qa,qaNative:qaNative,qaReadOnly:qaReadOnly," +
+            "qaCopied:qaCopied,qaReportValid:qaReportValid});" +
             "}catch(e){return JSON.stringify({error:String(e),stack:String(e.stack||'')})}})()");
         JSONObject result=new JSONObject((String)new JSONTokener(reply).nextValue());
         if(result.has("error"))throw new AssertionError("Landscape JS failed: "+result);
@@ -1653,6 +1662,19 @@ public final class RouteRunner extends Instrumentation {
         for(int i=0;i<fits.length();i++)
             if(!fits.getBoolean(i))
                 throw new AssertionError("Landscape clipped screen profile "+i+": "+result);
+        JSONObject qa=result.getJSONObject("qa"),
+            qaNative=result.getJSONObject("qaNative");
+        if(!"bearframe-device-qa".equals(qa.getString("kind"))||
+           !qa.getBoolean("saveVerified")||
+           qa.getJSONObject("touch").getInt("visibleControls")<1||
+           qaNative.getInt("apiLevel")<28||
+           qaNative.getInt("hostProcessPssKb")<=0||
+           !result.getBoolean("qaReadOnly")||
+           !result.getBoolean("qaCopied")||
+           !result.getBoolean("qaReportValid"))
+            throw new AssertionError("Installed phone QA/clipboard report failed: "+result);
+        resultMeta.putString("deviceQa",
+            "PASS read-only tap sizes, host PSS, explicit clipboard, unchanged saved state");
         if(result.getDouble("coverage")<0.80)
             throw new AssertionError("Landscape viewport wastes too much phone display: "+result);
         if(result.getDouble("w")<=result.getDouble("h")||
