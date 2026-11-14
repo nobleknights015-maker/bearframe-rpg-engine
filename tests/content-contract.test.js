@@ -75,3 +75,19 @@ test('content fingerprints reject non-enumerable object and array metadata', () 
   assert.equal(fingerprint(base), stable);
   assert.equal(fingerprint({entries:[1,2],contentRevision:'v1'}), stable);
 });
+
+
+test('revision opt-in inspection never invokes a getter', () => {
+  let reads = 0;
+  const project = {entries:[1,2]};
+  Object.defineProperty(project, 'contentRevision', {
+    enumerable:true, get(){ reads++; throw new Error('getter executed'); }
+  });
+  assert.throws(() => fingerprint(project), /accessor property/);
+  assert.equal(reads, 0);
+  const hidden = {entries:[1,2]};
+  Object.defineProperty(hidden, 'contentRevision', {value:'v1', enumerable:false});
+  assert.throws(() => fingerprint(hidden), /non-enumerable property/);
+  assert.equal(fingerprint({entries:[1,2]}), null);
+  assert.equal(fingerprint({entries:[1,2],contentRevision:undefined}), null);
+});
