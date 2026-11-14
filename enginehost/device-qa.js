@@ -63,7 +63,8 @@ function createBearframeDeviceQA(options){
   }
   function capture(){
     var game=options.snapshot()||{},layout=options.layout()||{};
-    var paint=game.scenePaint||{},work=game.renderWork||{};
+    var paint=game.scenePaint||{},work=game.renderWork||{},
+      pacing=game.framePacing||{};
     var touch=lastTouch||sample();
     var nativeInfo={};
     if(options.nativeMetrics){
@@ -98,6 +99,11 @@ function createBearframeDeviceQA(options){
         overBudgetRatio:num(work.health&&work.health.overBudgetRatio),
         longFrames:num(work.longFrames)
       },
+      // Delivered RAF callback spacing, NOT compositor presentation FPS.
+      callbackPacing:values(pacing,[
+        'sampleCount','averageCallbackMs','p95CallbackMs','maxCallbackMs',
+        'gapsOver33Ms','gapsOver50Ms','callbackRateHz'
+      ]),
       loadedAssets:num(game.assetsLoaded),
       saveVerified:game.saveVerified===true,
       native:nativeInfo
