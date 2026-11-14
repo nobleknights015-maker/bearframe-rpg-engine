@@ -803,6 +803,36 @@
         renderer:surface.width+'x'+surface.height};
     }
     assets.preload(requiredImages).then(function(){
+    // Device evidence is captured on request, never from the game journal.
+    // Capture touch rectangles before Developer Diagnostics hides gameplay.
+    var deviceQaBridge=window.BearframeDeviceQAClipboard||null;
+    var deviceQA=createBearframeDeviceQA({
+      stage:document.getElementById('engine-landscape-stage'),
+      snapshot:snapshot,
+      layout:function(){return landscape.snapshot();},
+      nativeMetrics:function(){
+        return deviceQaBridge&&typeof deviceQaBridge.metrics==='function'?
+          deviceQaBridge.metrics():null;
+      }
+    });
+    document.getElementById('landscape-open-diagnostics')
+      .addEventListener('click',function(){deviceQA.sample();},true);
+    document.getElementById('device-qa-copy').addEventListener('click',function(){
+      var output=document.getElementById('device-qa-report'),
+        state=document.getElementById('device-qa-status');
+      try{
+        var report=JSON.stringify(deviceQA.capture(),null,2);
+        output.value=report;
+        var copied=false;
+        if(deviceQaBridge&&typeof deviceQaBridge.copyReport==='function')
+          copied=deviceQaBridge.copyReport(report)===true;
+        state.textContent=copied?
+          'Device QA report copied to Android clipboard. No save data included.':
+          'Device QA report generated below. Select the text to copy it manually.';
+      }catch(error){
+        state.textContent='Unable to collect device QA: '+error.message;
+      }
+    });
     window.BearframeHost=Object.freeze({
       snapshot:snapshot,
       snapshotJson:function(){return JSON.stringify(snapshot());},
@@ -818,6 +848,7 @@
       presentationClock:partyWorldClock,
       scenePainter:partyWorldPainter,
       renderBudget:sceneBudget,
+      deviceQA:deviceQA,
       partyWorldScreens:partyWorldScreens,
       jrpgMenu:jrpgMenu,
       gameAudio:gameAudio,
