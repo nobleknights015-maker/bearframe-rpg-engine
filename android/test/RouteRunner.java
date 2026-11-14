@@ -2140,6 +2140,17 @@ public final class RouteRunner extends Instrumentation {
      * Simulates the SAF document result with a local file URI. Actual external
      * picker UI and physical phone acceptance remain separate release gates. */
     private void checkUnifiedCompatFile(boolean restart) throws Exception {
+        if(restart){
+            // The CI upgrade step installs a higher versionCode signed with
+            // the same job-local key. Confirm the PackageManager accepted
+            // that replacement before asserting old+new save continuity.
+            int installedCode=getTargetContext().getPackageManager()
+                .getPackageInfo("dev.bearframe.ridge",0).versionCode;
+            if(installedCode!=2)
+                throw new AssertionError("Expected installed v2 signed upgrade; got versionCode="+installedCode);
+            resultMeta.putString("signedUpgrade",
+                "PASS same-signer v1-to-v2 APK replacement and preserved old/new journals");
+        }
         android.content.SharedPreferences old=getTargetContext()
             .getSharedPreferences("ExpeditionActivity",android.content.Context.MODE_PRIVATE);
         if(!restart){
