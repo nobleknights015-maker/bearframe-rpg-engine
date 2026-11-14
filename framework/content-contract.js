@@ -3,7 +3,16 @@
  * Canonical object-key ordering makes the tag cross-JS-engine deterministic.
  */
 function createBearframeContentContract(project){
-  if(!project||project.contentRevision===undefined)return null;
+  if(!project)return null;
+  // Inspect the revision without executing an authored getter. Even the
+  // initial opt-in check must not run arbitrary project code.
+  var revisionDescriptor=Object.getOwnPropertyDescriptor(project,'contentRevision');
+  if(!revisionDescriptor)return null;
+  if(!Object.prototype.hasOwnProperty.call(revisionDescriptor,'value'))
+    throw new TypeError('Unsupported content contract accessor property');
+  if(!revisionDescriptor.enumerable)
+    throw new TypeError('Unsupported content contract non-enumerable property');
+  if(revisionDescriptor.value===undefined)return null;
   if(typeof project.contentRevision!=='string'||
      !/^[a-z][a-z0-9_-]{0,63}$/.test(project.contentRevision))
     throw new TypeError('Invalid project contentRevision');
