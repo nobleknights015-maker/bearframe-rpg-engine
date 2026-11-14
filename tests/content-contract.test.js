@@ -28,3 +28,17 @@ test('validation never mutates source content', () => {
   validate(current);
   assert.equal(JSON.stringify(current), original);
 });
+
+const fingerprint = require('../framework/content-contract');
+test('content fingerprints refuse enumerable array metadata rather than silently ignoring it', () => {
+  const base = {contentRevision:'v1', entries:[1,2]};
+  const original = fingerprint(base);
+  const extra = {contentRevision:'v1', entries:[1,2]};
+  extra.entries.note = 'unfingerprinted metadata';
+  assert.throws(() => fingerprint(extra), /array property/);
+  const edge = {contentRevision:'v1', entries:[1,2]};
+  edge.entries[4] = 5;
+  assert.throws(() => fingerprint(edge), /Sparse content contract array/);
+  assert.equal(fingerprint(base), original);
+  assert.equal(fingerprint({entries:[1,2],contentRevision:'v1'}), original);
+});
