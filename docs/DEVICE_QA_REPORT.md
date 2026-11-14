@@ -7,7 +7,7 @@ Status: engineering diagnostic, not an engine release certificate. This records 
 1. Open the separately installed engine preview. Continue to use the four-cardinal controls, menus, and the visible save verifier.
 2. Open **Developer diagnostics** from the engine's diagnostic Save panel. The current visible game control bounds are sampled before the gameplay stage is hidden.
 3. Tap **Generate and copy device QA report**. If Android's clipboard service succeeds, paste the JSON into a private bug report or issue. If clipboard is unavailable, the read-only text box still contains the report for manual copying.
-4. To measure game controls in a different state, return to the game, navigate to the relevant phase, then reopen diagnostics and recapture. Only currently visible controls count; hidden, disabled and paginated controls are excluded.
+4. Visit the World, Party, Save, battle and command-menu states you want to inspect, then open diagnostics. The report includes bounded `touchByScreen` snapshots for the visited states; hidden, disabled and paginated controls are excluded from each sample. Screen changes trigger measurements, not animation frames or repeated movement.
 
 ## Collected fields
 

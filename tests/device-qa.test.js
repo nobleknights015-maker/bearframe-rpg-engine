@@ -55,6 +55,35 @@ test('samples actual visible button rectangles and excludes disabled/paginated-o
  h.small.hidden=true;
  assert.equal(h.qa.sample().visibleControls,1);
 });
+test('records bounded per-screen touch evidence without layout polling or save access',()=>{
+ const h=harness();
+ const world=h.qa.sample('world');
+ assert.equal(world.visibleControls,2);
+ const afterWorld=h.qa.capture();
+ assert.equal(afterWorld.touchByScreen.world.undersizedControls,1);
+ const tiny=element('battle-action',25,36,h.stage);
+ h.stage.buttons=[tiny];
+ h.qa.sample('battle');
+ let result=h.qa.capture();
+ assert.equal(result.touch.visibleControls,1);
+ assert.equal(result.touchByScreen.world.visibleControls,2,
+   'an earlier world geometry sample must survive a battle transition');
+ assert.equal(result.touchByScreen.battle.undersizedControls,1);
+ assert.equal(result.touchByScreen.battle.undersizedExamples[0].control,'battle-action');
+ h.stage.buttons=Array.from({length:48},(_,i)=>
+   element('button-'+i,20,20,h.stage));
+ h.qa.sample('menu');
+ result=h.qa.capture();
+ assert.equal(result.touch.undersizedControls,48);
+ assert.equal(result.touch.undersizedExamples.length,12);
+ assert.equal(result.touchByScreen.menu.undersizedExamples.length,4);
+ assert.ok(JSON.stringify(result).length<12000,
+   'phone QA report must fit the bounded Android clipboard bridge');
+ const sections=['world','event','battle','menu','party','save'];
+ for(const category of sections)h.qa.sample(category);
+ assert.deepEqual(Object.keys(h.qa.capture().touchByScreen).sort(),
+   sections.slice().sort(),'arbitrary categories must not grow the report unbounded');
+});
 test('captures bounded release evidence and never serializes private gameplay or device identifiers',()=>{
  const h=harness();
  h.qa.sample();
@@ -98,9 +127,12 @@ test('physical QA stays in developer diagnostics, uses explicit native clipboard
  assert.match(html,/id="device-qa-report" readonly/);
  assert.match(html,/src="device-qa\.js"/);
  assert.match(boot,/createBearframeDeviceQA\(/);
- assert.match(boot,/deviceQA\.sample\(\);},true/);
+ assert.match(boot,/sampleControls\(true\);},true/);
  assert.match(boot,/deviceQaBridge\.copyReport\(report\)===true/);
  assert.match(boot,/deviceQA:deviceQA/);
+ assert.match(boot,/function sampleControls\(force\)/);
+ assert.match(boot,/deviceQALastPhase===phase/);
+ assert.match(boot,/deviceQA\.sample\(phase\)/);
  assert.match(java,/addJavascriptInterface\(deviceQAClipboard,"BearframeDeviceQAClipboard"\)/);
  assert.match(java,/removeJavascriptInterface\("BearframeDeviceQAClipboard"\)/);
  assert.match(native,/@JavascriptInterface public boolean copyReport\(String content\)/);
