@@ -34,16 +34,17 @@ test('CI builds and publishes separately installable engine test APK',()=>{
   assert.ok(!workflow.includes('GITHUB_SHA:0:8'), 'POSIX sh must never use Bash slicing');
   const ciLines=workflow.split(String.fromCharCode(10));
   const shaLines=ciLines.filter(line=>line.includes('preview_sha='));
-  assert.equal(shaLines.length,2,'both CI shells must generate preview id');
-  assert.ok(shaLines.every(line=>line.includes('cut -c1-8')),
-    'use portable POSIX SHA prefix extraction');
-  const emulatorPkg=ciLines.findIndex(line=>line.includes('preview_pkg='));
-  assert.ok(emulatorPkg>0);
-  assert.equal(ciLines[emulatorPkg].match(/^ */)[0].length,
-    ciLines[emulatorPkg-1].match(/^ */)[0].length,
-    'emulator preview code must stay inside the YAML script block');
-  assert.match(workflow,/preview_pkg="dev\.bearframe\.ridge\.preview\.c\$\{preview_id\}"/);
-  assert.match(workflow,/adb shell am start -W -n "\$\{preview_pkg\}\/dev\.bearframe\.ridge\.UnifiedEngineActivity"/);
+  assert.equal(shaLines.length,1,'build step calculates a stable CI preview ID');
+  assert.ok(shaLines[0].includes('cut -c1-8'),'SHA prefix must be POSIX safe');
+  // Android emulator runner executes lines via independent POSIX shells.
+  // Do not rely on local variables assigned in earlier commands.
+  const launch=ciLines.find(line=>line.includes('adb shell am start -W -n "dev.bearframe.ridge.preview.c'));
+  const stop=ciLines.find(line=>line.includes('adb shell am force-stop "dev.bearframe.ridge.preview.c'));
+  assert.ok(launch&&stop,'per-run preview install and shutdown must be wired');
+  assert.ok(launch.includes('cut -c1-8')&&stop.includes('cut -c1-8'));
+  assert.ok(launch.includes('${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}'));
+  assert.ok(stop.includes('${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}'));
+  assert.ok(launch.match(/^ */)[0].length>=12,'emulator code must remain in YAML script');
   assert.doesNotMatch(workflow,/adb shell am force-stop dev\.bearframe\.ridge\.preview\s*$/m);
   assert.match(workflow,/adb install -r "\$RUNNER_TEMP\/bearframe-ci.apk"/);
 });
