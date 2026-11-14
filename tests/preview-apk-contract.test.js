@@ -31,6 +31,17 @@ test('CI builds and publishes separately installable engine test APK',()=>{
   assert.match(workflow,/bearframe-engine-preview.apk/);
   assert.match(workflow,/BF_ENGINE_PREVIEW_BUILD_ID="\$preview_id"/);
   assert.match(workflow,/GITHUB_RUN_ATTEMPT/);
+  assert.doesNotMatch(workflow,/\\$\\{GITHUB_SHA:0:8\\}/);
+  const ciLines=workflow.split('\\n');
+  const shaLines=ciLines.filter(line=>line.includes('preview_sha='));
+  assert.equal(shaLines.length,2,'both CI shells must generate preview id');
+  assert.ok(shaLines.every(line=>line.includes('cut -c1-8')),
+    'use portable POSIX SHA prefix extraction');
+  const emulatorPkg=ciLines.findIndex(line=>line.includes('preview_pkg='));
+  assert.ok(emulatorPkg>0);
+  assert.equal(ciLines[emulatorPkg].match(/^ */)[0].length,
+    ciLines[emulatorPkg-1].match(/^ */)[0].length,
+    'emulator preview code must stay inside the YAML script block');
   assert.match(workflow,/preview_pkg="dev\.bearframe\.ridge\.preview\.c\$\{preview_id\}"/);
   assert.match(workflow,/adb shell am start -W -n "\$\{preview_pkg\}\/dev\.bearframe\.ridge\.UnifiedEngineActivity"/);
   assert.doesNotMatch(workflow,/adb shell am force-stop dev\.bearframe\.ridge\.preview\s*$/m);
