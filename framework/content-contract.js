@@ -21,6 +21,17 @@ function createBearframeContentContract(project){
     if(active.indexOf(v)!==-1)throw new TypeError('Cyclic content contract');
     if(!Array.isArray(v)&&Object.getPrototypeOf(v)!==Object.prototype&&Object.getPrototypeOf(v)!==null)
       throw new TypeError('Unsupported content contract object');
+    // Accessors can execute code or return changing values while hashing.
+    // Symbol keys are omitted by Object.keys, so reject both explicitly.
+    if(Object.getOwnPropertySymbols(v).length)
+      throw new TypeError('Unsupported content contract symbol property');
+    var descriptors=Object.getOwnPropertyDescriptors(v);
+    var descriptorKeys=Object.keys(descriptors);
+    for(var d=0;d<descriptorKeys.length;d++){
+      var descriptor=descriptors[descriptorKeys[d]];
+      if(!Object.prototype.hasOwnProperty.call(descriptor,'value'))
+        throw new TypeError('Unsupported content contract accessor property');
+    }
     active.push(v);
     try{
       if(Array.isArray(v)){
