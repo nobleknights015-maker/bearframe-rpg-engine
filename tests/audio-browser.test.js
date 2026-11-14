@@ -420,3 +420,31 @@ test('native preload, source and loop setter failures clean up partially initial
    backend.dispose();
  }
 });
+
+test('native SFX ended-handler registration failure cleans voice and preserves queue',async()=>{
+ const elements=[];
+ let fail=true;
+ const backend=create(()=>{
+   const e={src:'',volume:1,loop:false,currentTime:0,
+     play(){return Promise.resolve();},pause(){this.pauses=(this.pauses||0)+1;},
+     load(){this.loads=(this.loads||0)+1;},
+     removeAttribute(name){if(name==='src')this.src='';}};
+   Object.defineProperty(e,'onended',{configurable:true,
+     set(fn){if(fail)throw new Error('native ended handler detached');this.handler=fn;}});
+   elements.push(e);return e;
+ });
+ const results=await backend.execute([sfx('broken'),music('still-works')]);
+ assert.equal(results[0].reason,'ended-handler-threw');
+ assert.match(results[0].message,/native ended handler detached/);
+ assert.deepEqual(results[1],{ok:true});
+ assert.equal(elements[0].src,'');
+ assert.ok(elements[0].loads>=1);
+ assert.equal(backend.status().activeSfx,0);
+ assert.equal(backend.status().music,'still-works');
+ fail=false;
+ assert.deepEqual(await backend.execute([sfx('recovered')]),[{ok:true}]);
+ assert.equal(backend.status().activeSfx,1);
+ elements[2].handler();
+ assert.equal(backend.status().activeSfx,0);
+ backend.dispose();
+});
