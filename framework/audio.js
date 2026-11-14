@@ -30,7 +30,7 @@ function createBearframeAudioDirector(catalog){
     volumes:{master:100,music:80,sfx:100},music:null,musicStarted:false};}
   function gain(s,bus){return s.muted?0:Math.floor(s.volumes.master*s.volumes[bus]/100);}
   function valid(s){
-    return !!s&&s.version===1&&Number.isInteger(s.sequence)&&s.sequence>=0&&
+    return !!s&&s.version===1&&Number.isSafeInteger(s.sequence)&&s.sequence>=0&&
       typeof s.paused==='boolean'&&typeof s.muted==='boolean'&&
       !!s.volumes&&['master','music','sfx'].every(function(k){return Number.isInteger(s.volumes[k])&&s.volumes[k]>=0&&s.volumes[k]<=100;})&&
       (s.music===null||(has(catalog,s.music)&&catalog[s.music].type==='music'))&&
@@ -94,7 +94,10 @@ function createBearframeAudioDirector(catalog){
             {type:'gain',bus:'sfx',gain:gain(next,'sfx')});
         }break;
     }
-    if(changed)next.sequence++;
+    if(changed){
+      if(next.sequence===Number.MAX_SAFE_INTEGER)throw new RangeError('Audio sequence exhausted');
+      next.sequence++;
+    }
     if(!changed)return {state:previous,commands:cmd};
     if(!valid(next))throw new Error('Audio transition violated state contract');
     return {state:next,commands:cmd};
