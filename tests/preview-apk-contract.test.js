@@ -31,8 +31,8 @@ test('CI builds and publishes separately installable engine test APK',()=>{
   assert.match(workflow,/bearframe-engine-preview.apk/);
   assert.match(workflow,/BF_ENGINE_PREVIEW_BUILD_ID="\$preview_id"/);
   assert.match(workflow,/GITHUB_RUN_ATTEMPT/);
-  assert.doesNotMatch(workflow,/\\$\\{GITHUB_SHA:0:8\\}/);
-  const ciLines=workflow.split('\\n');
+  assert.ok(!workflow.includes('GITHUB_SHA:0:8'), 'POSIX sh must never use Bash slicing');
+  const ciLines=workflow.split(String.fromCharCode(10));
   const shaLines=ciLines.filter(line=>line.includes('preview_sha='));
   assert.equal(shaLines.length,2,'both CI shells must generate preview id');
   assert.ok(shaLines.every(line=>line.includes('cut -c1-8')),
