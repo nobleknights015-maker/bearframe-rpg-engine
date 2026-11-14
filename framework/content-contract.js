@@ -7,15 +7,37 @@ function createBearframeContentContract(project){
   if(typeof project.contentRevision!=='string'||
      !/^[a-z][a-z0-9_-]{0,63}$/.test(project.contentRevision))
     throw new TypeError('Invalid project contentRevision');
+  // Reject values that JSON would silently erase or coerce. Otherwise two
+  // different authored contracts could share the same journal fingerprint.
+  var active=[];
   function canonical(v){
-    if(v===null||typeof v!=='object')return JSON.stringify(v);
-    if(Array.isArray(v))return '['+v.map(canonical).join(',')+']';
-    var keys=Object.keys(v).sort(),bits=[];
-    for(var i=0;i<keys.length;i++){
-      var k=keys[i];
-      if(v[k]!==undefined)bits.push(JSON.stringify(k)+':'+canonical(v[k]));
+    if(v===null)return 'null';
+    if(typeof v==='string'||typeof v==='boolean')return JSON.stringify(v);
+    if(typeof v==='number'){
+      if(!Number.isFinite(v))throw new TypeError('Invalid content contract number');
+      return JSON.stringify(v);
     }
-    return '{'+bits.join(',')+'}';
+    if(typeof v!=='object')throw new TypeError('Unsupported content contract value');
+    if(active.indexOf(v)!==-1)throw new TypeError('Cyclic content contract');
+    if(!Array.isArray(v)&&Object.getPrototypeOf(v)!==Object.prototype&&Object.getPrototypeOf(v)!==null)
+      throw new TypeError('Unsupported content contract object');
+    active.push(v);
+    try{
+      if(Array.isArray(v)){
+        var values=[];
+        for(var j=0;j<v.length;j++){
+          if(!Object.prototype.hasOwnProperty.call(v,j))throw new TypeError('Sparse content contract array');
+          values.push(canonical(v[j]));
+        }
+        return '['+values.join(',')+']';
+      }
+      var keys=Object.keys(v).sort(),bits=[];
+      for(var i=0;i<keys.length;i++){
+        var k=keys[i];
+        bits.push(JSON.stringify(k)+':'+canonical(v[k]));
+      }
+      return '{'+bits.join(',')+'}';
+    }finally{active.pop();}
   }
   var data=canonical(project),fnv=2166136261,djb=5381;
   for(var n=0;n<data.length;n++){
