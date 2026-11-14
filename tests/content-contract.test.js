@@ -59,3 +59,19 @@ test('content fingerprints reject accessors and symbol-keyed metadata without in
   assert.throws(() => fingerprint(symbol), /symbol property/);
   assert.equal(fingerprint(baseline), stable);
 });
+
+test('content fingerprints reject non-enumerable object and array metadata', () => {
+  const base = {contentRevision:'v1', entries:[1,2]};
+  const stable = fingerprint(base);
+  const hiddenObject = {contentRevision:'v1', entries:[1,2]};
+  Object.defineProperty(hiddenObject, 'hidden', {value:'different', enumerable:false});
+  assert.throws(() => fingerprint(hiddenObject), /non-enumerable property/);
+  const hiddenArray = {contentRevision:'v1', entries:[1,2]};
+  Object.defineProperty(hiddenArray.entries, 'note', {value:'different', enumerable:false});
+  assert.throws(() => fingerprint(hiddenArray), /non-enumerable property/);
+  const hiddenIndex = {contentRevision:'v1', entries:[1,2]};
+  Object.defineProperty(hiddenIndex.entries, '0', {value:1, enumerable:false});
+  assert.throws(() => fingerprint(hiddenIndex), /non-enumerable property/);
+  assert.equal(fingerprint(base), stable);
+  assert.equal(fingerprint({entries:[1,2],contentRevision:'v1'}), stable);
+});
