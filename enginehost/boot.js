@@ -273,7 +273,7 @@
     var partyWorldSurface=document.getElementById('party-world-surface');
     var partyWorldSceneReady=false,partyWorldClock=null;
     var partyWorldPainter=createBearframeScenePainter(partyWorldSurface);
-    var deviceQA=null;
+    var deviceQA=null,deviceQALastPhase=null;
     // Ported Engine v1 frame-work budget: read-only telemetry, NOT reported FPS.
     var sceneBudget=createBearframePerformanceBudget({profile:'balanced',windowSize:120});
     var sceneBudgetSamples=0;
@@ -329,11 +329,15 @@
         audio:gameAudio,preferences:userSettings,
         onVisibility:function(){syncPresentationClock();renderPartyWorld();}
       });
-    function sampleControls(){
+    function sampleControls(force){
       if(!deviceQA||landscape.isDebug())return;
       var screen=partyWorldScreens.current(),v=partyWorld.view();
       var phase=jrpgMenu.isOpen()?'menu':screen!=='world'?screen:
         v&&v.prompt?'event':v&&(v.partyBattle||v.battle)?'battle':'world';
+      // A movement step may repaint frequently; never force layout geometry
+      // measurement again until the visible UI phase actually changes.
+      if(!force&&deviceQALastPhase===phase)return;
+      deviceQALastPhase=phase;
       deviceQA.sample(phase);
     }
     function performPartyMovement(dir){
@@ -826,7 +830,7 @@
       }
     });
     document.getElementById('landscape-open-diagnostics')
-      .addEventListener('click',function(){sampleControls();},true);
+      .addEventListener('click',function(){sampleControls(true);},true);
     sampleControls();
     document.getElementById('device-qa-copy').addEventListener('click',function(){
       var output=document.getElementById('device-qa-report'),
